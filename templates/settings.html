@@ -1,0 +1,155 @@
+{% extends "layout.html" %}
+
+{% block title %}Pengaturan - Mesin Pencarian Semantik Al-Quran{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-3">
+        <div class="card shadow mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">Menu</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    <a href="{{ url_for('profile') }}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-user me-2"></i> Profil
+                    </a>
+                    <a href="{{ url_for('settings') }}" class="list-group-item list-group-item-action active">
+                        <i class="fas fa-cog me-2"></i> Pengaturan
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-9">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">Pengaturan Pencarian</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('settings') }}">
+                    <div class="row mb-3">
+                        <label for="default_model" class="col-sm-3 col-form-label">Model Default</label>
+                        <div class="col-sm-9">
+                            <select class="form-select" id="default_model" name="default_model">
+                                <option value="word2vec" {% if settings.default_model == 'word2vec' %}selected{% endif %}>Word2Vec</option>
+                                <option value="fasttext" {% if settings.default_model == 'fasttext' %}selected{% endif %}>FastText</option>
+                                <option value="glove" {% if settings.default_model == 'glove' %}selected{% endif %}>GloVe</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label for="result_limit" class="col-sm-3 col-form-label">Jumlah Hasil Default</label>
+                        <div class="col-sm-9">
+                            <select class="form-select" id="result_limit" name="result_limit">
+                                <option value="5" {% if settings.result_limit == 5 %}selected{% endif %}>5 hasil</option>
+                                <option value="10" {% if settings.result_limit == 10 %}selected{% endif %}>10 hasil</option>
+                                <option value="20" {% if settings.result_limit == 20 %}selected{% endif %}>20 hasil</option>
+                                <option value="50" {% if settings.result_limit == 50 %}selected{% endif %}>50 hasil</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label for="threshold" class="col-sm-3 col-form-label">Ambang Kesamaan</label>
+                        <div class="col-sm-9">
+                            <input type="range" class="form-range" min="0.1" max="0.9" step="0.05" id="threshold" name="threshold" value="{{ settings.threshold }}" oninput="thresholdValue.innerText = this.value">
+                            <div class="small text-muted">
+                                Nilai: <span id="thresholdValue">{{ settings.threshold }}</span>
+                                <small>(Semakin tinggi, semakin ketat filter kesamaan)</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i> Simpan Pengaturan
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card shadow mt-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="card-title mb-0">Status Model</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Model</th>
+                                <th>Status</th>
+                                <th>Terakhir Diperbarui</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Word2Vec</td>
+                                <td>
+                                    {% if model_status.word2vec.initialized %}
+                                        <span class="badge bg-success">Terinisialisasi</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Belum Terinisialisasi</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ model_status.word2vec.last_updated or '-' }}</td>
+                                <td>
+                                    <form method="POST" action="{{ url_for('initialize_model') }}">
+                                        <input type="hidden" name="model_name" value="word2vec">
+                                        <button type="submit" class="btn btn-sm btn-primary" {% if model_status.word2vec.initialized %}disabled{% endif %}>
+                                            <i class="fas fa-sync-alt me-1"></i> Inisialisasi
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>FastText</td>
+                                <td>
+                                    {% if model_status.fasttext.initialized %}
+                                        <span class="badge bg-success">Terinisialisasi</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Belum Terinisialisasi</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ model_status.fasttext.last_updated or '-' }}</td>
+                                <td>
+                                    <form method="POST" action="{{ url_for('initialize_model') }}">
+                                        <input type="hidden" name="model_name" value="fasttext">
+                                        <button type="submit" class="btn btn-sm btn-primary" {% if model_status.fasttext.initialized %}disabled{% endif %}>
+                                            <i class="fas fa-sync-alt me-1"></i> Inisialisasi
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>GloVe</td>
+                                <td>
+                                    {% if model_status.glove.initialized %}
+                                        <span class="badge bg-success">Terinisialisasi</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Belum Terinisialisasi</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ model_status.glove.last_updated or '-' }}</td>
+                                <td>
+                                    <form method="POST" action="{{ url_for('initialize_model') }}">
+                                        <input type="hidden" name="model_name" value="glove">
+                                        <button type="submit" class="btn btn-sm btn-primary" {% if model_status.glove.initialized %}disabled{% endif %}>
+                                            <i class="fas fa-sync-alt me-1"></i> Inisialisasi
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i> Inisialisasi model dapat memakan waktu beberapa menit tergantung pada ukuran model dan performa sistem.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

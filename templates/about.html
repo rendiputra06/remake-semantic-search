@@ -1,0 +1,104 @@
+{% extends "layout.html" %}
+
+{% block title %}Tentang - Mesin Pencarian Semantik Al-Quran{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="card shadow border-0">
+            <div class="card-body p-5">
+                <h1 class="display-5 text-primary mb-4">Tentang Mesin Pencarian Semantik Al-Quran</h1>
+                
+                <div class="mb-5">
+                    <h3>Apa itu Pencarian Semantik?</h3>
+                    <p class="lead">Pencarian semantik adalah teknologi pencarian yang tidak hanya mencari kata kunci yang sama persis, tetapi memahami <em>makna</em> dan <em>konteks</em> dari kueri pencarian.</p>
+                    <p>Berbeda dengan pencarian berbasis kata kunci tradisional yang hanya mencocokkan kata atau frasa yang sama persis, pencarian semantik mampu menemukan teks yang memiliki makna serupa meskipun menggunakan kata-kata yang berbeda.</p>
+                    
+                    <div class="alert alert-info">
+                        <h5><i class="fas fa-lightbulb me-2"></i>Contoh Sederhana</h5>
+                        <p class="mb-0">Jika Anda mencari "orang yang melakukan maksiat", pencarian semantik bisa menemukan ayat yang berisi kata-kata seperti "pelaku dosa", "orang yang durhaka", atau "orang yang berbuat zalim" karena memiliki makna yang berhubungan.</p>
+                    </div>
+                </div>
+
+                <div class="mb-5">
+                    <h3>Model Semantik dalam Aplikasi Ini</h3>
+                    <p>Kami menggunakan tiga model pembelajaran mesin berbeda untuk memberikan hasil pencarian yang akurat:</p>
+                    
+                    <div class="table-responsive mt-3">
+                        <table class="table table-bordered">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Model</th>
+                                    <th>Deskripsi</th>
+                                    <th>Kelebihan</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Word2Vec</strong></td>
+                                    <td>Mengubah kata menjadi vektor dan mengukur jarak semantik antar kata berdasarkan konteks</td>
+                                    <td>Sangat baik dalam memahami hubungan semantik kata-kata umum</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>FastText</strong></td>
+                                    <td>Pengembangan Word2Vec yang memperhitungkan subword (karakter n-gram)</td>
+                                    <td>Lebih baik dalam menangani kata-kata yang jarang muncul dan bahasa dengan banyak imbuhan</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>GloVe</strong></td>
+                                    <td>Menggabungkan statistik global kemunculan kata dengan pendekatan lokal</td>
+                                    <td>Lebih baik dalam memahami analogi dan hubungan semantik yang kompleks</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="mb-5">
+                    <h3>Bagaimana Cara Kerjanya?</h3>
+                    <p>Aplikasi ini telah dilatih menggunakan terjemahan Al-Quran dalam berbagai bahasa untuk memahami makna dan konteks dari setiap ayat. Proses pencarian bekerja sebagai berikut:</p>
+                    
+                    <div class="row mt-4">
+                        <div class="col-md-6 mb-4 mb-md-0">
+                            <div class="card h-100 bg-light">
+                                <div class="card-body">
+                                    <h5 class="card-title"><i class="fas fa-cogs me-2 text-primary"></i>Proses Pelatihan</h5>
+                                    <ol>
+                                        <li>Mengumpulkan terjemahan Al-Quran dalam berbagai bahasa</li>
+                                        <li>Melakukan preprocessing teks (tokenisasi, penghapusan stopwords)</li>
+                                        <li>Melatih model Word2Vec, FastText, dan GloVe untuk memahami makna kata</li>
+                                        <li>Menghasilkan vektor untuk setiap ayat Al-Quran</li>
+                                    </ol>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card h-100 bg-light">
+                                <div class="card-body">
+                                    <h5 class="card-title"><i class="fas fa-search me-2 text-primary"></i>Proses Pencarian</h5>
+                                    <ol>
+                                        <li>Mengubah kueri pencarian pengguna menjadi vektor</li>
+                                        <li>Menghitung kesamaan kosinus antara vektor kueri dan vektor ayat Al-Quran</li>
+                                        <li>Mengurutkan hasil berdasarkan skor kesamaan</li>
+                                        <li>Menampilkan ayat-ayat yang paling relevan</li>
+                                    </ol>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h3>Tim Pengembang</h3>
+                    <p>Aplikasi ini dikembangkan oleh Tim Peneliti Semantik Al-Quran yang berdedikasi untuk memudahkan pencarian dan pemahaman kandungan Al-Quran melalui teknologi pembelajaran mesin terkini.</p>
+                    
+                    <div class="text-center mt-5">
+                        <p class="text-muted"><em>"Dan Kami turunkan kepadamu Al-Kitab (Al-Quran) untuk menjelaskan segala sesuatu dan petunjuk serta rahmat dan kabar gembira bagi orang-orang yang berserah diri."</em></p>
+                        <p class="text-muted">- QS. An-Nahl: 89</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

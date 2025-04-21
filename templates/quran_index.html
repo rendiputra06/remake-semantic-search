@@ -1,0 +1,1183 @@
+{% extends "layout.html" %}
+
+{% block title %}Klasifikasi Index Al-Quran{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Klasifikasi Index Al-Quran</h1>
+    
+    <div class="row">
+        <!-- Breadcrumb navigation -->
+        <div class="col-12 mb-3">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb" id="index-breadcrumb">
+                    <li class="breadcrumb-item"><a href="javascript:void(0)" onclick="loadRootIndexes()">Root</a></li>
+                </ol>
+            </nav>
+        </div>
+        
+        <!-- Index list container with Tree View -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Daftar Index</h5>
+                    <div>
+                        {% if user and user.role == 'admin' %}
+                        <button class="btn btn-sm btn-primary" onclick="showAddIndexModal()">
+                            <i class="fas fa-plus"></i> Tambah Index
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Tree View Mode -->
+                    <div id="tree-view-container">
+                        <div id="index-tree" class="tree-root">
+                            <div class="text-center py-4" id="tree-loading">
+                                <div class="spinner-border" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <p class="mt-2">Memuat struktur indeks...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Detail container -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0" id="detail-title">Detail</h5>
+                </div>
+                <div class="card-body" id="detail-container">
+                    <p class="text-muted text-center">Pilih index untuk melihat detail</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if user and user.role == 'admin' %}
+<!-- Modal untuk tambah/edit index -->
+<div class="modal fade" id="indexModal" tabindex="-1" aria-labelledby="indexModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="indexModalLabel">Tambah Index Baru</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="indexForm">
+                    <input type="hidden" id="index-id">
+                    <input type="hidden" id="parent-id">
+                    
+                    <div class="mb-3">
+                        <label for="index-title" class="form-label">Judul</label>
+                        <input type="text" class="form-control" id="index-title" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="index-description" class="form-label">Deskripsi</label>
+                        <textarea class="form-control" id="index-description" rows="3"></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="index-sort-order" class="form-label">Urutan</label>
+                        <input type="number" class="form-control" id="index-sort-order" value="0">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-primary" id="save-index-btn">Simpan</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal untuk upload file Excel -->
+<div class="modal fade" id="excelUploadModal" tabindex="-1" aria-labelledby="excelUploadModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="excelUploadModalLabel">Upload File Excel</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="excelUploadForm" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="excel-file" class="form-label">Pilih File Excel</label>
+                        <input type="file" class="form-control" id="excel-file" accept=".xls,.xlsx" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="sheet-name" class="form-label">Nama Sheet</label>
+                        <select class="form-select" id="sheet-name" disabled>
+                            <option value="">Pilih file terlebih dahulu</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="parent-index" class="form-label">Index Parent (opsional)</label>
+                        <select class="form-select" id="parent-index">
+                            <option value="">Root (Tidak ada parent)</option>
+                        </select>
+                    </div>
+                </form>
+                <div class="progress d-none" id="upload-progress">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-primary" id="upload-excel-btn">Upload</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal untuk tambah/edit ayat -->
+<div class="modal fade" id="ayatModal" tabindex="-1" aria-labelledby="ayatModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="ayatModalLabel">Tambah Ayat</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="ayatForm">
+                    <input type="hidden" id="ayat-id">
+                    <input type="hidden" id="ayat-index-id">
+                    
+                    <div class="mb-3">
+                        <label for="ayat-surah" class="form-label">Surah</label>
+                        <input type="number" class="form-control" id="ayat-surah" required min="1" max="114">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="ayat-number" class="form-label">Ayat</label>
+                        <input type="number" class="form-control" id="ayat-number" required min="1">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="ayat-text" class="form-label">Teks Ayat</label>
+                        <textarea class="form-control" id="ayat-text" rows="3" required dir="rtl"></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="ayat-translation" class="form-label">Terjemahan</label>
+                        <textarea class="form-control" id="ayat-translation" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-primary" id="save-ayat-btn">Simpan</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal konfirmasi hapus -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteConfirmModalLabel">Konfirmasi Hapus</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="delete-confirm-text">Apakah Anda yakin ingin menghapus item ini?</p>
+                <p class="text-danger" id="delete-warning-text"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-danger" id="confirm-delete-btn">Hapus</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block styles %}
+<style>
+    /* Tree View Styles */
+    .tree-root {
+        margin-left: -20px;
+    }
+    
+    .tree-view {
+        list-style-type: none;
+        padding-left: 20px;
+    }
+    
+    .tree-node {
+        position: relative;
+        margin: 5px 0;
+    }
+    
+    .tree-content {
+        display: flex;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        padding: 6px 10px;
+        border-radius: 4px;
+        background-color: #f8f9fa;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    
+    .tree-content:hover {
+        background-color: #e9ecef;
+    }
+    
+    .tree-content.active {
+        background-color: #e7f1ff;
+        border-color: #b8daff;
+    }
+    
+    .tree-title {
+        flex: 1;
+        display: flex;
+        align-items: center;
+    }
+    
+    .tree-actions {
+        display: flex;
+        margin-left: auto;
+    }
+    
+    .toggle-icon {
+        margin-right: 5px;
+        transition: transform 0.2s;
+        width: 16px;
+        text-align: center;
+    }
+    
+    .toggle-icon.rotated {
+        transform: rotate(90deg);
+    }
+    
+    .tree-icon {
+        margin-right: 8px;
+    }
+    
+    .tree-children {
+        padding-left: 20px;
+        list-style-type: none;
+    }
+    
+    .tree-node::before {
+        content: '';
+        position: absolute;
+        left: -15px;
+        top: 0;
+        height: 100%;
+        border-left: 1px dashed #ccc;
+        z-index: 0;
+    }
+    
+    .tree-node:last-child::before {
+        height: 15px;
+    }
+    
+    .tree-node::after {
+        content: '';
+        position: absolute;
+        left: -15px;
+        top: 15px;
+        width: 15px;
+        border-top: 1px dashed #ccc;
+        z-index: 0;
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Variabel global
+    let currentParentId = null;
+    let breadcrumbStack = [];
+    let treeData = [];
+    let isAdmin = false;
+    
+    // Saat halaman dimuat, load index level teratas
+    document.addEventListener("DOMContentLoaded", function() {
+        // Cek apakah user adalah admin
+        isAdmin = document.body.getAttribute('data-is-admin') === 'true';
+        
+        // Langsung muat tree data
+        loadTreeData();
+        
+        if (isAdmin) {
+            showAdminToolbar();
+        }
+    });
+    
+    // Fungsi untuk menampilkan data ayat dari JSON
+    function displayAyatList(jsonString) {
+        if (!jsonString) return '';
+        
+        try {
+            const ayatList = JSON.parse(jsonString);
+            if (!ayatList || !ayatList.length) return '';
+            
+            let html = '<div class="mt-1"><strong>Ayat:</strong> ';
+            ayatList.forEach((ayat, index) => {
+                html += `<span class="badge bg-info me-1">${ayat}</span>`;
+            });
+            html += '</div>';
+            
+            return html;
+        } catch (e) {
+            console.error('Error parsing ayat JSON:', e);
+            return '';
+        }
+    }
+    
+    // Fungsi untuk memuat data tree
+    function loadTreeData() {
+        const treeContainer = document.getElementById('index-tree');
+        const treeLoading = document.getElementById('tree-loading');
+        
+        if (treeLoading) {
+            treeLoading.style.display = 'block';
+        }
+        
+        // Ambil semua data index untuk membangun tree
+        fetch('/api/quran/index/tree')
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    treeData = result.data;
+                    renderTreeView(treeData);
+                } else {
+                    showAlert('danger', result.message || 'Gagal memuat data tree');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('danger', 'Terjadi kesalahan saat memuat data tree');
+            })
+            .finally(() => {
+                if (treeLoading) {
+                    treeLoading.style.display = 'none';
+                }
+            });
+    }
+    
+    // Fungsi untuk render tree view
+    function renderTreeView(data) {
+        const treeContainer = document.getElementById('index-tree');
+        
+        if (!data || data.length === 0) {
+            treeContainer.innerHTML = '<p class="text-center text-muted my-3">Tidak ada index</p>';
+            return;
+        }
+        
+        treeContainer.innerHTML = buildTreeHTML(data);
+        
+        // Tambahkan event listener untuk toggle
+        document.querySelectorAll('.toggle-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const nodeId = this.getAttribute('data-node-id');
+                const childrenContainer = document.getElementById(`children-${nodeId}`);
+                const toggleIcon = this.querySelector('.toggle-icon');
+                
+                if (childrenContainer.classList.contains('d-none')) {
+                    childrenContainer.classList.remove('d-none');
+                    toggleIcon.classList.add('rotated');
+                } else {
+                    childrenContainer.classList.add('d-none');
+                    toggleIcon.classList.remove('rotated');
+                }
+            });
+        });
+        
+        // Tambahkan event listener untuk selektor node
+        document.querySelectorAll('.tree-content').forEach(node => {
+            node.addEventListener('click', function() {
+                const nodeId = this.getAttribute('data-node-id');
+                
+                // Hapus active class dari semua node
+                document.querySelectorAll('.tree-content').forEach(n => {
+                    n.classList.remove('active');
+                });
+                
+                // Tambahkan active class ke node yang dipilih
+                this.classList.add('active');
+                
+                // Load detail index
+                selectIndex(parseInt(nodeId));
+            });
+        });
+    }
+    
+    // Fungsi untuk membangun HTML tree view
+    function buildTreeHTML(nodes, level = 0) {
+        if (!nodes || nodes.length === 0) return '';
+        
+        let html = '<ul class="tree-view">';
+        
+        nodes.forEach(node => {
+            const hasChildren = node.children && node.children.length > 0;
+            const hasAyat = node.has_ayat;
+            const icon = hasChildren ? 'fa-folder' : (hasAyat ? 'fa-file-alt' : 'fa-file');
+            const ayatHtml = displayAyatList(node.list_ayat);
+            
+            html += `<li class="tree-node">`;
+            html += `<div class="tree-content" data-node-id="${node.id}">`;
+            
+            // Title section with toggle and icon
+            html += `<div class="tree-title">`;
+            if (hasChildren) {
+                html += `<span class="toggle-btn" data-node-id="${node.id}">
+                            <i class="fas fa-caret-right toggle-icon"></i>
+                        </span>`;
+            } else {
+                html += `<span style="width: 16px; display: inline-block;"></span>`;
+            }
+            
+            html += `<i class="fas ${icon} tree-icon"></i>`;
+            html += `<span>${node.title}</span>`;
+            html += `</div>`;
+            
+            // Action buttons for admin
+            if (isAdmin) {
+                html += `<div class="tree-actions">
+                    <button class="btn btn-sm btn-info btn-sm mx-1" onclick="event.stopPropagation(); showEditIndexModal(${node.id})">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-danger btn-sm" onclick="event.stopPropagation(); showDeleteIndexModal(${node.id})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>`;
+            }
+            
+            // Ayat badges display (full width)
+            html += ayatHtml;
+            
+            html += `</div>`;
+            
+            if (hasChildren) {
+                html += `<div id="children-${node.id}" class="d-none">`;
+                html += buildTreeHTML(node.children, level + 1);
+                html += `</div>`;
+            }
+            
+            html += `</li>`;
+        });
+        
+        html += '</ul>';
+        return html;
+    }
+    
+    // Fungsi untuk memuat index root / level teratas
+    function loadRootIndexes() {
+        loadTreeData();
+        currentParentId = null;
+        updateBreadcrumb(null);
+    }
+    
+    // Fungsi untuk memuat index berdasarkan parent
+    function loadIndexes(parentId) {
+        selectIndex(parentId);
+        currentParentId = parentId;
+        updateBreadcrumb(parentId);
+        
+        // Cari node di tree view dan expand jika ada
+        if (parentId !== null) {
+            const nodeToggle = document.querySelector(`.toggle-btn[data-node-id="${parentId}"]`);
+            if (nodeToggle) {
+                const childrenContainer = document.getElementById(`children-${parentId}`);
+                const toggleIcon = nodeToggle.querySelector('.toggle-icon');
+                
+                if (childrenContainer.classList.contains('d-none')) {
+                    childrenContainer.classList.remove('d-none');
+                    toggleIcon.classList.add('rotated');
+                }
+                
+                // Pilih node di tree
+                const treeContent = document.querySelector(`.tree-content[data-node-id="${parentId}"]`);
+                if (treeContent) {
+                    // Hapus active class dari semua node
+                    document.querySelectorAll('.tree-content').forEach(n => {
+                        n.classList.remove('active');
+                    });
+                    
+                    // Tambahkan active class ke node yang dipilih
+                    treeContent.classList.add('active');
+                    
+                    // Scroll ke node yang dipilih
+                    treeContent.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+        }
+    }
+    
+    // Fungsi untuk memilih index dan menampilkan detailnya
+    function selectIndex(indexId) {
+        const detailContainer = document.getElementById('detail-container');
+        const detailTitle = document.getElementById('detail-title');
+        
+        detailContainer.innerHTML = `
+            <div class="text-center py-4">
+                <div class="spinner-border" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        `;
+        
+        fetch(`/api/quran/index/${indexId}`)
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    const data = result.data;
+                    detailTitle.textContent = data.index.title;
+                    
+                    let html = `
+                        <div class="mb-3">
+                            <p>${data.index.description || '<em>Tidak ada deskripsi</em>'}</p>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mb-3">
+                            <button class="btn btn-primary btn-sm" onclick="loadIndexes(${indexId})">
+                                <i class="fas fa-folder-open me-1"></i> Buka
+                            </button>
+                            
+                            <div>
+                                {% if user and user.role == 'admin' %}
+                                <button class="btn btn-success btn-sm" onclick="showAddAyatModal(${indexId})">
+                                    <i class="fas fa-plus me-1"></i> Tambah Ayat
+                                </button>
+                                <button class="btn btn-info btn-sm" onclick="showEditIndexModal(${indexId})">
+                                    <i class="fas fa-edit me-1"></i> Edit
+                                </button>
+                                <button class="btn btn-danger btn-sm" onclick="showDeleteIndexModal(${indexId})">
+                                    <i class="fas fa-trash me-1"></i> Hapus
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Tampilkan ayat jika ada
+                    if (data.ayat && data.ayat.length > 0) {
+                        html += '<hr><h6>Ayat Terkait:</h6>';
+                        
+                        data.ayat.forEach(ayat => {
+                            html += `
+                                <div class="card mb-2">
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                        <span>Q.S. ${ayat.surah}:${ayat.ayat}</span>
+                                        {% if user and user.role == 'admin' %}
+                                        <div>
+                                            <button class="btn btn-info btn-sm btn-sm" onclick="showEditAyatModal(${ayat.id})">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="btn btn-danger btn-sm btn-sm" onclick="showDeleteAyatModal(${ayat.id})">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="text-end" dir="rtl">${ayat.text}</p>
+                                        ${ayat.translation ? `<p>${ayat.translation}</p>` : ''}
+                                    </div>
+                                </div>
+                            `;
+                        });
+                    }
+                    
+                    detailContainer.innerHTML = html;
+                } else {
+                    detailContainer.innerHTML = `<p class="text-danger">${result.message || 'Gagal memuat detail'}</p>`;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                detailContainer.innerHTML = '<p class="text-danger">Terjadi kesalahan saat memuat detail</p>';
+            });
+    }
+    
+    // Fungsi untuk memperbarui breadcrumb
+    function updateBreadcrumb(parentId) {
+        if (parentId === null) {
+            // Reset breadcrumb ke root
+            breadcrumbStack = [];
+            document.getElementById('index-breadcrumb').innerHTML = `
+                <li class="breadcrumb-item active">Root</li>
+            `;
+            return;
+        }
+        
+        // Dapatkan informasi tentang parent
+        fetch(`/api/quran/index/${parentId}`)
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    const index = result.data.index;
+                    
+                    // Reset atau perbarui breadcrumb
+                    if (breadcrumbStack.findIndex(item => item.id === index.id) === -1) {
+                        // Tambahkan ke stack jika belum ada
+                        breadcrumbStack.push({ id: index.id, title: index.title });
+                    } else {
+                        // Potong stack sampai index yang dipilih
+                        const idx = breadcrumbStack.findIndex(item => item.id === index.id);
+                        breadcrumbStack = breadcrumbStack.slice(0, idx + 1);
+                    }
+                    
+                    // Render breadcrumb
+                    let html = `<li class="breadcrumb-item"><a href="javascript:void(0)" onclick="loadIndexes(null)">Root</a></li>`;
+                    
+                    breadcrumbStack.forEach((item, idx) => {
+                        if (idx === breadcrumbStack.length - 1) {
+                            html += `<li class="breadcrumb-item active">${item.title}</li>`;
+                        } else {
+                            html += `<li class="breadcrumb-item"><a href="javascript:void(0)" onclick="loadIndexes(${item.id})">${item.title}</a></li>`;
+                        }
+                    });
+                    
+                    document.getElementById('index-breadcrumb').innerHTML = html;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+    }
+    
+    // Fungsi untuk menampilkan alert
+    function showAlert(type, message) {
+        const alertContainer = document.createElement('div');
+        alertContainer.className = `alert alert-${type} alert-dismissible fade show`;
+        alertContainer.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        `;
+        
+        // Tambahkan alert ke container
+        const container = document.querySelector('.container');
+        container.insertBefore(alertContainer, container.firstChild);
+        
+        // Otomatis hilangkan setelah 5 detik
+        setTimeout(() => {
+            alertContainer.remove();
+        }, 5000);
+    }
+    
+    // Fungsi untuk menampilkan admin toolbar
+    function showAdminToolbar() {
+        if (document.getElementById('admin-toolbar')) return;
+        
+        const container = document.querySelector('.container');
+        const toolbar = document.createElement('div');
+        toolbar.id = 'admin-toolbar';
+        toolbar.className = 'mb-3 d-flex justify-content-end';
+        toolbar.innerHTML = `
+            <button class="btn btn-success me-2" onclick="showExcelUploadModal()">
+                <i class="fas fa-file-excel me-1"></i> Upload Excel
+            </button>
+        `;
+        
+        container.insertBefore(toolbar, container.firstChild.nextSibling);
+    }
+    
+    // Fungsi untuk menampilkan modal upload Excel
+    function showExcelUploadModal() {
+        // Reset form
+        document.getElementById('excelUploadForm').reset();
+        document.getElementById('sheet-name').innerHTML = '<option value="">Pilih file terlebih dahulu</option>';
+        document.getElementById('sheet-name').disabled = true;
+        document.getElementById('upload-progress').classList.add('d-none');
+        document.getElementById('upload-progress').querySelector('.progress-bar').style.width = '0%';
+        
+        // Load daftar index untuk parent
+        fetch('/api/quran/index/all')
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    const parentSelect = document.getElementById('parent-index');
+                    let options = '<option value="">Root (Tidak ada parent)</option>';
+                    
+                    result.data.forEach(index => {
+                        options += `<option value="${index.id}">${index.title}</option>`;
+                    });
+                    
+                    parentSelect.innerHTML = options;
+                }
+            });
+        
+        // Event listener for file input
+        document.getElementById('excel-file').addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                // Show loading in sheet select
+                document.getElementById('sheet-name').innerHTML = '<option value="">Loading sheets...</option>';
+                
+                // Create FormData and send to server to get sheets
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                fetch('/api/quran/excel/sheets', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success) {
+                        const sheetSelect = document.getElementById('sheet-name');
+                        let options = '';
+                        
+                        result.data.forEach(sheet => {
+                            options += `<option value="${sheet}">${sheet}</option>`;
+                        });
+                        
+                        sheetSelect.innerHTML = options;
+                        sheetSelect.disabled = false;
+                    } else {
+                        showAlert('danger', result.message || 'Gagal membaca sheets dari file Excel');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showAlert('danger', 'Terjadi kesalahan saat membaca file Excel');
+                });
+            }
+        });
+        
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('excelUploadModal'));
+        modal.show();
+        
+        // Event handler for upload button
+        document.getElementById('upload-excel-btn').onclick = function() {
+            const fileInput = document.getElementById('excel-file');
+            const sheetName = document.getElementById('sheet-name').value;
+            const parentId = document.getElementById('parent-index').value || null;
+            
+            if (!fileInput.files.length) {
+                showAlert('danger', 'Pilih file Excel terlebih dahulu');
+                return;
+            }
+            
+            if (!sheetName) {
+                showAlert('danger', 'Pilih sheet yang akan diproses');
+                return;
+            }
+            
+            // Create FormData
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            formData.append('sheet_name', sheetName);
+            if (parentId) formData.append('parent_id', parentId);
+            
+            // Show progress bar
+            const progressBar = document.getElementById('upload-progress');
+            progressBar.classList.remove('d-none');
+            
+            // Disable button
+            document.getElementById('upload-excel-btn').disabled = true;
+            
+            // Upload file
+            fetch('/api/quran/excel/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    showAlert('success', result.message || 'File berhasil diupload dan data telah diproses');
+                    
+                    // Close modal
+                    bootstrap.Modal.getInstance(document.getElementById('excelUploadModal')).hide();
+                    
+                    // Reload data
+                    loadTreeData();
+                } else {
+                    showAlert('danger', result.message || 'Gagal memproses file Excel');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('danger', 'Terjadi kesalahan saat mengupload file');
+            })
+            .finally(() => {
+                // Hide progress and enable button
+                document.getElementById('upload-excel-btn').disabled = false;
+                progressBar.classList.add('d-none');
+            });
+        };
+    }
+    
+    // Admin functions
+    function showAddIndexModal(parentId) {
+        // Reset form
+        document.getElementById('indexForm').reset();
+        document.getElementById('index-id').value = '';
+        document.getElementById('parent-id').value = parentId || currentParentId || '';
+        
+        // Update judul modal
+        document.getElementById('indexModalLabel').textContent = 'Tambah Index Baru';
+        
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('indexModal'));
+        modal.show();
+        
+        // Event handler untuk save button
+        document.getElementById('save-index-btn').onclick = function() {
+            saveIndex(false);
+        };
+    }
+    
+    function showEditIndexModal(indexId) {
+        // Reset form terlebih dahulu
+        document.getElementById('indexForm').reset();
+        
+        // Ambil data index
+        fetch(`/api/quran/index/${indexId}`)
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    const index = result.data.index;
+                    
+                    // Isi form
+                    document.getElementById('index-id').value = index.id;
+                    document.getElementById('parent-id').value = index.parent_id || '';
+                    document.getElementById('index-title').value = index.title;
+                    document.getElementById('index-description').value = index.description || '';
+                    document.getElementById('index-sort-order').value = index.sort_order;
+                    
+                    // Update judul modal
+                    document.getElementById('indexModalLabel').textContent = 'Edit Index';
+                    
+                    // Initialize modal
+                    const modal = new bootstrap.Modal(document.getElementById('indexModal'));
+                    modal.show();
+                    
+                    // Set up save button
+                    document.getElementById('save-index-btn').onclick = saveIndex;
+                } else {
+                    showAlert('danger', result.message || 'Gagal memuat data index');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('danger', 'Terjadi kesalahan saat memuat data');
+            });
+    }
+    
+    function saveIndex(isEdit) {
+        const indexId = document.getElementById('index-id').value;
+        
+        // Ambil data dari form
+        const data = {
+            title: document.getElementById('index-title').value,
+            description: document.getElementById('index-description').value,
+            parent_id: document.getElementById('parent-id').value || null,
+            sort_order: parseInt(document.getElementById('index-sort-order').value || 0)
+        };
+        
+        // Validasi input
+        if (!data.title) {
+            showAlert('danger', 'Judul harus diisi');
+            return;
+        }
+        
+        // Endpoint dan method
+        const url = isEdit ? `/api/quran/index/${indexId}` : '/api/quran/index';
+        const method = isEdit ? 'PUT' : 'POST';
+        
+        // Kirim request
+        fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    // Tutup modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('indexModal'));
+                    modal.hide();
+                    
+                    // Tampilkan pesan sukses
+                    showAlert('success', result.message || 'Index berhasil disimpan');
+                    
+                    // Muat ulang data
+                    loadTreeData();
+                } else {
+                    showAlert('danger', result.message || 'Gagal menyimpan index');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('danger', 'Terjadi kesalahan saat menyimpan data');
+            });
+    }
+    
+    function showDeleteIndexModal(indexId) {
+        // Ambil data index
+        fetch(`/api/quran/index/${indexId}`)
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    const index = result.data.index;
+                    const hasSubIndexes = result.data.sub_indexes.length > 0;
+                    const hasAyat = result.data.ayat.length > 0;
+                    
+                    // Set up confirm text
+                    document.getElementById('delete-confirm-text').innerHTML = `
+                        Apakah Anda yakin ingin menghapus index <strong>${index.title}</strong>?
+                    `;
+                    
+                    // Set up warning text
+                    if (hasSubIndexes || hasAyat) {
+                        let warningText = 'Perhatian: ';
+                        if (hasSubIndexes) {
+                            warningText += `Index ini memiliki ${result.data.sub_indexes.length} sub-index. `;
+                        }
+                        if (hasAyat) {
+                            warningText += `Index ini memiliki ${result.data.ayat.length} ayat terkait. `;
+                        }
+                        warningText += 'Semua data terkait akan ikut terhapus.';
+                        
+                        document.getElementById('delete-warning-text').textContent = warningText;
+                    } else {
+                        document.getElementById('delete-warning-text').textContent = '';
+                    }
+                    
+                    // Initialize modal
+                    const modal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+                    modal.show();
+                    
+                    // Set up delete button
+                    document.getElementById('confirm-delete-btn').onclick = function() {
+                        deleteIndex(indexId);
+                    };
+                } else {
+                    showAlert('danger', result.message || 'Gagal memuat data index');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('danger', 'Terjadi kesalahan saat memuat data');
+            });
+    }
+    
+    function deleteIndex(indexId) {
+        fetch(`/api/quran/index/${indexId}`, {
+            method: 'DELETE'
+        })
+            .then(response => response.json())
+            .then(result => {
+                // Tutup modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('deleteConfirmModal'));
+                modal.hide();
+                
+                if (result.success) {
+                    // Tampilkan pesan sukses
+                    showAlert('success', result.message || 'Index berhasil dihapus');
+                    
+                    // Muat ulang data
+                    loadTreeData();
+                    
+                    // Reset detail
+                    document.getElementById('detail-title').textContent = 'Detail';
+                    document.getElementById('detail-container').innerHTML = '<p class="text-muted text-center">Pilih index untuk melihat detail</p>';
+                } else {
+                    showAlert('danger', result.message || 'Gagal menghapus index');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('danger', 'Terjadi kesalahan saat menghapus data');
+            });
+    }
+    
+    function showAddAyatModal(indexId) {
+        // Reset form
+        document.getElementById('ayatForm').reset();
+        document.getElementById('ayat-id').value = '';
+        document.getElementById('ayat-index-id').value = indexId;
+        
+        // Update judul modal
+        document.getElementById('ayatModalLabel').textContent = 'Tambah Ayat Baru';
+        
+        // Initialize modal
+        const modal = new bootstrap.Modal(document.getElementById('ayatModal'));
+        modal.show();
+        
+        // Set up save button
+        document.getElementById('save-ayat-btn').onclick = saveAyat;
+    }
+    
+    function showEditAyatModal(ayatId) {
+        // Ambil data ayat
+        fetch(`/api/quran/index/${currentParentId}`)
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    const ayat = result.data.ayat.find(a => a.id === ayatId);
+                    
+                    if (ayat) {
+                        // Isi form
+                        document.getElementById('ayat-id').value = ayat.id;
+                        document.getElementById('ayat-index-id').value = ayat.index_id;
+                        document.getElementById('ayat-surah').value = ayat.surah;
+                        document.getElementById('ayat-number').value = ayat.ayat;
+                        document.getElementById('ayat-text').value = ayat.text;
+                        document.getElementById('ayat-translation').value = ayat.translation || '';
+                        
+                        // Update judul modal
+                        document.getElementById('ayatModalLabel').textContent = 'Edit Ayat';
+                        
+                        // Initialize modal
+                        const modal = new bootstrap.Modal(document.getElementById('ayatModal'));
+                        modal.show();
+                        
+                        // Set up save button
+                        document.getElementById('save-ayat-btn').onclick = saveAyat;
+                    } else {
+                        showAlert('danger', 'Ayat tidak ditemukan');
+                    }
+                } else {
+                    showAlert('danger', result.message || 'Gagal memuat data ayat');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('danger', 'Terjadi kesalahan saat memuat data');
+            });
+    }
+    
+    function saveAyat() {
+        const ayatId = document.getElementById('ayat-id').value;
+        const isEdit = ayatId !== '';
+        
+        // Ambil data dari form
+        const data = {
+            index_id: parseInt(document.getElementById('ayat-index-id').value),
+            surah: parseInt(document.getElementById('ayat-surah').value),
+            ayat: parseInt(document.getElementById('ayat-number').value),
+            text: document.getElementById('ayat-text').value,
+            translation: document.getElementById('ayat-translation').value || null
+        };
+        
+        // Validasi input
+        if (!data.surah || !data.ayat || !data.text) {
+            showAlert('danger', 'Surah, ayat, dan teks ayat harus diisi');
+            return;
+        }
+        
+        // Endpoint dan method
+        const url = isEdit ? `/api/quran/ayat/${ayatId}` : '/api/quran/ayat';
+        const method = isEdit ? 'PUT' : 'POST';
+        
+        // Kirim request
+        fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    // Tutup modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('ayatModal'));
+                    modal.hide();
+                    
+                    // Tampilkan pesan sukses
+                    showAlert('success', result.message || 'Ayat berhasil disimpan');
+                    
+                    // Update detail jika sedang melihat index yang sama
+                    selectIndex(data.index_id);
+                } else {
+                    showAlert('danger', result.message || 'Gagal menyimpan ayat');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('danger', 'Terjadi kesalahan saat menyimpan data');
+            });
+    }
+    
+    function showDeleteAyatModal(ayatId) {
+        // Ambil data ayat
+        fetch(`/api/quran/index/${currentParentId}`)
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    const ayat = result.data.ayat.find(a => a.id === ayatId);
+                    
+                    if (ayat) {
+                        // Set up confirm text
+                        document.getElementById('delete-confirm-text').innerHTML = `
+                            Apakah Anda yakin ingin menghapus ayat Q.S. ${ayat.surah}:${ayat.ayat}?
+                        `;
+                        
+                        // Reset warning text
+                        document.getElementById('delete-warning-text').textContent = '';
+                        
+                        // Initialize modal
+                        const modal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+                        modal.show();
+                        
+                        // Set up delete button
+                        document.getElementById('confirm-delete-btn').onclick = function() {
+                            deleteAyat(ayatId, ayat.index_id);
+                        };
+                    } else {
+                        showAlert('danger', 'Ayat tidak ditemukan');
+                    }
+                } else {
+                    showAlert('danger', result.message || 'Gagal memuat data ayat');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('danger', 'Terjadi kesalahan saat memuat data');
+            });
+    }
+    
+    function deleteAyat(ayatId, indexId) {
+        fetch(`/api/quran/ayat/${ayatId}`, {
+            method: 'DELETE'
+        })
+            .then(response => response.json())
+            .then(result => {
+                // Tutup modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('deleteConfirmModal'));
+                modal.hide();
+                
+                if (result.success) {
+                    // Tampilkan pesan sukses
+                    showAlert('success', result.message || 'Ayat berhasil dihapus');
+                    
+                    // Update detail jika sedang melihat index yang sama
+                    selectIndex(indexId);
+                } else {
+                    showAlert('danger', result.message || 'Gagal menghapus ayat');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('danger', 'Terjadi kesalahan saat menghapus data');
+            });
+    }
+</script>
+{% endblock %}
+
+{% block body_attributes %}
+data-is-admin="{% if user and user.role == 'admin' %}true{% else %}false{% endif %}"
+{% endblock %} 
