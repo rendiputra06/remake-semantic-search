@@ -7,6 +7,7 @@ from backend.api import api_bp
 from backend.db import init_db, get_user_by_id, get_user_by_username, authenticate_user, register_user
 from backend.db import get_user_settings, update_user_settings, add_search_history, get_search_history
 from backend.db import get_model_status, update_model_status, get_db_connection
+from backend.monitoring import monitoring_bp  # Import monitoring blueprint
 
 app = Flask(__name__)
 app.secret_key = 'rahasia_semantic_search' # Ganti dengan secret key yang lebih aman di produksi
@@ -14,6 +15,9 @@ CORS(app)  # Mengaktifkan CORS untuk semua domain
 
 # Registrasi blueprint API
 app.register_blueprint(api_bp, url_prefix='/api')
+
+# Daftarkan blueprint monitoring
+app.register_blueprint(monitoring_bp, url_prefix='/monitoring')
 
 # Inisialisasi database
 init_db()

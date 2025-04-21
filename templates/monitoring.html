@@ -1,0 +1,351 @@
+{% extends "layout.html" %}
+
+{% block title %}Monitoring Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-5 fw-bold text-primary mb-3">Monitoring Dashboard</h1>
+            <p class="lead">Pemantauan penggunaan sumber daya aplikasi Pencarian Semantik Al-Quran</p>
+            <div class="btn-group mb-3">
+                <button id="refreshBtn" class="btn btn-primary">
+                    <i class="fas fa-sync-alt me-1"></i> Refresh Data
+                </button>
+                <button id="startTrackingBtn" class="btn btn-success">
+                    <i class="fas fa-play me-1"></i> Mulai Tracking
+                </button>
+                <button id="stopTrackingBtn" class="btn btn-danger">
+                    <i class="fas fa-stop me-1"></i> Stop Tracking
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Grafik Penggunaan RAM -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Penggunaan RAM (MB)</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="memoryChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Grafik Penggunaan CPU -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Penggunaan CPU (%)</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="cpuChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Informasi Proses -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Informasi Proses</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-striped table-hover">
+                        <tbody>
+                            <tr>
+                                <th>PID</th>
+                                <td id="pid">-</td>
+                            </tr>
+                            <tr>
+                                <th>RAM (RSS)</th>
+                                <td id="memoryRss">-</td>
+                            </tr>
+                            <tr>
+                                <th>RAM (VMS)</th>
+                                <td id="memoryVms">-</td>
+                            </tr>
+                            <tr>
+                                <th>CPU Usage</th>
+                                <td id="cpuUsage">-</td>
+                            </tr>
+                            <tr>
+                                <th>Uptime</th>
+                                <td id="uptime">-</td>
+                            </tr>
+                            <tr>
+                                <th>Threads</th>
+                                <td id="threads">-</td>
+                            </tr>
+                            <tr>
+                                <th>Open Files</th>
+                                <td id="openFiles">-</td>
+                            </tr>
+                            <tr>
+                                <th>Connections</th>
+                                <td id="connections">-</td>
+                            </tr>
+                            <tr>
+                                <th>IO Read</th>
+                                <td id="ioRead">-</td>
+                            </tr>
+                            <tr>
+                                <th>IO Write</th>
+                                <td id="ioWrite">-</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Informasi Sistem -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Informasi Sistem</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-striped table-hover">
+                        <tbody>
+                            <tr>
+                                <th>Total RAM</th>
+                                <td id="totalRam">-</td>
+                            </tr>
+                            <tr>
+                                <th>Available RAM</th>
+                                <td id="availableRam">-</td>
+                            </tr>
+                            <tr>
+                                <th>RAM Usage</th>
+                                <td id="ramUsage">-</td>
+                            </tr>
+                            <tr>
+                                <th>System CPU</th>
+                                <td id="systemCpu">-</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <h5 class="mt-4">Gunicorn Workers</h5>
+                    <div id="workersInfo">
+                        <p class="text-muted">Tidak ada worker yang ditemukan</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+<script>
+    // Charts
+    let memoryChart;
+    let cpuChart;
+    
+    // Data untuk charts
+    const memoryData = {
+        labels: [],
+        datasets: [{
+            label: 'RAM Usage (MB)',
+            data: [],
+            fill: true,
+            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            tension: 0.4
+        }]
+    };
+    
+    const cpuData = {
+        labels: [],
+        datasets: [{
+            label: 'CPU Usage (%)',
+            data: [],
+            fill: true,
+            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+            borderColor: 'rgba(255, 99, 132, 1)',
+            tension: 0.4
+        }]
+    };
+    
+    // Opsi chart
+    const chartOptions = {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        },
+        animation: {
+            duration: 500
+        }
+    };
+    
+    // Inisialisasi chart saat dokumen siap
+    document.addEventListener('DOMContentLoaded', function() {
+        // Inisialisasi memoryChart
+        const memoryCtx = document.getElementById('memoryChart').getContext('2d');
+        memoryChart = new Chart(memoryCtx, {
+            type: 'line',
+            data: memoryData,
+            options: chartOptions
+        });
+        
+        // Inisialisasi cpuChart
+        const cpuCtx = document.getElementById('cpuChart').getContext('2d');
+        cpuChart = new Chart(cpuCtx, {
+            type: 'line',
+            data: cpuData,
+            options: chartOptions
+        });
+        
+        // Ambil data awal
+        fetchResourceInfo();
+        
+        // Set interval untuk refresh otomatis setiap 5 detik
+        setInterval(fetchResourceInfo, 5000);
+        
+        // Event handlers untuk tombol
+        document.getElementById('refreshBtn').addEventListener('click', fetchResourceInfo);
+        document.getElementById('startTrackingBtn').addEventListener('click', startTracking);
+        document.getElementById('stopTrackingBtn').addEventListener('click', stopTracking);
+    });
+    
+    // Fetch informasi resource dari API
+    function fetchResourceInfo() {
+        fetch('/monitoring/resources?track=true')
+            .then(response => response.json())
+            .then(data => {
+                updateDashboard(data);
+            })
+            .catch(error => {
+                console.error('Error fetching resource data:', error);
+            });
+            
+        // Ambil histori untuk charts
+        fetch('/monitoring/history')
+            .then(response => response.json())
+            .then(data => {
+                updateCharts(data);
+            })
+            .catch(error => {
+                console.error('Error fetching history data:', error);
+            });
+    }
+    
+    // Update semua elemen dashboard dengan data terbaru
+    function updateDashboard(data) {
+        // Update informasi proses
+        document.getElementById('pid').textContent = data.process.pid;
+        document.getElementById('memoryRss').textContent = `${data.process.memory_rss_mb} MB`;
+        document.getElementById('memoryVms').textContent = `${data.process.memory_vms_mb} MB`;
+        document.getElementById('cpuUsage').textContent = `${data.process.cpu_percent}%`;
+        
+        // Format uptime
+        const uptime = data.process.uptime_seconds;
+        const hours = Math.floor(uptime / 3600);
+        const minutes = Math.floor((uptime % 3600) / 60);
+        const seconds = Math.floor(uptime % 60);
+        document.getElementById('uptime').textContent = 
+            `${hours}h ${minutes}m ${seconds}s`;
+        
+        document.getElementById('threads').textContent = data.process.threads;
+        document.getElementById('openFiles').textContent = 
+            data.process.open_files === -1 ? 'Tidak tersedia' : data.process.open_files;
+        document.getElementById('connections').textContent = 
+            data.process.connections === -1 ? 'Tidak tersedia' : data.process.connections;
+        document.getElementById('ioRead').textContent = 
+            data.process.io_read_mb === -1 ? 'Tidak tersedia' : `${data.process.io_read_mb} MB`;
+        document.getElementById('ioWrite').textContent = 
+            data.process.io_write_mb === -1 ? 'Tidak tersedia' : `${data.process.io_write_mb} MB`;
+        
+        // Update informasi sistem
+        document.getElementById('totalRam').textContent = `${data.system.total_memory_mb} MB`;
+        document.getElementById('availableRam').textContent = `${data.system.available_memory_mb} MB`;
+        document.getElementById('ramUsage').textContent = `${data.system.used_memory_percent}%`;
+        document.getElementById('systemCpu').textContent = `${data.system.cpu_percent}%`;
+        
+        // Update informasi Gunicorn workers
+        const workersContainer = document.getElementById('workersInfo');
+        if (data.gunicorn_workers && data.gunicorn_workers.length > 0) {
+            let workersHtml = '<ul class="list-group">';
+            data.gunicorn_workers.forEach(worker => {
+                workersHtml += `
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    Worker PID: ${worker.pid}
+                    <div>
+                        <span class="badge bg-primary me-2">${worker.memory_mb} MB</span>
+                        <span class="badge bg-secondary">${worker.threads} threads</span>
+                    </div>
+                </li>`;
+            });
+            workersHtml += '</ul>';
+            workersContainer.innerHTML = workersHtml;
+        } else {
+            workersContainer.innerHTML = '<p class="text-muted">Tidak ada worker yang ditemukan</p>';
+        }
+    }
+    
+    // Update charts dengan data histori
+    function updateCharts(data) {
+        // Update memory chart
+        if (data.memory && data.memory.length > 0) {
+            memoryData.labels = data.memory.map(point => point.time);
+            memoryData.datasets[0].data = data.memory.map(point => point.value);
+            memoryChart.update();
+        }
+        
+        // Update CPU chart
+        if (data.cpu && data.cpu.length > 0) {
+            cpuData.labels = data.cpu.map(point => point.time);
+            cpuData.datasets[0].data = data.cpu.map(point => point.value);
+            cpuChart.update();
+        }
+    }
+    
+    // Memulai tracking otomatis
+    function startTracking() {
+        fetch('/monitoring/start_tracking', {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Pelacakan otomatis dimulai');
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error starting tracking:', error);
+            alert('Terjadi kesalahan saat memulai pelacakan');
+        });
+    }
+    
+    // Menghentikan tracking otomatis
+    function stopTracking() {
+        fetch('/monitoring/stop_tracking', {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Pelacakan otomatis dihentikan');
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error stopping tracking:', error);
+            alert('Terjadi kesalahan saat menghentikan pelacakan');
+        });
+    }
+</script>
+{% endblock %} 

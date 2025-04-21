@@ -35,6 +35,16 @@
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint == 'about' %}active{% endif %}" href="{{ url_for('about') }}">Tentang</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/quran-index">
+                            <i class="fas fa-sitemap me-1"></i> Index Al-Quran
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/monitoring/dashboard">
+                            <i class="fas fa-chart-line me-1"></i> Monitoring
+                        </a>
+                    </li>
                 </ul>
                 
                 <ul class="navbar-nav">
