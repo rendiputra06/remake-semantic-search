@@ -1,559 +1,675 @@
-{% extends "layout.html" %}
-
-{% block title %}Mesin Pencarian Semantik Al-Quran{% endblock %}
-
-{% block content %}
+{% extends "layout.html" %} {% block title %}Mesin Pencarian Semantik Al-Quran{%
+endblock %} {% block content %}
 <div class="row justify-content-center">
-    <div class="col-lg-10">
-        <div class="text-center mb-5">
-            <h1 class="display-4 fw-bold text-primary">Pencarian Semantik Al-Quran</h1>
-            <p class="lead">Cari ayat Al-Quran berdasarkan makna dan konsep menggunakan teknologi pembelajaran mesin</p>
-        </div>
-
-        <div class="card shadow-lg border-0 rounded-lg">
-            <div class="card-body p-5">
-                <form id="searchForm">
-                    <div class="row mb-4">
-                        <div class="col-md-9">
-                            <div class="form-floating mb-3 mb-md-0">
-                                <input class="form-control" id="searchQuery" type="text" placeholder="Masukkan kata kunci pencarian" required />
-                                <label for="searchQuery">Kata Kunci Pencarian</label>
-                            </div>
-                            <div class="mt-2">
-                                <small class="text-muted">Contoh pencarian: 
-                                    <a href="#" class="example-search">kesabaran dalam menghadapi cobaan</a>, 
-                                    <a href="#" class="example-search">berbuat baik kepada orang tua</a>, 
-                                    <a href="#" class="example-search">keutamaan sedekah</a>, 
-                                    <a href="#" class="example-search">larangan bersikap sombong</a>, 
-                                    <a href="#" class="example-search">pentingnya menuntut ilmu</a>
-                                </small>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="form-floating mb-3 mb-md-0">
-                                <select class="form-select" id="modelType">
-                                    <option value="word2vec" selected>Word2Vec</option>
-                                    <option value="fasttext">FastText</option>
-                                    <option value="glove">GloVe</option>
-                                </select>
-                                <label for="modelType">Model Semantik</label>
-                            </div>
-                            <div class="form-floating mt-3">
-                                <select class="form-select" id="resultCount">
-                                    <option value="5">5 hasil</option>
-                                    <option value="10" selected>10 hasil</option>
-                                    <option value="20">20 hasil</option>
-                                    <option value="50">50 hasil</option>
-                                </select>
-                                <label for="resultCount">Jumlah Hasil</label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="d-flex align-items-center justify-content-between mt-4 mb-0">
-                        <button type="button" class="btn btn-outline-secondary" id="resetBtn">
-                            <i class="fas fa-undo me-1"></i> Reset
-                        </button>
-                        <button type="submit" class="btn btn-primary btn-lg px-5" id="searchButton">
-                            <i class="fas fa-search me-1"></i> Cari
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <div class="card shadow mt-4 d-none" id="resultsCard">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">Hasil Pencarian</h5>
-            </div>
-            <div class="card-body p-0">
-                <div class="list-group list-group-flush" id="searchResults">
-                    <!-- Hasil pencarian akan ditampilkan di sini -->
-                </div>
-            </div>
-        </div>
-
-        <!-- Loading spinner -->
-        <div class="text-center my-5 d-none" id="loadingSpinner">
-            <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
-                <span class="visually-hidden">Loading...</span>
-            </div>
-            <p class="mt-3">Sedang mencari ayat-ayat yang relevan...</p>
-        </div>
-
-        <div class="mt-5">
-            <h3 class="text-center mb-4">Tentang Model Pencarian Semantik</h3>
-            
-            <div class="card border-primary mb-3">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">Word2Vec</h5>
-                </div>
-                <div class="card-body">
-                    <p>Pencarian semantik menggunakan model Word2Vec memungkinkan Anda mencari ayat-ayat Al-Quran berdasarkan makna dan konteks, bukan hanya berdasarkan kecocokan kata yang persis sama.</p>
-                    <p>Teknologi ini memahami hubungan antara kata-kata dan konsep, sehingga dapat menemukan ayat yang secara makna berkaitan dengan pencarian Anda meskipun tidak menggunakan kata yang persis sama.</p>
-                    <ul class="small">
-                        <li>Akurasi tinggi untuk hubungan kata tertentu</li>
-                        <li>Penanganan konteks semantik yang baik</li>
-                        <li>Cocok untuk kata-kata umum</li>
-                        <li>Menemukan konsep dan tema terkait</li>
-                    </ul>
-                </div>
-            </div>
-            
-            <div class="card border-success mb-3">
-                <div class="card-header bg-success text-white">
-                    <h5 class="mb-0">FastText</h5>
-                </div>
-                <div class="card-body">
-                    <p>FastText memperluas model Word2Vec dengan kemampuan untuk memahami kata-kata yang tidak ada dalam kosakata model, melalui representasi sub-kata (n-gram karakter).</p>
-                    <p>Model ini unggul dalam menangani bahasa dengan morfologi kaya dan dapat mengenali makna kata-kata jarang berdasarkan bagian-bagiannya.</p>
-                    <ul class="small">
-                        <li>Penanganan out-of-vocabulary words</li>
-                        <li>Representasi sub-kata untuk analisis morfologi</li>
-                        <li>Performa lebih baik untuk kata-kata jarang</li>
-                        <li>Pemahaman nuansa bahasa yang lebih dalam</li>
-                    </ul>
-                </div>
-            </div>
-            
-            <div class="card border-info mb-3">
-                <div class="card-header bg-info text-white">
-                    <h5 class="mb-0">GloVe</h5>
-                </div>
-                <div class="card-body">
-                    <p>GloVe (Global Vectors for Word Representation) adalah model yang menggabungkan kelebihan metode faktoriasi matriks global dengan model prediksi lokal seperti Word2Vec.</p>
-                    <p>Model ini menganalisis statistik co-occurrence seluruh korpus teks, sehingga dapat menangkap hubungan semantik dan sintaksis dengan lebih baik.</p>
-                    <ul class="small">
-                        <li>Menangkap pola statistik global</li>
-                        <li>Representasi makna yang lebih komprehensif</li>
-                        <li>Keseimbangan antara semantik lokal dan global</li>
-                        <li>Pemahaman analogi dan hubungan linguistik</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
+  <div class="col-lg-10">
+    <div class="text-center mb-5">
+      <h1 class="display-4 fw-bold text-primary">
+        Pencarian Semantik Al-Quran
+      </h1>
+      <p class="lead">
+        Cari ayat Al-Quran berdasarkan makna dan konsep menggunakan teknologi
+        pembelajaran mesin
+      </p>
     </div>
-</div>
-{% endblock %}
 
-{% block extra_js %}
-<!-- Penyimpanan data dari Jinja -->
-<div id="userSettings" 
-    {% if user %}
-    data-default-model="{{ user.settings.default_model|safe }}"
-    data-result-limit="{{ user.settings.result_limit|safe }}"
-    {% else %}
-    data-default-model="word2vec"
-    data-result-limit="10"
-    {% endif %}
-    style="display:none;">
+    <div class="card shadow-lg border-0 rounded-lg">
+      <div class="card-body p-5">
+        <form id="searchForm">
+          <div class="row mb-4">
+            <div class="col-md-9">
+              <div class="form-floating mb-3 mb-md-0">
+                <input
+                  class="form-control"
+                  id="searchQuery"
+                  type="text"
+                  placeholder="Masukkan kata kunci pencarian"
+                  required
+                />
+                <label for="searchQuery">Kata Kunci Pencarian</label>
+              </div>
+              <div class="mt-2">
+                <small class="text-muted"
+                  >Contoh pencarian:
+                  <a href="#" class="example-search"
+                    >kesabaran dalam menghadapi cobaan</a
+                  >,
+                  <a href="#" class="example-search"
+                    >berbuat baik kepada orang tua</a
+                  >, <a href="#" class="example-search">keutamaan sedekah</a>,
+                  <a href="#" class="example-search"
+                    >larangan bersikap sombong</a
+                  >,
+                  <a href="#" class="example-search"
+                    >pentingnya menuntut ilmu</a
+                  >
+                </small>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-floating mb-3">
+                <select class="form-select" id="searchType">
+                  <option value="semantic" selected>Semantik</option>
+                  <option value="lexical">Leksikal</option>
+                  <option value="expanded">Semantik + Sinonim</option>
+                </select>
+                <label for="searchType">Tipe Pencarian</label>
+              </div>
+              <div class="form-floating mb-3 semantic-option">
+                <select class="form-select" id="modelType">
+                  <option value="word2vec" selected>Word2Vec</option>
+                  <option value="fasttext">FastText</option>
+                  <option value="glove">GloVe</option>
+                </select>
+                <label for="modelType">Model Semantik</label>
+              </div>
+              <div class="form-floating mb-3 lexical-option d-none">
+                <select class="form-select" id="lexicalOption">
+                  <option value="keywords" selected>Kata Kunci</option>
+                  <option value="exactMatch">Frasa Persis</option>
+                  <option value="regex">Regex</option>
+                </select>
+                <label for="lexicalOption">Opsi Pencarian</label>
+              </div>
+              <div class="form-floating mt-3">
+                <select class="form-select" id="resultCount">
+                  <option value="5">5 hasil</option>
+                  <option value="10" selected>10 hasil</option>
+                  <option value="20">20 hasil</option>
+                  <option value="50">50 hasil</option>
+                  <option value="100">100 hasil</option>
+                  <option value="0">Tanpa batas</option>
+                </select>
+                <label for="resultCount">Jumlah Hasil</label>
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="d-flex align-items-center justify-content-between mt-4 mb-0"
+          >
+            <button
+              type="button"
+              class="btn btn-outline-secondary"
+              id="resetBtn"
+            >
+              <i class="fas fa-undo me-1"></i> Reset
+            </button>
+            <div class="d-flex">
+              <button
+                type="button"
+                class="btn btn-outline-primary me-2"
+                id="checkSynonymsBtn"
+              >
+                <i class="fas fa-exchange-alt me-1"></i> Cek Sinonim
+              </button>
+              <button
+                type="submit"
+                class="btn btn-primary btn-lg px-5"
+                id="searchButton"
+              >
+                <i class="fas fa-search me-1"></i>
+                <span id="searchBtnText">Cari</span>
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal untuk sinonim -->
+    <div
+      class="modal fade"
+      id="synonymsModal"
+      tabindex="-1"
+      aria-labelledby="synonymsModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="synonymsModalLabel">Sinonim Kata</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <div id="synonymsContent">
+              <p>Masukkan kata untuk melihat sinonimnya.</p>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Tutup
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card shadow mt-4 d-none" id="resultsCard">
+      <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">Hasil Pencarian</h5>
+      </div>
+      <div class="card-body p-0">
+        <div class="list-group list-group-flush" id="searchResults">
+          <!-- Hasil pencarian akan ditampilkan di sini -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading spinner -->
+    <div class="text-center my-5 d-none" id="loadingSpinner">
+      <div
+        class="spinner-border text-primary"
+        style="width: 3rem; height: 3rem"
+        role="status"
+      >
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <p class="mt-3">Sedang mencari ayat-ayat yang relevan...</p>
+    </div>
+
+    <div class="mt-5">
+      <h3 class="text-center mb-4">Tentang Model dan Tipe Pencarian</h3>
+
+      <div class="card border-primary mb-3">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0">Semantik (Word2Vec, FastText, GloVe)</h5>
+        </div>
+        <div class="card-body">
+          <p>
+            Pencarian semantik memungkinkan Anda mencari ayat-ayat Al-Quran
+            berdasarkan makna dan konteks, bukan hanya berdasarkan kecocokan
+            kata yang persis sama.
+          </p>
+          <p>
+            Teknologi ini memahami hubungan antara kata-kata dan konsep,
+            sehingga dapat menemukan ayat yang secara makna berkaitan dengan
+            pencarian Anda meskipun tidak menggunakan kata yang persis sama.
+          </p>
+          <ul class="small">
+            <li>
+              Word2Vec: Akurasi tinggi untuk hubungan kata umum dan konteks
+              semantik yang baik
+            </li>
+            <li>
+              FastText: Penanganan kata yang tidak umum dan analisis morfologi
+              yang lebih baik
+            </li>
+            <li>
+              GloVe: Menangkap pola statistik global dan keseimbangan semantik
+              lokal dan global
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card border-success mb-3">
+        <div class="card-header bg-success text-white">
+          <h5 class="mb-0">Leksikal (Kata Kunci, Frasa Persis, Regex)</h5>
+        </div>
+        <div class="card-body">
+          <p>
+            Pencarian leksikal memungkinkan Anda menemukan ayat-ayat yang
+            mengandung kata atau frasa tertentu secara tepat.
+          </p>
+          <p>
+            Tipe pencarian ini berguna ketika Anda mencari kata atau frasa
+            spesifik dalam Al-Quran.
+          </p>
+          <ul class="small">
+            <li>
+              Kata Kunci: Mencari ayat yang mengandung semua kata kunci yang
+              Anda masukkan
+            </li>
+            <li>
+              Frasa Persis: Mencari ayat yang mengandung frasa persis seperti
+              yang Anda masukkan
+            </li>
+            <li>
+              Regex: Mencari ayat dengan menggunakan ekspresi reguler (untuk
+              pencarian lanjutan)
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card border-info mb-3">
+        <div class="card-header bg-info text-white">
+          <h5 class="mb-0">Semantik + Sinonim</h5>
+        </div>
+        <div class="card-body">
+          <p>
+            Pencarian semantik dengan ekspansi sinonim memperluas pencarian Anda
+            dengan menggunakan sinonim dari kata-kata kunci yang Anda masukkan.
+          </p>
+          <p>
+            Ini meningkatkan kemungkinan menemukan ayat yang relevan, bahkan
+            jika ayat tersebut menggunakan kata-kata yang berbeda namun maknanya
+            serupa.
+          </p>
+          <ul class="small">
+            <li>
+              Memperluas cakupan pencarian dengan sinonim Bahasa Indonesia
+            </li>
+            <li>Menggunakan tesaurus khusus untuk istilah-istilah Al-Quran</li>
+            <li>Menggabungkan hasil dari beberapa query secara otomatis</li>
+            <li>Menampilkan query yang diperluas untuk transparansi</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
+{% endblock %} {% block extra_js %}
+<!-- Penyimpanan data dari Jinja -->
+<div
+  id="userSettings"
+  {%
+  if
+  user
+  %}
+  data-default-model="{{ user.settings.default_model|safe }}"
+  data-result-limit="{{ user.settings.result_limit|safe }}"
+  {%
+  else
+  %}
+  data-default-model="word2vec"
+  data-result-limit="10"
+  {%
+  endif
+  %}
+  style="display: none"
+></div>
 
 <script>
-    $(document).ready(function() {
-        // Ambil data dari elemen HTML
-        var defaultModelType = $('#userSettings').data('default-model');
-        var defaultResultCount = $('#userSettings').data('result-limit');
-        
-        // Muat daftar model yang tersedia
-        $.ajax({
-            type: 'GET',
-            url: '/api/models',
-            success: function(data) {
-                // Kosongkan dropdown
-                $('#modelType').empty();
-                
-                // Tambahkan model-model yang tersedia
-                data.forEach(function(model) {
-                    $('#modelType').append(`<option value="${model.id}">${model.name}</option>`);
-                });
-                
-                // Set default ke model yang dipilih
-                $('#modelType').val(defaultModelType);
-                $('#resultCount').val(defaultResultCount);
-            },
-            error: function(error) {
-                console.error('Error fetching models:', error);
-            }
-        });
-        
-        // Cek apakah ada parameter query di URL
-        var urlParams = new URLSearchParams(window.location.search);
-        var queryParam = urlParams.get('query');
-        var modelParam = urlParams.get('model');
-        
-        if (queryParam) {
-            $('#searchQuery').val(queryParam);
-            
-            if (modelParam) {
-                $('#modelType').val(modelParam);
-            }
-            
-            // Trigger pencarian otomatis jika ada parameter query
-            setTimeout(function() {
-                $('#searchForm').submit();
-            }, 500);
-        }
-        
-        // Reset form
-        $('#resetBtn').click(function() {
-            $('#searchForm')[0].reset();
-            $('#searchResults').empty();
-            $('#resultsCard').addClass('d-none');
+  $(document).ready(function () {
+    // Ambil data dari elemen HTML
+    var defaultModelType = $("#userSettings").data("default-model");
+    var defaultResultCount = $("#userSettings").data("result-limit");
+
+    // Muat daftar model yang tersedia
+    $.ajax({
+      type: "GET",
+      url: "/api/models",
+      success: function (data) {
+        // Kosongkan dropdown
+        $("#modelType").empty();
+
+        // Tambahkan model-model yang tersedia
+        data.forEach(function (model) {
+          $("#modelType").append(
+            `<option value="${model.id}">${model.name}</option>`
+          );
         });
 
-        // Contoh pencarian
-        $('.example-search').click(function(e) {
-            e.preventDefault();
-            const searchText = $(this).text();
-            $('#searchQuery').val(searchText);
-        });
-
-        // Handle form submission
-        $('#searchForm').submit(function(e) {
-            e.preventDefault();
-            
-            // Tampilkan loading spinner
-            $('#loadingSpinner').removeClass('d-none');
-            $('#resultsCard').addClass('d-none');
-            $('#searchButton').prop('disabled', true);
-            $('#searchButton').html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Mencari...');
-            
-            // Ambil nilai form
-            const query = $('#searchQuery').val();
-            const limit = $('#resultCount').val();
-            const modelType = $('#modelType').val();
-            
-            // Data untuk dikirim ke API
-            const searchData = {
-                query: query,
-                model: modelType,
-                language: 'id',
-                limit: parseInt(limit),
-                threshold: 0.5
-            };
-            
-            // Kirim request ke API
-            $.ajax({
-                type: 'POST',
-                url: '/api/search',
-                data: JSON.stringify(searchData),
-                contentType: 'application/json',
-                dataType: 'json',
-                success: function(data) {
-                    // Sembunyikan loading spinner
-                    $('#loadingSpinner').addClass('d-none');
-                    $('#searchButton').prop('disabled', false);
-                    $('#searchButton').html('<i class="fas fa-search me-1"></i> Cari');
-                    
-                    // Tampilkan hasil
-                    $('#searchResults').empty();
-                    
-                    if (data.results && data.results.length > 0) {
-                        // Update header hasil pencarian
-                        $('#resultsCard .card-header h5').text(`Hasil Pencarian untuk "${data.query}" (${data.model.toUpperCase()})`);
-                        
-                        // Tambahkan setiap hasil ke daftar
-                        data.results.forEach(function(result) {
-                            // Breadcrumb path dari klasifikasi jika ada
-                            let classificationHtml = '';
-                            if (result.classification) {
-                                classificationHtml = `
-                                    <div class="mt-2 mb-3">
-                                        <small class="text-muted">
-                                            <i class="fas fa-sitemap me-1"></i> Klasifikasi: 
-                                            <nav aria-label="breadcrumb">
-                                                <ol class="breadcrumb mb-0 pb-0 small">
-                                                    <li class="breadcrumb-item"><a href="/quran-index">Root</a></li>
-                                                    ${result.classification.path.map((item, index) => {
-                                                        if (index === result.classification.path.length - 1) {
-                                                            return `<li class="breadcrumb-item active">${item.title}</li>`;
-                                                        } else {
-                                                            return `<li class="breadcrumb-item"><a href="/quran-index#${item.id}">${item.title}</a></li>`;
-                                                        }
-                                                    }).join('')}
-                                                </ol>
-                                            </nav>
-                                        </small>
-                                    </div>
-                                `;
-                            }
-                            
-                            const resultHtml = `
-                                <div class="list-group-item p-3">
-                                    <div class="d-flex w-100 justify-content-between mb-2">
-                                        <h5 class="mb-1">${result.surah_name} (${result.surah_number}): ${result.ayat_number}</h5>
-                                        <span class="badge bg-success">${(result.similarity * 100).toFixed(1)}% kecocokan</span>
-                                    </div>
-                                    ${classificationHtml}
-                                    <p class="arabic-text text-end mb-2" dir="rtl">${result.arabic}</p>
-                                    <p class="mb-0">${result.translation}</p>
-                                </div>
-                            `;
-                            $('#searchResults').append(resultHtml);
-                        });
-                        
-                        // Tambahkan tombol untuk melihat distribusi hasil
-                        if (data.results.length > 0) {
-                            const distributionButton = `
-                                <div class="card-footer bg-white text-center p-3">
-                                    <button id="showDistributionBtn" class="btn btn-outline-primary">
-                                        <i class="fas fa-chart-pie me-1"></i> Lihat Distribusi Klasifikasi
-                                    </button>
-                                </div>
-                            `;
-                            $('#resultsCard').append(distributionButton);
-                            
-                            // Modal untuk menampilkan visualisasi distribusi
-                            const distributionModal = `
-                                <div class="modal fade" id="distributionModal" tabindex="-1" aria-labelledby="distributionModalLabel" aria-hidden="true">
-                                    <div class="modal-dialog modal-lg">
-                                        <div class="modal-content">
-                                            <div class="modal-header">
-                                                <h5 class="modal-title" id="distributionModalLabel">Distribusi Hasil Berdasarkan Klasifikasi</h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                            </div>
-                                            <div class="modal-body">
-                                                <div id="distributionLoading" class="text-center p-4">
-                                                    <div class="spinner-border text-primary" role="status">
-                                                        <span class="visually-hidden">Loading...</span>
-                                                    </div>
-                                                    <p class="mt-2">Menganalisa distribusi hasil...</p>
-                                                </div>
-                                                <div id="distributionContent" class="d-none">
-                                                    <div class="mb-4">
-                                                        <canvas id="distributionChart"></canvas>
-                                                    </div>
-                                                    <div id="distributionTable"></div>
-                                                </div>
-                                            </div>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            `;
-                            $('body').append(distributionModal);
-                            
-                            // Event untuk tombol distribusi
-                            $('#showDistributionBtn').click(function() {
-                                // Tampilkan modal
-                                const modal = new bootstrap.Modal(document.getElementById('distributionModal'));
-                                modal.show();
-                                
-                                // Tampilkan loading
-                                $('#distributionLoading').removeClass('d-none');
-                                $('#distributionContent').addClass('d-none');
-                                
-                                // Kirim request ke API untuk mendapatkan distribusi
-                                $.ajax({
-                                    type: 'POST',
-                                    url: '/api/search/distribution',
-                                    data: JSON.stringify({ results: data.results }),
-                                    contentType: 'application/json',
-                                    dataType: 'json',
-                                    success: function(result) {
-                                        if (result.success) {
-                                            // Sembunyikan loading
-                                            $('#distributionLoading').addClass('d-none');
-                                            $('#distributionContent').removeClass('d-none');
-                                            
-                                            // Render distribusi chart
-                                            renderDistributionChart(result.data);
-                                            
-                                            // Render distribusi tabel
-                                            renderDistributionTable(result.data);
-                                        } else {
-                                            $('#distributionContent').html(`
-                                                <div class="alert alert-danger">
-                                                    <i class="fas fa-exclamation-circle me-2"></i> Gagal mendapatkan data distribusi.
-                                                </div>
-                                            `);
-                                            $('#distributionContent').removeClass('d-none');
-                                            $('#distributionLoading').addClass('d-none');
-                                        }
-                                    },
-                                    error: function(error) {
-                                        $('#distributionContent').html(`
-                                            <div class="alert alert-danger">
-                                                <i class="fas fa-exclamation-circle me-2"></i> Terjadi kesalahan saat mengambil data distribusi.
-                                            </div>
-                                        `);
-                                        $('#distributionContent').removeClass('d-none');
-                                        $('#distributionLoading').addClass('d-none');
-                                        console.error('Error:', error);
-                                    }
-                                });
-                            });
-                        }
-                    } else {
-                        // Tampilkan pesan jika tidak ada hasil
-                        $('#searchResults').html(`
-                            <div class="alert alert-warning">
-                                <i class="fas fa-exclamation-circle me-2"></i> Tidak ditemukan hasil untuk pencarian tersebut.
-                            </div>
-                        `);
-                    }
-                    
-                    // Tampilkan bagian hasil pencarian
-                    $('#resultsCard').removeClass('d-none');
-                    
-                    // Scroll ke hasil pencarian
-                    $('html, body').animate({
-                        scrollTop: $('#resultsCard').offset().top - 100
-                    }, 500);
-                },
-                error: function(error) {
-                    // Tampilkan pesan error
-                    $('#searchResults').html(`
-                        <div class="alert alert-danger">
-                            <i class="fas fa-exclamation-circle me-2"></i> Terjadi kesalahan saat melakukan pencarian.
-                        </div>
-                    `);
-                    $('#resultsCard').removeClass('d-none');
-                    console.error('Error:', error);
-                }
-            });
-        });
+        // Set default ke model yang dipilih
+        $("#modelType").val(defaultModelType);
+        $("#resultCount").val(defaultResultCount);
+      },
+      error: function (error) {
+        console.error("Error fetching models:", error);
+      },
     });
-    
-    // Fungsi untuk render chart distribusi
-    function renderDistributionChart(data) {
-        // Destroy chart lama jika sudah ada
-        if (window.distributionChart) {
-            window.distributionChart.destroy();
-        }
-        
-        // Ambil kategori dan jumlah
-        const labels = data.map(item => item.category);
-        const counts = data.map(item => item.count);
-        
-        // Setup warna
-        const backgroundColors = [
-            'rgba(54, 162, 235, 0.5)',
-            'rgba(255, 99, 132, 0.5)',
-            'rgba(255, 206, 86, 0.5)',
-            'rgba(75, 192, 192, 0.5)',
-            'rgba(153, 102, 255, 0.5)',
-            'rgba(255, 159, 64, 0.5)',
-            'rgba(199, 199, 199, 0.5)'
-        ];
-        
-        // Pastikan ada cukup warna
-        while (backgroundColors.length < labels.length) {
-            backgroundColors.push(backgroundColors[backgroundColors.length % 7]);
-        }
-        
-        // Buat chart
-        const ctx = document.getElementById('distributionChart').getContext('2d');
-        window.distributionChart = new Chart(ctx, {
-            type: 'pie',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Jumlah Ayat',
-                    data: counts,
-                    backgroundColor: backgroundColors,
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'right',
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                const label = context.label || '';
-                                const value = context.raw || 0;
-                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                const percentage = ((value / total) * 100).toFixed(1);
-                                return `${label}: ${value} (${percentage}%)`;
-                            }
-                        }
-                    }
-                }
-            }
-        });
+
+    // Cek apakah ada parameter query di URL
+    var urlParams = new URLSearchParams(window.location.search);
+    var queryParam = urlParams.get("query");
+    var modelParam = urlParams.get("model");
+    var typeParam = urlParams.get("type");
+
+    if (queryParam) {
+      $("#searchQuery").val(queryParam);
+
+      if (modelParam) {
+        $("#modelType").val(modelParam);
+      }
+
+      if (typeParam) {
+        $("#searchType").val(typeParam);
+        toggleSearchOptions();
+      }
+
+      // Trigger pencarian otomatis jika ada parameter query
+      setTimeout(function () {
+        $("#searchForm").submit();
+      }, 500);
     }
-    
-    // Fungsi untuk render tabel distribusi
-    function renderDistributionTable(data) {
-        // Hitung total
-        const total = data.reduce((sum, item) => sum + item.count, 0);
-        
-        // Buat HTML tabel
-        let tableHtml = `
-            <div class="table-responsive">
-                <table class="table table-bordered table-hover">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Kategori</th>
-                            <th>Jumlah Ayat</th>
-                            <th>Persentase</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-        `;
-        
-        // Tambahkan baris untuk setiap kategori
-        data.forEach(item => {
-            const percentage = ((item.count / total) * 100).toFixed(1);
-            tableHtml += `
-                <tr>
-                    <td>${item.category}</td>
-                    <td>${item.count}</td>
-                    <td>${percentage}%</td>
-                </tr>
+
+    // Fungsi toggle opsi pencarian
+    function toggleSearchOptions() {
+      var searchType = $("#searchType").val();
+
+      if (searchType === "lexical") {
+        $(".semantic-option").addClass("d-none");
+        $(".lexical-option").removeClass("d-none");
+      } else {
+        $(".lexical-option").addClass("d-none");
+        $(".semantic-option").removeClass("d-none");
+      }
+    }
+
+    // Toggle opsi pencarian saat pilihan berubah
+    $("#searchType").change(function () {
+      toggleSearchOptions();
+    });
+
+    // Reset form
+    $("#resetBtn").click(function () {
+      $("#searchForm")[0].reset();
+      $("#searchResults").html("");
+      $("#resultsCard").addClass("d-none");
+      toggleSearchOptions();
+    });
+
+    // Contoh pencarian
+    $(".example-search").click(function (e) {
+      e.preventDefault();
+      var exampleQuery = $(this).text();
+      $("#searchQuery").val(exampleQuery);
+      $("#searchButton").click();
+    });
+
+    // Cek sinonim
+    $("#checkSynonymsBtn").click(function () {
+      var query = $("#searchQuery").val().trim();
+
+      if (!query) {
+        alert("Masukkan kata untuk melihat sinonimnya.");
+        return;
+      }
+
+      // Tampilkan modal
+      $("#synonymsModal").modal("show");
+      $("#synonymsContent").html("<p>Mencari sinonim...</p>");
+
+      // Cari sinonim
+      $.ajax({
+        type: "GET",
+        url: "/api/thesaurus/synonyms",
+        data: { word: query },
+        success: function (data) {
+          if (data.synonyms && data.synonyms.length > 0) {
+            var html = `<h5>Sinonim untuk "${data.word}":</h5><ul class="list-group">`;
+            data.synonyms.forEach(function (synonym) {
+              html += `<li class="list-group-item">${synonym}</li>`;
+            });
+            html += "</ul>";
+            $("#synonymsContent").html(html);
+          } else {
+            $("#synonymsContent").html(
+              `<p>Tidak ditemukan sinonim untuk "${query}".</p>`
+            );
+          }
+        },
+        error: function (error) {
+          $("#synonymsContent").html(
+            `<p class="text-danger">Error: ${
+              error.responseJSON?.error || "Gagal mencari sinonim"
+            }</p>`
+          );
+        },
+      });
+    });
+
+    // Submit form pencarian
+    $("#searchForm").submit(function (e) {
+      e.preventDefault();
+
+      var query = $("#searchQuery").val().trim();
+      var searchType = $("#searchType").val();
+      var model = $("#modelType").val();
+      var limit = $("#resultCount").val();
+
+      if (!query) {
+        alert("Masukkan kata kunci pencarian.");
+        return;
+      }
+
+      // Tampilkan spinner loading pada tombol
+      $("#searchButton").prop("disabled", true);
+      $("#searchBtnText").html("Mencari...");
+      $("#searchButton").prepend(
+        '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>'
+      );
+
+      // Tampilkan spinner loading
+      $("#loadingSpinner").removeClass("d-none");
+      $("#resultsCard").addClass("d-none");
+
+      var apiEndpoint = "/api/search";
+      var requestData = {
+        query: query,
+        limit: parseInt(limit) || 9999, // Jika 0 (tanpa batas), gunakan angka besar
+      };
+
+      // Set parameter berdasarkan tipe pencarian
+      if (searchType === "semantic") {
+        apiEndpoint = "/api/search";
+        requestData.model = model;
+        requestData.threshold = 0.5;
+      } else if (searchType === "lexical") {
+        apiEndpoint = "/api/search/lexical";
+        var lexOption = $("#lexicalOption").val();
+        requestData.exact_match = lexOption === "exactMatch";
+        requestData.use_regex = lexOption === "regex";
+      } else if (searchType === "expanded") {
+        apiEndpoint = "/api/search/expanded";
+        requestData.model = model;
+        requestData.threshold = 0.5;
+      }
+
+      // Kirim request pencarian
+      $.ajax({
+        type: "POST",
+        url: apiEndpoint,
+        contentType: "application/json",
+        data: JSON.stringify(requestData),
+        success: function (data) {
+          // Sembunyikan spinner dan reset tombol
+          $("#loadingSpinner").addClass("d-none");
+          resetSearchButton();
+
+          // Simpan hasil pencarian di variabel global untuk digunakan fitur ekspor
+          window.searchResults = data;
+
+          // Tampilkan tombol ekspor jika ada hasil
+          if (data.results && data.results.length > 0) {
+            $("#exportExcelBtn").removeClass("d-none");
+          } else {
+            $("#exportExcelBtn").addClass("d-none");
+          }
+
+          // Tampilkan hasil
+          displaySearchResults(data, searchType);
+        },
+        error: function (error) {
+          $("#loadingSpinner").addClass("d-none");
+          resetSearchButton();
+          alert("Error: " + (error.responseJSON?.error || "Pencarian gagal"));
+        },
+      });
+    });
+
+    // Fungsi untuk mereset tombol pencarian
+    function resetSearchButton() {
+      $("#searchButton").prop("disabled", false);
+      $("#searchButton").find(".spinner-border").remove();
+      $("#searchBtnText").html("Cari");
+    }
+
+    // Tampilkan hasil pencarian
+    function displaySearchResults(data, searchType) {
+      var resultsHtml = "";
+
+      if (data.results && data.results.length > 0) {
+        // Tampilkan header tambahan untuk pencarian dengan ekspansi
+        if (searchType === "expanded" && data.expanded_queries) {
+          resultsHtml += '<div class="list-group-item bg-light">';
+          resultsHtml += "<h6>Query yang diperluas:</h6>";
+          resultsHtml += '<ul class="mb-0">';
+          data.expanded_queries.forEach(function (q) {
+            resultsHtml += `<li>${q}</li>`;
+          });
+          resultsHtml += "</ul></div>";
+        }
+
+        // Tambahkan tombol ekspor Excel di bagian atas hasil
+        resultsHtml += '<div class="list-group-item bg-light">';
+        resultsHtml +=
+          '<div class="d-flex justify-content-between align-items-center">';
+        resultsHtml += `<span>Ditemukan <strong>${data.results.length}</strong> hasil untuk pencarian "${data.query}"</span>`;
+        resultsHtml +=
+          '<button id="exportExcelBtn" class="btn btn-sm btn-success"><i class="fas fa-file-excel me-1"></i> Ekspor ke Excel</button>';
+        resultsHtml += "</div></div>";
+
+        // Tampilkan hasil
+        data.results.forEach(function (result, index) {
+          var resultClass = index % 2 === 0 ? "bg-light" : "";
+          var similarityBadge = "";
+
+          if (result.similarity !== undefined) {
+            var similarityPercentage = Math.round(result.similarity * 100);
+            var badgeClass =
+              similarityPercentage >= 80
+                ? "bg-success"
+                : similarityPercentage >= 60
+                ? "bg-primary"
+                : similarityPercentage >= 40
+                ? "bg-info"
+                : "bg-secondary";
+
+            similarityBadge = `<span class="badge ${badgeClass} float-end">${similarityPercentage}% relevan</span>`;
+          }
+
+          if (searchType === "expanded" && result.source_query) {
+            similarityBadge += `<span class="badge bg-info float-end me-2" title="Query sumber">Dari: ${result.source_query}</span>`;
+          }
+
+          if (searchType === "lexical" && result.match_type) {
+            var matchTypeLabel =
+              result.match_type === "exact_phrase"
+                ? "Frasa Persis"
+                : result.match_type === "regex"
+                ? "Regex"
+                : "Kata Kunci";
+            similarityBadge += `<span class="badge bg-success float-end me-2">${matchTypeLabel}</span>`;
+          }
+
+          var classification = "";
+          if (result.classification) {
+            classification = `<div class="small text-muted mt-1">Klasifikasi: ${result.classification.title}</div>`;
+          }
+
+          resultsHtml += `
+                        <div class="list-group-item ${resultClass}">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h5 class="mb-1">Surah ${result.surah_number} (${result.surah_name}), Ayat ${result.ayat_number}</h5>
+                                ${similarityBadge}
+                            </div>
+                            <p class="mb-1 arabic-text text-end">${result.arabic}</p>
+                            <p class="mb-1">${result.translation}</p>
+                            ${classification}
+                        </div>
             `;
         });
-        
-        // Tambahkan baris total
-        tableHtml += `
-                    </tbody>
-                    <tfoot class="table-light">
-                        <tr>
-                            <th>Total</th>
-                            <th>${total}</th>
-                            <th>100%</th>
-                        </tr>
-                    </tfoot>
-                </table>
+
+        $("#searchResults").html(resultsHtml);
+        $("#resultsCard").removeClass("d-none");
+
+        // Scroll ke hasil
+        $("html, body").animate(
+          {
+            scrollTop: $("#resultsCard").offset().top - 20,
+          },
+          500
+        );
+
+        // Tambahkan handler untuk ekspor ke Excel
+        $("#exportExcelBtn").click(function () {
+          exportToExcel(data);
+        });
+      } else {
+        resultsHtml = `
+                    <div class="list-group-item">
+                        <p class="mb-0 text-center py-3">Tidak ditemukan ayat yang sesuai dengan pencarian "${data.query}".</p>
             </div>
         `;
-        
-        // Render tabel
-        $('#distributionTable').html(tableHtml);
-    }
-</script>
-{% endblock %}
 
-{% block extra_css %}
+        $("#searchResults").html(resultsHtml);
+        $("#resultsCard").removeClass("d-none");
+      }
+    }
+
+    // Fungsi untuk mengekspor hasil pencarian ke Excel
+    function exportToExcel(data) {
+      // Buat URL API untuk ekspor Excel
+      var searchType = $("#searchType").val();
+      var query = $("#searchQuery").val().trim();
+
+      // Siapkan parameter untuk ekspor
+      var params = {
+        query: query,
+        searchType: searchType,
+        data: JSON.stringify(data),
+      };
+
+      // Buat form untuk mengirim data
+      var form = $("<form>")
+        .attr("method", "POST")
+        .attr("action", "/api/export/excel")
+        .css("display", "none");
+
+      // Tambahkan parameter ke form
+      $.each(params, function (key, value) {
+        form.append(
+          $("<input>")
+            .attr("type", "hidden")
+            .attr("name", key)
+            .attr("value", value)
+        );
+      });
+
+      // Tambahkan form ke dokumen, submit, dan hapus
+      $("body").append(form);
+      form.submit();
+      form.remove();
+    }
+
+    // Inisialisasi
+    toggleSearchOptions();
+  });
+</script>
+{% endblock %} {% block extra_css %}
 <style>
-    .arabic-text {
-        font-family: "Traditional Arabic", "Scheherazade New", serif;
-        font-size: 1.5rem;
-    }
-    
-    .example-search {
-        text-decoration: none;
-        color: #0d6efd;
-        cursor: pointer;
-    }
-    
-    .example-search:hover {
-        text-decoration: underline;
-    }
-    
-    #loadingSpinner {
-        min-height: 200px;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-    }
+  .arabic-text {
+    font-family: "Traditional Arabic", "Scheherazade New", serif;
+    font-size: 1.5rem;
+  }
+
+  .example-search {
+    text-decoration: none;
+    color: #0d6efd;
+    cursor: pointer;
+  }
+
+  .example-search:hover {
+    text-decoration: underline;
+  }
+
+  #loadingSpinner {
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
 </style>
 {% endblock %}

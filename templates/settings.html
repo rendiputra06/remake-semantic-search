@@ -142,6 +142,44 @@
                                     </form>
                                 </td>
                             </tr>
+                            <tr>
+                                <td>Pencarian Leksikal</td>
+                                <td>
+                                    {% if model_status.lexical.initialized %}
+                                        <span class="badge bg-success">Terinisialisasi</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Belum Terinisialisasi</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ model_status.lexical.last_updated or '-' }}</td>
+                                <td>
+                                    <form method="POST" action="{{ url_for('initialize_model') }}">
+                                        <input type="hidden" name="model_name" value="lexical">
+                                        <button type="submit" class="btn btn-sm btn-primary" {% if model_status.lexical.initialized %}disabled{% endif %}>
+                                            <i class="fas fa-sync-alt me-1"></i> Inisialisasi
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Tesaurus Sinonim</td>
+                                <td>
+                                    {% if model_status.thesaurus.initialized %}
+                                        <span class="badge bg-success">Terinisialisasi</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Belum Terinisialisasi</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ model_status.thesaurus.last_updated or '-' }}</td>
+                                <td>
+                                    <form method="POST" action="{{ url_for('initialize_model') }}">
+                                        <input type="hidden" name="model_name" value="thesaurus">
+                                        <button type="submit" class="btn btn-sm btn-primary" {% if model_status.thesaurus.initialized %}disabled{% endif %}>
+                                            <i class="fas fa-sync-alt me-1"></i> Inisialisasi
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>

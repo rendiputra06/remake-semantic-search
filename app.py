@@ -156,14 +156,20 @@ def initialize_model():
     """Memulai inisialisasi model."""
     model_name = request.form.get('model_name')
     
-    if model_name not in ['word2vec', 'fasttext', 'glove']:
+    if model_name not in ['word2vec', 'fasttext', 'glove', 'lexical', 'thesaurus']:
         flash('Model tidak valid.', 'danger')
         return redirect(url_for('settings'))
     
     try:
         # Jalankan proses inisialisasi di background
         script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), f'scripts/init_{model_name}.py'))
-        subprocess.Popen(['python', script_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        
+        # Untuk lexical dan thesaurus, gunakan script lexical
+        if model_name in ['lexical', 'thesaurus']:
+            script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'scripts/init_lexical.py'))
+            subprocess.Popen(['python', script_path, f'--component={model_name}'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        else:
+            subprocess.Popen(['python', script_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         
         # Update status model
         update_model_status(model_name, True)

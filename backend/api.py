@@ -1,10 +1,12 @@
 """
 Modul untuk penanganan API mesin pencarian semantik Al-Quran
 """
-from flask import Blueprint, request, jsonify, session
+from flask import Blueprint, request, jsonify, session, send_file, Response
 from backend.word2vec_model import Word2VecModel
 from backend.fasttext_model import FastTextModel
 from backend.glove_model import GloVeModel
+from backend.lexical_search import LexicalSearch
+from backend.thesaurus import IndonesianThesaurus
 from backend.db import get_user_settings, add_search_history, get_user_by_id, get_search_history, get_quran_indexes, get_quran_index_by_id, get_quran_ayat_by_index, add_quran_index, update_quran_index, delete_quran_index, get_db_connection
 import os
 import sys
@@ -12,6 +14,8 @@ import traceback
 import datetime
 import pandas as pd
 import json
+from io import BytesIO
+import tempfile
 
 # Inisialisasi Blueprint untuk API
 api_bp = Blueprint('api', __name__)
@@ -20,6 +24,8 @@ api_bp = Blueprint('api', __name__)
 word2vec_model = None
 fasttext_model = None
 glove_model = None
+lexical_search = None
+thesaurus = None
 
 def init_model(model_type='word2vec'):
     """
@@ -1167,4 +1173,440 @@ def update_index_ayat(index_id):
         return jsonify({
             'success': False,
             'message': message
-        }), 500 
+        }), 500
+
+@api_bp.route('/search/lexical', methods=['POST'])
+def lexical_search_api():
+    """
+    Endpoint untuk pencarian leksikal
+    """
+    # Dapatkan parameter dari request
+    data = request.json
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+    
+    query = data.get('query', '')
+    if not query:
+        return jsonify({'error': 'Query is required'}), 400
+    
+    exact_match = data.get('exact_match', False)
+    use_regex = data.get('use_regex', False)
+    limit = int(data.get('limit', 10))
+    
+    # Inisialisasi pencarian leksikal
+    global lexical_search
+    if lexical_search is None:
+        try:
+            lexical_search = LexicalSearch()
+            lexical_search.load_index()
+        except Exception as e:
+            return jsonify({'error': f'Failed to initialize lexical search: {str(e)}'}), 500
+    
+    # Lakukan pencarian
+    try:
+        results = lexical_search.search(query, exact_match, use_regex, limit)
+        
+        # Tambahkan informasi klasifikasi untuk setiap hasil seperti pada pencarian semantik
+        for result in results:
+            # Dapatkan index_id berdasarkan surah dan ayat
+            surah = result['surah_number']
+            ayat = result['ayat_number']
+            ayat_ref = f"{surah}:{ayat}"
+            
+            # Cari melalui list_ayat dalam format JSON
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            
+            cursor.execute('''
+                SELECT id, title, list_ayat 
+                FROM quran_index 
+                WHERE list_ayat IS NOT NULL
+            ''')
+            
+            indexes_with_ayat = cursor.fetchall()
+            conn.close()
+            
+            matching_indexes = []
+            for idx in indexes_with_ayat:
+                if idx['list_ayat']:
+                    try:
+                        ayat_list = json.loads(idx['list_ayat'])
+                        if ayat_list and ayat_ref in ayat_list:
+                            matching_indexes.append({
+                                'id': idx['id'],
+                                'title': idx['title']
+                            })
+                    except json.JSONDecodeError:
+                        continue
+            
+            if matching_indexes:
+                # Pilih klasifikasi pertama untuk breadcrumb path
+                primary_classification = matching_indexes[0]
+                result['classification'] = {
+                    'id': primary_classification['id'],
+                    'title': primary_classification['title'],
+                    'path': get_classification_path(primary_classification['id'])
+                }
+                
+                # Tambahkan semua klasifikasi terkait
+                result['related_classifications'] = matching_indexes
+            else:
+                result['classification'] = None
+                result['related_classifications'] = []
+        
+        # Tambahkan ke histori pencarian jika user sudah login
+        if 'user_id' in session:
+            add_search_history(session['user_id'], query, 'lexical', len(results))
+        
+        return jsonify({
+            'query': query,
+            'search_type': 'lexical',
+            'exact_match': exact_match,
+            'use_regex': use_regex,
+            'results': results,
+            'count': len(results)
+        })
+    except Exception as e:
+        print(f"Lexical search error: {e}")
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+@api_bp.route('/thesaurus/synonyms', methods=['GET'])
+def get_synonyms():
+    """
+    Endpoint untuk mendapatkan sinonim kata
+    """
+    word = request.args.get('word', '')
+    if not word:
+        return jsonify({'error': 'Word parameter is required'}), 400
+    
+    # Inisialisasi tesaurus
+    global thesaurus
+    if thesaurus is None:
+        try:
+            thesaurus = IndonesianThesaurus()
+        except Exception as e:
+            return jsonify({'error': f'Failed to initialize thesaurus: {str(e)}'}), 500
+    
+    # Dapatkan sinonim
+    try:
+        synonyms = thesaurus.get_synonyms(word)
+        return jsonify({
+            'word': word,
+            'synonyms': synonyms,
+            'count': len(synonyms)
+        })
+    except Exception as e:
+        print(f"Thesaurus error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@api_bp.route('/thesaurus/add', methods=['POST'])
+def add_synonym():
+    """
+    Endpoint untuk menambahkan sinonim kata ke tesaurus kustom
+    """
+    # Cek apakah pengguna sudah login dan memiliki hak admin
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    user = get_user_by_id(session['user_id'])
+    if not user or user['role'] != 'admin':
+        return jsonify({'error': 'Forbidden'}), 403
+    
+    # Dapatkan parameter dari request
+    data = request.json
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+    
+    word = data.get('word', '')
+    synonym = data.get('synonym', '')
+    
+    if not word or not synonym:
+        return jsonify({'error': 'Word and synonym are required'}), 400
+    
+    # Inisialisasi tesaurus
+    global thesaurus
+    if thesaurus is None:
+        try:
+            thesaurus = IndonesianThesaurus()
+        except Exception as e:
+            return jsonify({'error': f'Failed to initialize thesaurus: {str(e)}'}), 500
+    
+    # Tambahkan sinonim
+    try:
+        success = thesaurus.add_synonym(word, synonym)
+        if success:
+            return jsonify({
+                'success': True,
+                'message': f'Synonym "{synonym}" added to word "{word}"'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'message': 'Failed to add synonym'
+            }), 500
+    except Exception as e:
+        print(f"Add synonym error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@api_bp.route('/search/expanded', methods=['POST'])
+def expanded_search():
+    """
+    Endpoint untuk pencarian semantik dengan ekspansi query menggunakan sinonim
+    """
+    # Dapatkan parameter dari request
+    data = request.json
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+    
+    query = data.get('query', '')
+    if not query:
+        return jsonify({'error': 'Query is required'}), 400
+    
+    model_type = data.get('model', 'word2vec')
+    language = data.get('language', 'id')
+    limit = int(data.get('limit', 10))
+    threshold = float(data.get('threshold', 0.5))
+    
+    # Validasi model type
+    if model_type not in ['word2vec', 'fasttext', 'glove']:
+        return jsonify({'error': f'Unsupported model type: {model_type}'}), 400
+    
+    # Inisialisasi model yang dipilih
+    try:
+        model = init_model(model_type)
+    except Exception as e:
+        return jsonify({'error': f'Failed to initialize {model_type} model: {str(e)}'}), 500
+    
+    # Inisialisasi tesaurus
+    global thesaurus
+    if thesaurus is None:
+        try:
+            thesaurus = IndonesianThesaurus()
+        except Exception as e:
+            return jsonify({'error': f'Failed to initialize thesaurus: {str(e)}'}), 500
+    
+    # Ekspansi query dengan sinonim
+    expanded_queries = thesaurus.expand_query(query)
+    
+    # Lakukan pencarian untuk setiap query yang diperluas
+    try:
+        all_results = []
+        
+        # Cari untuk setiap query yang diperluas
+        for expanded_query in expanded_queries:
+            results = model.search(expanded_query, language, limit, threshold)
+            
+            # Tambahkan sumber query
+            for result in results:
+                result['source_query'] = expanded_query
+            
+            all_results.extend(results)
+        
+        # Hapus duplikat berdasarkan verse_id
+        unique_results = {}
+        for result in all_results:
+            verse_id = result['verse_id']
+            # Jika ayat belum ada atau hasil baru memiliki kesamaan lebih tinggi
+            if verse_id not in unique_results or result['similarity'] > unique_results[verse_id]['similarity']:
+                unique_results[verse_id] = result
+        
+        # Konversi kembali ke list dan urutkan berdasarkan kesamaan
+        results = list(unique_results.values())
+        results.sort(key=lambda x: x['similarity'], reverse=True)
+        
+        # Batasi jumlah hasil
+        results = results[:limit]
+        
+        # Tambahkan informasi klasifikasi
+        for result in results:
+            # Dapatkan index_id berdasarkan surah dan ayat
+            surah = result['surah_number']
+            ayat = result['ayat_number']
+            ayat_ref = f"{surah}:{ayat}"
+            
+            # Cari melalui list_ayat dalam format JSON
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            
+            cursor.execute('''
+                SELECT id, title, list_ayat 
+                FROM quran_index 
+                WHERE list_ayat IS NOT NULL
+            ''')
+            
+            indexes_with_ayat = cursor.fetchall()
+            conn.close()
+            
+            matching_indexes = []
+            for idx in indexes_with_ayat:
+                if idx['list_ayat']:
+                    try:
+                        ayat_list = json.loads(idx['list_ayat'])
+                        if ayat_list and ayat_ref in ayat_list:
+                            matching_indexes.append({
+                                'id': idx['id'],
+                                'title': idx['title']
+                            })
+                    except json.JSONDecodeError:
+                        continue
+            
+            if matching_indexes:
+                # Pilih klasifikasi pertama untuk breadcrumb path
+                primary_classification = matching_indexes[0]
+                result['classification'] = {
+                    'id': primary_classification['id'],
+                    'title': primary_classification['title'],
+                    'path': get_classification_path(primary_classification['id'])
+                }
+                
+                # Tambahkan semua klasifikasi terkait
+                result['related_classifications'] = matching_indexes
+            else:
+                result['classification'] = None
+                result['related_classifications'] = []
+        
+        # Tambahkan ke histori pencarian jika user sudah login
+        if 'user_id' in session:
+            add_search_history(session['user_id'], query, f'expanded_{model_type}', len(results))
+        
+        return jsonify({
+            'query': query,
+            'expanded_queries': expanded_queries,
+            'model': model_type,
+            'results': results,
+            'count': len(results)
+        })
+    except Exception as e:
+        print(f"Expanded search error: {e}")
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+@api_bp.route('/export/excel', methods=['POST'])
+def export_excel():
+    """
+    Ekspor hasil pencarian ke Excel
+    """
+    try:
+        # Dapatkan parameter dari request
+        query = request.form.get('query', '')
+        search_type = request.form.get('searchType', '')
+        data_json = request.form.get('data', '')
+        
+        if not data_json:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        # Parse data JSON
+        data = json.loads(data_json)
+        results = data.get('results', [])
+        
+        if not results:
+            return jsonify({'error': 'No results to export'}), 400
+            
+        # Buat dataframe dari hasil pencarian
+        df_data = []
+        
+        # Tentukan judul berdasarkan tipe pencarian
+        if search_type == 'semantic':
+            model_type = data.get('model', 'word2vec')
+            title = f"Hasil Pencarian Semantik ({model_type.upper()}) untuk '{query}'"
+        elif search_type == 'lexical':
+            title = f"Hasil Pencarian Leksikal untuk '{query}'"
+        elif search_type == 'expanded':
+            model_type = data.get('model', 'word2vec')
+            title = f"Hasil Pencarian Semantik dengan Ekspansi Sinonim ({model_type.upper()}) untuk '{query}'"
+        else:
+            title = f"Hasil Pencarian untuk '{query}'"
+            
+        # Format data untuk Excel
+        for result in results:
+            row = {
+                'Surah': result.get('surah_number'),
+                'Nama Surah': result.get('surah_name'),
+                'Ayat': result.get('ayat_number'),
+                'Referensi': f"{result.get('surah_number')}:{result.get('ayat_number')}",
+                'Teks Arab': result.get('arabic'),
+                'Terjemahan': result.get('translation'),
+            }
+            
+            # Tambahkan data spesifik berdasarkan tipe pencarian
+            if 'similarity' in result:
+                row['Skor Kesamaan'] = result.get('similarity')
+                row['Persentase Kesamaan'] = f"{int(result.get('similarity', 0) * 100)}%"
+                
+            if 'source_query' in result:
+                row['Query Sumber'] = result.get('source_query')
+                
+            if 'match_type' in result:
+                match_type = result.get('match_type')
+                if match_type == 'exact_phrase':
+                    row['Tipe Kecocokan'] = 'Frasa Persis'
+                elif match_type == 'regex':
+                    row['Tipe Kecocokan'] = 'Regex'
+                else:
+                    row['Tipe Kecocokan'] = 'Kata Kunci'
+            
+            # Tambahkan data klasifikasi jika ada
+            if result.get('classification'):
+                row['Klasifikasi'] = result.get('classification', {}).get('title', '')
+                
+                # Tambahkan path klasifikasi jika ada
+                classification_path = result.get('classification', {}).get('path', [])
+                if classification_path:
+                    path_titles = [p.get('title', '') for p in classification_path]
+                    row['Path Klasifikasi'] = ' > '.join(path_titles)
+            
+            df_data.append(row)
+            
+        # Buat pandas DataFrame
+        df = pd.DataFrame(df_data)
+        
+        # Gunakan BytesIO untuk menyimpan file Excel dalam memori
+        output = BytesIO()
+        
+        # Buat Excel writer menggunakan engine openpyxl
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            # Sheet untuk informasi pencarian
+            info_df = pd.DataFrame({
+                'Informasi': ['Query Pencarian', 'Tipe Pencarian', 'Jumlah Hasil', 'Waktu Ekspor'],
+                'Nilai': [
+                    query,
+                    search_type,
+                    len(results),
+                    datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                ]
+            })
+            
+            # Tambahkan informasi expanded queries jika ada
+            if search_type == 'expanded' and 'expanded_queries' in data:
+                expanded_queries = ', '.join(data['expanded_queries'])
+                new_row = pd.DataFrame({
+                    'Informasi': ['Query Diperluas'],
+                    'Nilai': [expanded_queries]
+                })
+                info_df = pd.concat([info_df, new_row], ignore_index=True)
+                
+            # Tulis sheet informasi
+            info_df.to_excel(writer, sheet_name='Informasi Pencarian', index=False)
+            
+            # Tulis sheet hasil utama
+            df.to_excel(writer, sheet_name='Hasil Pencarian', index=False)
+            
+        # Reset file pointer
+        output.seek(0)
+        
+        # Tentukan nama file (sanitasi query untuk nama file yang aman)
+        safe_query = ''.join(c if c.isalnum() else '_' for c in query)
+        filename = f"Pencarian_{search_type}_{safe_query}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        
+        # Kirim file ke client
+        return send_file(
+            output,
+            as_attachment=True,
+            download_name=filename,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500 
