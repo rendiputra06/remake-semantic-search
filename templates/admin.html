@@ -1,624 +1,1754 @@
-{% extends "layout.html" %}
-
-{% block title %}Admin - Mesin Pencarian Semantik Al-Quran{% endblock %}
-
-{% block content %}
+{% extends "layout.html" %} {% block title %}Admin - Mesin Pencarian Semantik
+Al-Quran{% endblock %} {% block content %}
 <div class="container mt-4">
-    <h1 class="mb-4">Admin Panel</h1>
-    
-    <!-- Tabs untuk navigasi -->
-    <ul class="nav nav-tabs mb-4" id="adminTabs" role="tablist">
-        <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="users-tab" data-bs-toggle="tab" data-bs-target="#users-pane" type="button" role="tab" aria-controls="users-pane" aria-selected="true">
-                <i class="fas fa-users"></i> Manajemen User
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="models-tab" data-bs-toggle="tab" data-bs-target="#models-pane" type="button" role="tab" aria-controls="models-pane" aria-selected="false">
-                <i class="fas fa-brain"></i> Model AI
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="quran-index-tab" data-bs-toggle="tab" data-bs-target="#quran-index-pane" type="button" role="tab" aria-controls="quran-index-pane" aria-selected="false">
-                <i class="fas fa-book"></i> Index Al-Quran
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="stats-tab" data-bs-toggle="tab" data-bs-target="#stats-pane" type="button" role="tab" aria-controls="stats-pane" aria-selected="false">
-                <i class="fas fa-chart-bar"></i> Statistik
-            </button>
-        </li>
-    </ul>
-    
-    <!-- Konten tab -->
-    <div class="tab-content" id="adminTabsContent">
-        <!-- Tab User -->
-        <div class="tab-pane fade show active" id="users-pane" role="tabpanel" aria-labelledby="users-tab">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">Daftar User</h5>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-striped table-hover">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Username</th>
-                                    <th>Email</th>
-                                    <th>Role</th>
-                                    <th>Terdaftar</th>
-                                    <th>Login Terakhir</th>
-                                    <th>Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for user in users %}
-                                <tr>
-                                    <td>{{ user.id }}</td>
-                                    <td>{{ user.username }}</td>
-                                    <td>{{ user.email }}</td>
-                                    <td>
-                                        <span class="badge {% if user.role == 'admin' %}bg-danger{% else %}bg-primary{% endif %}">
-                                            {{ user.role }}
-                                        </span>
-                                    </td>
-                                    <td>{{ user.created_at }}</td>
-                                    <td>{{ user.last_login or '-' }}</td>
-                                    <td>
-                                        <button class="btn btn-sm btn-primary">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button class="btn btn-sm btn-danger">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
+  <h1 class="mb-4">Admin Panel</h1>
+
+  <!-- Tabs untuk navigasi -->
+  <ul class="nav nav-tabs mb-4" id="adminTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button
+        class="nav-link active"
+        id="users-tab"
+        data-bs-toggle="tab"
+        data-bs-target="#users-pane"
+        type="button"
+        role="tab"
+        aria-controls="users-pane"
+        aria-selected="true"
+      >
+        <i class="fas fa-users"></i> Manajemen User
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button
+        class="nav-link"
+        id="models-tab"
+        data-bs-toggle="tab"
+        data-bs-target="#models-pane"
+        type="button"
+        role="tab"
+        aria-controls="models-pane"
+        aria-selected="false"
+      >
+        <i class="fas fa-brain"></i> Model AI
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button
+        class="nav-link"
+        id="linguistic-tab"
+        data-bs-toggle="tab"
+        data-bs-target="#linguistic-pane"
+        type="button"
+        role="tab"
+        aria-controls="linguistic-pane"
+        aria-selected="false"
+      >
+        <i class="fas fa-language"></i> Data Linguistik
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button
+        class="nav-link"
+        id="wordlist-tab"
+        data-bs-toggle="tab"
+        data-bs-target="#wordlist-pane"
+        type="button"
+        role="tab"
+        aria-controls="wordlist-pane"
+        aria-selected="false"
+      >
+        <i class="fas fa-list"></i> Wordlist Generator
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button
+        class="nav-link"
+        id="quran-index-tab"
+        data-bs-toggle="tab"
+        data-bs-target="#quran-index-pane"
+        type="button"
+        role="tab"
+        aria-controls="quran-index-pane"
+        aria-selected="false"
+      >
+        <i class="fas fa-book"></i> Index Al-Quran
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button
+        class="nav-link"
+        id="stats-tab"
+        data-bs-toggle="tab"
+        data-bs-target="#stats-pane"
+        type="button"
+        role="tab"
+        aria-controls="stats-pane"
+        aria-selected="false"
+      >
+        <i class="fas fa-chart-bar"></i> Statistik
+      </button>
+    </li>
+  </ul>
+
+  <!-- Konten tab -->
+  <div class="tab-content" id="adminTabsContent">
+    <!-- Tab User -->
+    <div
+      class="tab-pane fade show active"
+      id="users-pane"
+      role="tabpanel"
+      aria-labelledby="users-tab"
+    >
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">Daftar User</h5>
         </div>
-        
-        <!-- Tab Model AI -->
-        <div class="tab-pane fade" id="models-pane" role="tabpanel" aria-labelledby="models-tab">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">Status Model</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        {% for model_name, status in model_status.items() %}
-                        <div class="col-md-4 mb-3">
-                            <div class="card h-100">
-                                <div class="card-body">
-                                    <h5 class="card-title">{{ model_name.upper() }}</h5>
-                                    
-                                    <div class="mb-3">
-                                        <span class="badge {% if status.initialized %}bg-success{% else %}bg-warning{% endif %}">
-                                            {% if status.initialized %}Aktif{% else %}Belum Diinisialisasi{% endif %}
-                                        </span>
-                                    </div>
-                                    
-                                    {% if status.last_updated %}
-                                    <p class="card-text">
-                                        <small class="text-muted">Terakhir diperbarui: {{ status.last_updated }}</small>
-                                    </p>
-                                    {% endif %}
-                                    
-                                    <form action="{{ url_for('initialize_model') }}" method="post">
-                                        <input type="hidden" name="model_name" value="{{ model_name }}">
-                                        <button type="submit" class="btn btn-primary btn-sm" {% if status.initialized %}disabled{% endif %}>
-                                            {% if status.initialized %}
-                                            <i class="fas fa-check-circle"></i> Terinisialisasi
-                                            {% else %}
-                                            <i class="fas fa-cog"></i> Inisialisasi Model
-                                            {% endif %}
-                                        </button>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Tab Index Al-Quran -->
-        <div class="tab-pane fade" id="quran-index-pane" role="tabpanel" aria-labelledby="quran-index-tab">
-            <div class="card mb-4">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Manajemen Index Al-Quran</h5>
-                    <div>
-                        <a href="{{ url_for('quran_index') }}" class="btn btn-primary btn-sm me-2">
-                            <i class="fas fa-eye"></i> Lihat Halaman Index
-                        </a>
-                        <button class="btn btn-success btn-sm" onclick="showExcelUploadModal()">
-                            <i class="fas fa-file-excel"></i> Upload Excel
-                        </button>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <div class="alert alert-info mb-4">
-                        <h5><i class="fas fa-info-circle"></i> Petunjuk Upload Excel</h5>
-                        <p>Untuk mengimpor data index dari file Excel, pastikan format file sesuai dengan ketentuan berikut:</p>
-                        <ol>
-                            <li>Baris 1-2 adalah header dan akan dilewati</li>
-                            <li>Kolom A biasanya kosong/nomor</li>
-                            <li>Kolom B-F (atau lebih) berisi hierarki index dengan struktur seperti tree</li>
-                            <li>Kolom setelah F dapat berisi referensi ayat dengan format "Surah:Ayat" (misalnya "2:255")</li>
-                        </ol>
-                        <p>Anda dapat memilih sheet yang akan diimpor dan menentukan index parent jika diperlukan.</p>
-                    </div>
-                    
-                    <h5 class="mt-4 mb-3"><i class="fas fa-sitemap"></i> Struktur Hierarki Index</h5>
-                    
-                    <div id="index-tree-loading" class="text-center py-4">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                        </div>
-                        <p class="mt-2">Memuat struktur indeks...</p>
-                    </div>
-                    
-                    <div id="index-tree-container" class="mt-3 border p-3 rounded" style="max-height: 500px; overflow-y: auto;">
-                        <!-- Tree hierarki akan ditampilkan di sini -->
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Tab Statistik -->
-        <div class="tab-pane fade" id="stats-pane" role="tabpanel" aria-labelledby="stats-tab">
-            <div class="card mb-4">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Statistik Index & Ayat</h5>
-                    <button class="btn btn-sm btn-outline-primary" id="refresh-stats-btn">
-                        <i class="fas fa-sync-alt"></i> Refresh
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-striped table-hover">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Username</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Terdaftar</th>
+                  <th>Login Terakhir</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for user in users %}
+                <tr>
+                  <td>{{ user.id }}</td>
+                  <td>{{ user.username }}</td>
+                  <td>{{ user.email }}</td>
+                  <td>
+                    <span
+                      class="badge {% if user.role == 'admin' %}bg-danger{% else %}bg-primary{% endif %}"
+                    >
+                      {{ user.role }}
+                    </span>
+                  </td>
+                  <td>{{ user.created_at }}</td>
+                  <td>{{ user.last_login or '-' }}</td>
+                  <td>
+                    <button class="btn btn-sm btn-primary">
+                      <i class="fas fa-edit"></i>
                     </button>
+                    <button class="btn btn-sm btn-danger">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab Model AI -->
+    <div
+      class="tab-pane fade"
+      id="models-pane"
+      role="tabpanel"
+      aria-labelledby="models-tab"
+    >
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">Status Model</h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            {% for model_name, status in model_status.items() %}
+            <div class="col-md-4 mb-3">
+              <div class="card h-100">
+                <div class="card-body">
+                  <h5 class="card-title">{{ model_name.upper() }}</h5>
+
+                  <div class="mb-3">
+                    <span
+                      class="badge {% if status.initialized %}bg-success{% else %}bg-warning{% endif %}"
+                    >
+                      {% if status.initialized %}Aktif{% else %}Belum
+                      Diinisialisasi{% endif %}
+                    </span>
+                  </div>
+
+                  {% if status.last_updated %}
+                  <p class="card-text">
+                    <small class="text-muted"
+                      >Terakhir diperbarui: {{ status.last_updated }}</small
+                    >
+                  </p>
+                  {% endif %}
+
+                  <form
+                    action="{{ url_for('initialize_model') }}"
+                    method="post"
+                  >
+                    <input
+                      type="hidden"
+                      name="model_name"
+                      value="{{ model_name }}"
+                    />
+                    <button
+                      type="submit"
+                      class="btn btn-primary btn-sm"
+                      {%
+                      if
+                      status.initialized
+                      %}disabled{%
+                      endif
+                      %}
+                    >
+                      {% if status.initialized %}
+                      <i class="fas fa-check-circle"></i> Terinisialisasi {%
+                      else %} <i class="fas fa-cog"></i> Inisialisasi Model {%
+                      endif %}
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab Data Linguistik -->
+    <div
+      class="tab-pane fade"
+      id="linguistic-pane"
+      role="tabpanel"
+      aria-labelledby="linguistic-tab"
+    >
+      <div class="card mb-4">
+        <div class="card-header">
+          <h5 class="mb-0">Manajemen Data Linguistik</h5>
+        </div>
+        <div class="card-body">
+          <ul class="nav nav-pills mb-4" id="linguisticSubTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button
+                class="nav-link active"
+                id="lexical-tab"
+                data-bs-toggle="pill"
+                data-bs-target="#lexical-content"
+                type="button"
+                role="tab"
+                aria-controls="lexical-content"
+                aria-selected="true"
+              >
+                <i class="fas fa-book"></i> Lexical Database
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button
+                class="nav-link"
+                id="thesaurus-tab"
+                data-bs-toggle="pill"
+                data-bs-target="#thesaurus-content"
+                type="button"
+                role="tab"
+                aria-controls="thesaurus-content"
+                aria-selected="false"
+              >
+                <i class="fas fa-project-diagram"></i> Tesaurus
+              </button>
+            </li>
+          </ul>
+
+          <div class="tab-content" id="linguisticTabContent">
+            <!-- Tab Lexical Database -->
+            <div
+              class="tab-pane fade show active"
+              id="lexical-content"
+              role="tabpanel"
+              aria-labelledby="lexical-tab"
+            >
+              <div class="row mb-4">
+                <div class="col-lg-6 mb-3">
+                  <div class="card h-100">
+                    <div class="card-header">
+                      <h5 class="mb-0">Status Database Lexical</h5>
+                    </div>
+                    <div class="card-body">
+                      <div class="mb-3">
+                        <span
+                          class="badge bg-{{ 'success' if lexical_status.initialized else 'warning' }}"
+                        >
+                          {{ 'Terinisialisasi' if lexical_status.initialized
+                          else 'Belum Diinisialisasi' }}
+                        </span>
+                        {% if lexical_status.last_updated %}
+                        <p class="mt-2">
+                          <small class="text-muted"
+                            >Terakhir diperbarui: {{ lexical_status.last_updated
+                            }}</small
+                          >
+                        </p>
+                        {% endif %}
+                        <p class="mt-3">
+                          <strong>Jumlah Entri:</strong>
+                          <span class="badge bg-primary"
+                            >{{ lexical_status.entry_count|default('0') }}</span
+                          >
+                        </p>
+                      </div>
+                      <div class="d-grid gap-2">
+                        <form
+                          action="{{ url_for('run_lexical_command') }}"
+                          method="post"
+                        >
+                          <input
+                            type="hidden"
+                            name="command"
+                            value="init_lexical"
+                          />
+                          <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-sync-alt"></i> Inisialisasi
+                            Database Lexical
+                          </button>
+                        </form>
+                        <form
+                          action="{{ url_for('run_lexical_command') }}"
+                          method="post"
+                        >
+                          <input
+                            type="hidden"
+                            name="command"
+                            value="export_lexical"
+                          />
+                          <button
+                            type="submit"
+                            class="btn btn-outline-secondary"
+                          >
+                            <i class="fas fa-file-export"></i> Export Database
+                          </button>
+                        </form>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-lg-6 mb-3">
+                  <div class="card h-100">
+                    <div class="card-header">
+                      <h5 class="mb-0">Import Data Lexical</h5>
+                    </div>
+                    <div class="card-body">
+                      <form
+                        action="{{ url_for('import_lexical_data') }}"
+                        method="post"
+                        enctype="multipart/form-data"
+                      >
+                        <div class="mb-3">
+                          <label for="lexicalFile" class="form-label"
+                            >File CSV/Excel</label
+                          >
+                          <input
+                            class="form-control"
+                            type="file"
+                            id="lexicalFile"
+                            name="lexical_file"
+                            accept=".csv,.xlsx"
+                          />
+                          <div class="form-text">
+                            Format: kolom kata, arti, contoh penggunaan
+                          </div>
+                        </div>
+                        <div class="mb-3">
+                          <div class="form-check">
+                            <input
+                              class="form-check-input"
+                              type="checkbox"
+                              id="overwriteLexical"
+                              name="overwrite"
+                              value="true"
+                            />
+                            <label
+                              class="form-check-label"
+                              for="overwriteLexical"
+                            >
+                              Timpa data yang sudah ada
+                            </label>
+                          </div>
+                        </div>
+                        <div class="d-grid">
+                          <button type="submit" class="btn btn-success">
+                            <i class="fas fa-file-import"></i> Import Data
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Tabel pencarian lexical -->
+              <div class="card">
+                <div class="card-header">
+                  <h5 class="mb-0">Cari & Edit Data Lexical</h5>
                 </div>
                 <div class="card-body">
-                    <div id="stats-loading" class="text-center py-5">
-                        <div class="spinner-border" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                        </div>
-                        <p class="mt-2">Memuat statistik...</p>
+                  <div class="row mb-3">
+                    <div class="col-md-6">
+                      <div class="input-group">
+                        <input
+                          type="text"
+                          id="lexicalSearchInput"
+                          class="form-control"
+                          placeholder="Cari kata..."
+                        />
+                        <button
+                          class="btn btn-primary"
+                          type="button"
+                          id="lexicalSearchBtn"
+                        >
+                          <i class="fas fa-search"></i> Cari
+                        </button>
+                      </div>
                     </div>
-                    
-                    <div id="stats-content" class="d-none">
-                        <div class="row mb-4">
-                            <div class="col-md-3">
-                                <div class="card bg-primary text-white h-100">
-                                    <div class="card-body text-center">
-                                        <h5>Total Index</h5>
-                                        <h2 id="total-categories">-</h2>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="card bg-success text-white h-100">
-                                    <div class="card-body text-center">
-                                        <h5>Total Ayat</h5>
-                                        <h2 id="total-ayat">-</h2>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="card bg-info text-white h-100">
-                                    <div class="card-body text-center">
-                                        <h5>Index dengan Ayat</h5>
-                                        <h2 id="categories-with-ayat">-</h2>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="card bg-warning text-dark h-100">
-                                    <div class="card-body text-center">
-                                        <h5>Root Index</h5>
-                                        <h2 id="root-categories">-</h2>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="card h-100">
-                                    <div class="card-header">
-                                        <h5 class="mb-0">Index berdasarkan Level</h5>
-                                    </div>
-                                    <div class="card-body">
-                                        <table class="table table-striped">
-                                            <thead>
-                                                <tr>
-                                                    <th>Level</th>
-                                                    <th>Jumlah</th>
-                                                    <th>Persentase</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="level-stats-tbody">
-                                                <tr>
-                                                    <td colspan="3" class="text-center">Tidak ada data</td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-6">
-                                <div class="card h-100">
-                                    <div class="card-header">
-                                        <h5 class="mb-0">Surah yang Paling Banyak Diindeks</h5>
-                                    </div>
-                                    <div class="card-body">
-                                        <table class="table table-striped">
-                                            <thead>
-                                                <tr>
-                                                    <th>Surah</th>
-                                                    <th>Jumlah Ayat</th>
-                                                    <th>Persentase</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="surah-stats-tbody">
-                                                <tr>
-                                                    <td colspan="3" class="text-center">Tidak ada data</td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="col-md-6 text-end">
+                      <button
+                        type="button"
+                        class="btn btn-success"
+                        data-bs-toggle="modal"
+                        data-bs-target="#addLexicalModal"
+                      >
+                        <i class="fas fa-plus"></i> Tambah Entri Baru
+                      </button>
                     </div>
+                  </div>
+
+                  <div class="table-responsive">
+                    <table
+                      class="table table-striped table-hover"
+                      id="lexicalTable"
+                    >
+                      <thead>
+                        <tr>
+                          <th>ID</th>
+                          <th>Kata</th>
+                          <th>Arti</th>
+                          <th>Contoh Penggunaan</th>
+                          <th>Aksi</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <!-- Data akan diisi melalui AJAX -->
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div id="lexicalPagination" class="mt-3">
+                    <!-- Pagination akan diisi melalui AJAX -->
+                  </div>
                 </div>
+              </div>
             </div>
+
+            <!-- Tab Tesaurus -->
+            <div
+              class="tab-pane fade"
+              id="thesaurus-content"
+              role="tabpanel"
+              aria-labelledby="thesaurus-tab"
+            >
+              <div class="row mb-4">
+                <div class="col-lg-6 mb-3">
+                  <div class="card h-100">
+                    <div class="card-header">
+                      <h5 class="mb-0">Status Database Tesaurus</h5>
+                    </div>
+                    <div class="card-body">
+                      <div class="mb-3">
+                        <span
+                          class="badge bg-{{ 'success' if thesaurus_status.initialized else 'warning' }}"
+                        >
+                          {{ 'Terinisialisasi' if thesaurus_status.initialized
+                          else 'Belum Diinisialisasi' }}
+                        </span>
+                        {% if thesaurus_status.last_updated %}
+                        <p class="mt-2">
+                          <small class="text-muted"
+                            >Terakhir diperbarui: {{
+                            thesaurus_status.last_updated }}</small
+                          >
+                        </p>
+                        {% endif %}
+                        <p class="mt-3">
+                          <strong>Jumlah Kata:</strong>
+                          <span class="badge bg-primary"
+                            >{{ thesaurus_status.word_count|default('0')
+                            }}</span
+                          ><br />
+                          <strong>Jumlah Relasi:</strong>
+                          <span class="badge bg-primary"
+                            >{{ thesaurus_status.relation_count|default('0')
+                            }}</span
+                          >
+                        </p>
+
+                        {% if thesaurus_status.synonym_count is defined %}
+                        <div class="mt-3">
+                          <h6>Rincian Relasi:</h6>
+                          <ul class="list-unstyled">
+                            <li>
+                              <strong>Sinonim:</strong>
+                              <span class="badge bg-info"
+                                >{{ thesaurus_status.synonym_count|default('0')
+                                }}</span
+                              >
+                            </li>
+                            <li>
+                              <strong>Antonim:</strong>
+                              <span class="badge bg-info"
+                                >{{ thesaurus_status.antonym_count|default('0')
+                                }}</span
+                              >
+                            </li>
+                            <li>
+                              <strong>Hiponim:</strong>
+                              <span class="badge bg-info"
+                                >{{ thesaurus_status.hyponym_count|default('0')
+                                }}</span
+                              >
+                            </li>
+                            <li>
+                              <strong>Hipernim:</strong>
+                              <span class="badge bg-info"
+                                >{{ thesaurus_status.hypernym_count|default('0')
+                                }}</span
+                              >
+                            </li>
+                          </ul>
+                        </div>
+                        {% endif %}
+                      </div>
+                      <div class="d-grid gap-2">
+                        <form
+                          action="{{ url_for('run_lexical_command') }}"
+                          method="post"
+                        >
+                          <input
+                            type="hidden"
+                            name="command"
+                            value="init_thesaurus"
+                          />
+                          <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-sync-alt"></i> Inisialisasi
+                            Database Tesaurus
+                          </button>
+                        </form>
+                        <form
+                          action="{{ url_for('run_lexical_command') }}"
+                          method="post"
+                        >
+                          <input
+                            type="hidden"
+                            name="command"
+                            value="export_thesaurus"
+                          />
+                          <button
+                            type="submit"
+                            class="btn btn-outline-secondary"
+                          >
+                            <i class="fas fa-file-export"></i> Export Database
+                          </button>
+                        </form>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-lg-6 mb-3">
+                  <div class="card h-100">
+                    <div class="card-header">
+                      <h5 class="mb-0">Import Relasi Tesaurus</h5>
+                    </div>
+                    <div class="card-body">
+                      <form
+                        action="{{ url_for('import_thesaurus_data') }}"
+                        method="post"
+                        enctype="multipart/form-data"
+                      >
+                        <div class="mb-3">
+                          <label for="thesaurusFile" class="form-label"
+                            >File CSV/Excel</label
+                          >
+                          <input
+                            class="form-control"
+                            type="file"
+                            id="thesaurusFile"
+                            name="thesaurus_file"
+                            accept=".csv,.xlsx"
+                          />
+                          <div class="form-text">
+                            Format: kolom kata1, kata2, jenis_relasi (opsional),
+                            kekuatan (opsional)
+                          </div>
+                        </div>
+                        <div class="mb-3">
+                          <label class="form-label">Jenis Relasi</label>
+                          <select
+                            class="form-select"
+                            name="relation_type"
+                            required
+                          >
+                            <option value="synonym" selected>Sinonim</option>
+                            <option value="antonym">Antonim</option>
+                            <option value="hyponym">Hiponim</option>
+                            <option value="hypernym">Hipernim</option>
+                          </select>
+                        </div>
+                        <div class="mb-3">
+                          <div class="form-check">
+                            <input
+                              class="form-check-input"
+                              type="checkbox"
+                              id="overwriteThesaurus"
+                              name="overwrite"
+                              value="true"
+                            />
+                            <label
+                              class="form-check-label"
+                              for="overwriteThesaurus"
+                            >
+                              Hapus relasi lama dengan jenis yang sama
+                            </label>
+                          </div>
+                        </div>
+                        <div class="d-grid">
+                          <button type="submit" class="btn btn-success">
+                            <i class="fas fa-file-import"></i> Import Data
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Visualisasi dan Pencarian Tesaurus -->
+              <div class="card">
+                <div class="card-header">
+                  <h5 class="mb-0">Visualisasi & Pencarian Tesaurus</h5>
+                </div>
+                <div class="card-body">
+                  <div class="row mb-3">
+                    <div class="col-md-6">
+                      <div class="input-group">
+                        <input
+                          type="text"
+                          id="thesaurusSearchInput"
+                          class="form-control"
+                          placeholder="Cari kata..."
+                        />
+                        <button
+                          class="btn btn-primary"
+                          type="button"
+                          id="thesaurusSearchBtn"
+                        >
+                          <i class="fas fa-search"></i> Cari
+                        </button>
+                      </div>
+                    </div>
+                    <div class="col-md-6 text-end">
+                      <div class="btn-group">
+                        <button
+                          class="btn btn-outline-secondary"
+                          id="visualizeThesaurusBtn"
+                        >
+                          <i class="fas fa-project-diagram"></i> Visualisasi
+                          Jaringan
+                        </button>
+                        <button
+                          class="btn btn-outline-secondary dropdown-toggle"
+                          type="button"
+                          data-bs-toggle="dropdown"
+                          aria-expanded="false"
+                        >
+                          Filter
+                        </button>
+                        <ul class="dropdown-menu">
+                          <li>
+                            <div class="dropdown-item">
+                              <div class="form-check">
+                                <input
+                                  class="form-check-input relation-filter"
+                                  type="checkbox"
+                                  id="showSynonyms"
+                                  checked
+                                />
+                                <label
+                                  class="form-check-label"
+                                  for="showSynonyms"
+                                >
+                                  Sinonim
+                                </label>
+                              </div>
+                            </div>
+                          </li>
+                          <li>
+                            <div class="dropdown-item">
+                              <div class="form-check">
+                                <input
+                                  class="form-check-input relation-filter"
+                                  type="checkbox"
+                                  id="showAntonyms"
+                                  checked
+                                />
+                                <label
+                                  class="form-check-label"
+                                  for="showAntonyms"
+                                >
+                                  Antonim
+                                </label>
+                              </div>
+                            </div>
+                          </li>
+                          <li>
+                            <div class="dropdown-item">
+                              <div class="form-check">
+                                <input
+                                  class="form-check-input relation-filter"
+                                  type="checkbox"
+                                  id="showHyponyms"
+                                  checked
+                                />
+                                <label
+                                  class="form-check-label"
+                                  for="showHyponyms"
+                                >
+                                  Hiponim
+                                </label>
+                              </div>
+                            </div>
+                          </li>
+                          <li>
+                            <div class="dropdown-item">
+                              <div class="form-check">
+                                <input
+                                  class="form-check-input relation-filter"
+                                  type="checkbox"
+                                  id="showHypernyms"
+                                  checked
+                                />
+                                <label
+                                  class="form-check-label"
+                                  for="showHypernyms"
+                                >
+                                  Hipernim
+                                </label>
+                              </div>
+                            </div>
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div
+                    id="thesaurusVisualization"
+                    style="height: 400px; border: 1px solid #ddd; display: none"
+                  ></div>
+
+                  <div id="thesaurusSearchResults" class="mt-3">
+                    <!-- Hasil pencarian akan ditampilkan di sini -->
+                  </div>
+                </div>
+              </div>
+
+              <!-- Panel Pengayaan Tesaurus -->
+              <div class="card mt-4">
+                <div class="card-header">
+                  <h5 class="mb-0">Pengayaan Tesaurus dengan Wordlist</h5>
+                </div>
+                <div class="card-body">
+                  <form
+                    action="{{ url_for('api_thesaurus_enrich') }}"
+                    method="post"
+                    id="thesaurusEnrichForm"
+                  >
+                    <div class="row mb-3">
+                      <div class="col-md-6">
+                        <label class="form-label">Pilih Wordlist</label>
+                        <select class="form-select" name="wordlist" required>
+                          <option value="" selected disabled>
+                            Pilih wordlist yang akan digunakan
+                          </option>
+                          {% for wordlist in wordlist_files %}
+                          <option value="{{ wordlist.filename }}">
+                            {{ wordlist.filename }} ({{ wordlist.size }})
+                          </option>
+                          {% endfor %}
+                        </select>
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">Jenis Relasi</label>
+                        <select
+                          class="form-select"
+                          name="relation_type"
+                          required
+                        >
+                          <option value="synonym" selected>Sinonim</option>
+                          <option value="antonym">Antonim</option>
+                          <option value="hyponym">Hiponim</option>
+                          <option value="hypernym">Hipernim</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="row mb-3">
+                      <div class="col-md-6">
+                        <label class="form-label">Skor Minimum (0.0-1.0)</label>
+                        <input
+                          type="number"
+                          class="form-control"
+                          name="min_score"
+                          min="0"
+                          max="1"
+                          step="0.1"
+                          value="0.7"
+                        />
+                        <div class="form-text">
+                          Semakin tinggi skor, semakin akurat relasi yang
+                          ditambahkan
+                        </div>
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label"
+                          >Jumlah Maksimum Relasi per Kata</label
+                        >
+                        <input
+                          type="number"
+                          class="form-control"
+                          name="max_relations"
+                          min="1"
+                          max="20"
+                          value="5"
+                        />
+                        <div class="form-text">
+                          Batasi jumlah relasi untuk menghindari noise
+                        </div>
+                      </div>
+                    </div>
+                    <div class="d-grid">
+                      <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-plus-circle"></i> Perkaya Tesaurus
+                      </button>
+                    </div>
+                  </form>
+                  <div id="enrichResult" class="mt-3"></div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
+      </div>
     </div>
+
+    <!-- Tab Wordlist Generator -->
+    <div
+      class="tab-pane fade"
+      id="wordlist-pane"
+      role="tabpanel"
+      aria-labelledby="wordlist-tab"
+    >
+      <div class="card mb-4">
+        <div class="card-header">
+          <h5 class="mb-0">Wordlist Generator</h5>
+        </div>
+        <div class="card-body">
+          <form
+            action="{{ url_for('run_wordlist_generator') }}"
+            method="post"
+            enctype="multipart/form-data"
+          >
+            <div class="row mb-3">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Sumber Data</label>
+                <div class="form-check">
+                  <input
+                    class="form-check-input"
+                    type="checkbox"
+                    id="useQuranDataset"
+                    name="use_quran_dataset"
+                    value="true"
+                    checked
+                  />
+                  <label class="form-check-label" for="useQuranDataset">
+                    Dataset Al-Quran
+                  </label>
+                </div>
+                <div class="form-check">
+                  <input
+                    class="form-check-input"
+                    type="checkbox"
+                    id="useCustomTxt"
+                    name="use_custom_txt"
+                    value="true"
+                  />
+                  <label class="form-check-label" for="useCustomTxt">
+                    File Teks Kustom (.txt)
+                  </label>
+                </div>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="customTxtFile" class="form-label"
+                  >Upload File Teks (opsional)</label
+                >
+                <input
+                  class="form-control"
+                  type="file"
+                  id="customTxtFile"
+                  name="custom_txt_file"
+                  accept=".txt"
+                  multiple
+                />
+                <div class="form-text">
+                  Anda dapat mengunggah beberapa file teks
+                </div>
+              </div>
+            </div>
+            <div class="row mb-3">
+              <div class="col-md-4 mb-3">
+                <label for="outputFilename" class="form-label"
+                  >Nama File Output</label
+                >
+                <input
+                  type="text"
+                  class="form-control"
+                  id="outputFilename"
+                  name="output_filename"
+                  value="wordlist_{{ '%Y%m%d'|strftime }}.txt"
+                />
+              </div>
+              <div class="col-md-4 mb-3">
+                <label for="minWordLength" class="form-label"
+                  >Panjang Kata Minimum</label
+                >
+                <input
+                  type="number"
+                  class="form-control"
+                  id="minWordLength"
+                  name="min_word_length"
+                  value="3"
+                  min="1"
+                  max="10"
+                />
+              </div>
+              <div class="col-md-4 mb-3">
+                <label for="minWordFreq" class="form-label"
+                  >Frekuensi Minimum</label
+                >
+                <input
+                  type="number"
+                  class="form-control"
+                  id="minWordFreq"
+                  name="min_word_freq"
+                  value="2"
+                  min="1"
+                  max="100"
+                />
+              </div>
+            </div>
+            <div class="mb-3">
+              <div class="form-check">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  id="stemWords"
+                  name="stem_words"
+                  value="true"
+                />
+                <label class="form-check-label" for="stemWords">
+                  Gunakan kata dasar (stemming)
+                </label>
+              </div>
+            </div>
+            <div class="d-grid">
+              <button type="submit" class="btn btn-primary">
+                <i class="fas fa-cogs"></i> Generate Wordlist
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">Wordlist yang Tersedia</h5>
+        </div>
+        <div class="card-body">
+          {% if wordlist_files %}
+          <div class="table-responsive">
+            <table class="table table-striped table-hover">
+              <thead>
+                <tr>
+                  <th>Nama File</th>
+                  <th>Ukuran</th>
+                  <th>Dibuat Pada</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for wordlist in wordlist_files %}
+                <tr>
+                  <td>{{ wordlist.filename }}</td>
+                  <td>{{ wordlist.size }}</td>
+                  <td>{{ wordlist.created }}</td>
+                  <td>
+                    <div class="btn-group">
+                      <a
+                        href="{{ url_for('download_wordlist', filename=wordlist.filename) }}"
+                        class="btn btn-sm btn-outline-primary"
+                      >
+                        <i class="fas fa-download"></i> Download
+                      </a>
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-outline-danger delete-wordlist"
+                        data-filename="{{ wordlist.filename }}"
+                      >
+                        <i class="fas fa-trash"></i> Hapus
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <div class="alert alert-info">
+            Belum ada wordlist yang tersedia. Silakan generate wordlist baru.
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab Index Al-Quran -->
+    <div
+      class="tab-pane fade"
+      id="quran-index-pane"
+      role="tabpanel"
+      aria-labelledby="quran-index-tab"
+    >
+      <div class="card mb-4">
+        <div
+          class="card-header d-flex justify-content-between align-items-center"
+        >
+          <h5 class="mb-0">Manajemen Index Al-Quran</h5>
+          <div>
+            <a
+              href="{{ url_for('quran_index') }}"
+              class="btn btn-primary btn-sm me-2"
+            >
+              <i class="fas fa-eye"></i> Lihat Halaman Index
+            </a>
+            <button
+              class="btn btn-success btn-sm"
+              onclick="showExcelUploadModal()"
+            >
+              <i class="fas fa-file-excel"></i> Upload Excel
+            </button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="alert alert-info mb-4">
+            <h5><i class="fas fa-info-circle"></i> Petunjuk Upload Excel</h5>
+            <p>
+              Untuk mengimpor data index dari file Excel, pastikan format file
+              sesuai dengan ketentuan berikut:
+            </p>
+            <ol>
+              <li>Baris 1-2 adalah header dan akan dilewati</li>
+              <li>Kolom A biasanya kosong/nomor</li>
+              <li>
+                Kolom B-F (atau lebih) berisi hierarki index dengan struktur
+                seperti tree
+              </li>
+              <li>
+                Kolom setelah F dapat berisi referensi ayat dengan format
+                "Surah:Ayat" (misalnya "2:255")
+              </li>
+            </ol>
+            <p>
+              Anda dapat memilih sheet yang akan diimpor dan menentukan index
+              parent jika diperlukan.
+            </p>
+          </div>
+
+          <h5 class="mt-4 mb-3">
+            <i class="fas fa-sitemap"></i> Struktur Hierarki Index
+          </h5>
+
+          <div id="index-tree-loading" class="text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Memuat struktur indeks...</p>
+          </div>
+
+          <div
+            id="index-tree-container"
+            class="mt-3 border p-3 rounded"
+            style="max-height: 500px; overflow-y: auto"
+          >
+            <!-- Tree hierarki akan ditampilkan di sini -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab Statistik -->
+    <div
+      class="tab-pane fade"
+      id="stats-pane"
+      role="tabpanel"
+      aria-labelledby="stats-tab"
+    >
+      <div class="card mb-4">
+        <div
+          class="card-header d-flex justify-content-between align-items-center"
+        >
+          <h5 class="mb-0">Statistik Index & Ayat</h5>
+          <button class="btn btn-sm btn-outline-primary" id="refresh-stats-btn">
+            <i class="fas fa-sync-alt"></i> Refresh
+          </button>
+        </div>
+        <div class="card-body">
+          <div id="stats-loading" class="text-center py-5">
+            <div class="spinner-border" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Memuat statistik...</p>
+          </div>
+
+          <div id="stats-content" class="d-none">
+            <div class="row mb-4">
+              <div class="col-md-3">
+                <div class="card bg-primary text-white h-100">
+                  <div class="card-body text-center">
+                    <h5>Total Index</h5>
+                    <h2 id="total-categories">-</h2>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="card bg-success text-white h-100">
+                  <div class="card-body text-center">
+                    <h5>Total Ayat</h5>
+                    <h2 id="total-ayat">-</h2>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="card bg-info text-white h-100">
+                  <div class="card-body text-center">
+                    <h5>Index dengan Ayat</h5>
+                    <h2 id="categories-with-ayat">-</h2>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="card bg-warning text-dark h-100">
+                  <div class="card-body text-center">
+                    <h5>Root Index</h5>
+                    <h2 id="root-categories">-</h2>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6">
+                <div class="card h-100">
+                  <div class="card-header">
+                    <h5 class="mb-0">Index berdasarkan Level</h5>
+                  </div>
+                  <div class="card-body">
+                    <table class="table table-striped">
+                      <thead>
+                        <tr>
+                          <th>Level</th>
+                          <th>Jumlah</th>
+                          <th>Persentase</th>
+                        </tr>
+                      </thead>
+                      <tbody id="level-stats-tbody">
+                        <tr>
+                          <td colspan="3" class="text-center">
+                            Tidak ada data
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <div class="card h-100">
+                  <div class="card-header">
+                    <h5 class="mb-0">Surah yang Paling Banyak Diindeks</h5>
+                  </div>
+                  <div class="card-body">
+                    <table class="table table-striped">
+                      <thead>
+                        <tr>
+                          <th>Surah</th>
+                          <th>Jumlah Ayat</th>
+                          <th>Persentase</th>
+                        </tr>
+                      </thead>
+                      <tbody id="surah-stats-tbody">
+                        <tr>
+                          <td colspan="3" class="text-center">
+                            Tidak ada data
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- Modal untuk upload Excel -->
-<div class="modal fade" id="excelUploadModal" tabindex="-1" aria-labelledby="excelUploadModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="excelUploadModalLabel">Upload File Excel</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form id="excelUploadForm" enctype="multipart/form-data">
-                    <div class="mb-3">
-                        <label for="excel-file" class="form-label">Pilih File Excel</label>
-                        <input type="file" class="form-control" id="excel-file" accept=".xls,.xlsx" required>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="sheet-name" class="form-label">Nama Sheet</label>
-                        <select class="form-select" id="sheet-name" disabled>
-                            <option value="">Pilih file terlebih dahulu</option>
-                        </select>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="parent-index" class="form-label">Index Parent (opsional)</label>
-                        <select class="form-select" id="parent-index">
-                            <option value="">Root (Tidak ada parent)</option>
-                        </select>
-                    </div>
-                </form>
-                
-                <div class="alert alert-info">
-                    <p>
-                        <i class="fas fa-info-circle"></i> <strong>Catatan:</strong> Jika Anda memilih indeks parent, 
-                        semua sub-indeks yang ada di bawahnya akan dihapus sebelum data baru diimpor.
-                    </p>
-                </div>
-                
-                <div id="upload-progress-container" class="d-none">
-                    <div class="text-center my-3">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                        </div>
-                        <p class="mt-2" id="processing-text">Memproses file Excel...</p>
-                    </div>
-                    
-                    <div class="progress">
-                        <div id="upload-progress-bar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
-                    </div>
-                </div>
-                
-                <div id="preview-container" class="mt-4 d-none">
-                    <h6>Preview Struktur (10 data teratas):</h6>
-                    <div id="preview-data" class="border p-3 bg-light" style="max-height: 200px; overflow-y: auto;">
-                        <!-- Data akan ditampilkan di sini -->
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                <button type="button" class="btn btn-primary" id="upload-excel-btn">Upload</button>
-            </div>
-        </div>
-    </div>
-</div>
-{% endblock %}
+<div
+  class="modal fade"
+  id="excelUploadModal"
+  tabindex="-1"
+  aria-labelledby="excelUploadModalLabel"
+  aria-hidden="true"
+  data-bs-backdrop="static"
+  data-bs-keyboard="false"
+>
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="excelUploadModalLabel">
+          Upload File Excel
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <form id="excelUploadForm" enctype="multipart/form-data">
+          <div class="mb-3">
+            <label for="excel-file" class="form-label">Pilih File Excel</label>
+            <input
+              type="file"
+              class="form-control"
+              id="excel-file"
+              accept=".xls,.xlsx"
+              required
+            />
+          </div>
 
-{% block scripts %}
+          <div class="mb-3">
+            <label for="sheet-name" class="form-label">Nama Sheet</label>
+            <select class="form-select" id="sheet-name" disabled>
+              <option value="">Pilih file terlebih dahulu</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label for="parent-index" class="form-label"
+              >Index Parent (opsional)</label
+            >
+            <select class="form-select" id="parent-index">
+              <option value="">Root (Tidak ada parent)</option>
+            </select>
+          </div>
+        </form>
+
+        <div class="alert alert-info">
+          <p>
+            <i class="fas fa-info-circle"></i> <strong>Catatan:</strong> Jika
+            Anda memilih indeks parent, semua sub-indeks yang ada di bawahnya
+            akan dihapus sebelum data baru diimpor.
+          </p>
+        </div>
+
+        <div id="upload-progress-container" class="d-none">
+          <div class="text-center my-3">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2" id="processing-text">Memproses file Excel...</p>
+          </div>
+
+          <div class="progress">
+            <div
+              id="upload-progress-bar"
+              class="progress-bar progress-bar-striped progress-bar-animated"
+              role="progressbar"
+              style="width: 0%"
+            ></div>
+          </div>
+        </div>
+
+        <div id="preview-container" class="mt-4 d-none">
+          <h6>Preview Struktur (10 data teratas):</h6>
+          <div
+            id="preview-data"
+            class="border p-3 bg-light"
+            style="max-height: 200px; overflow-y: auto"
+          >
+            <!-- Data akan ditampilkan di sini -->
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Batal
+        </button>
+        <button type="button" class="btn btn-primary" id="upload-excel-btn">
+          Upload
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal untuk menambah entri lexical baru -->
+<div
+  class="modal fade"
+  id="addLexicalModal"
+  tabindex="-1"
+  aria-labelledby="addLexicalModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="addLexicalModalLabel">
+          Tambah Entri Lexical Baru
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <form id="addLexicalForm">
+          <div class="mb-3">
+            <label for="newWord" class="form-label">Kata</label>
+            <input
+              type="text"
+              class="form-control"
+              id="newWord"
+              name="word"
+              required
+            />
+          </div>
+          <div class="mb-3">
+            <label for="newMeaning" class="form-label">Arti</label>
+            <textarea
+              class="form-control"
+              id="newMeaning"
+              name="meaning"
+              rows="3"
+              required
+            ></textarea>
+          </div>
+          <div class="mb-3">
+            <label for="newExample" class="form-label">Contoh Penggunaan</label>
+            <textarea
+              class="form-control"
+              id="newExample"
+              name="example"
+              rows="3"
+            ></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Batal
+        </button>
+        <button type="button" class="btn btn-primary" id="saveLexicalBtn">
+          Simpan
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal untuk konfirmasi hapus wordlist -->
+<div
+  class="modal fade"
+  id="deleteWordlistModal"
+  tabindex="-1"
+  aria-labelledby="deleteWordlistModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deleteWordlistModalLabel">
+          Konfirmasi Hapus
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <p>
+          Apakah Anda yakin ingin menghapus file wordlist "<span
+            id="wordlistFilenameToDelete"
+          ></span
+          >"?
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Batal
+        </button>
+        <form action="{{ url_for('delete_wordlist') }}" method="post">
+          <input type="hidden" name="filename" id="deleteWordlistFilename" />
+          <button type="submit" class="btn btn-danger">Hapus</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %} {% block scripts %}
 <script>
-    // Fungsi untuk menampilkan modal upload Excel
-    function showExcelUploadModal() {
-        // Reset form
-        document.getElementById('excelUploadForm').reset();
-        document.getElementById('sheet-name').innerHTML = '<option value="">Pilih file terlebih dahulu</option>';
-        document.getElementById('sheet-name').disabled = true;
-        document.getElementById('upload-progress-container').classList.add('d-none');
-        document.getElementById('upload-progress-bar').style.width = '0%';
-        document.getElementById('preview-container').classList.add('d-none');
-        
-        // Load daftar indeks root untuk parent (hanya indeks utama)
-        fetch('/api/quran/index/roots')
-            .then(response => response.json())
-            .then(result => {
-                if (result.success) {
-                    const parentSelect = document.getElementById('parent-index');
-                    let options = '<option value="">Root (Tidak ada parent)</option>';
-                    
-                    result.data.forEach(index => {
-                        options += `<option value="${index.id}">${index.title} (Level ${index.level})</option>`;
-                    });
-                    
-                    parentSelect.innerHTML = options;
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching root indexes:', error);
-                showAlert('danger', 'Gagal memuat daftar indeks utama');
-            });
-        
-        // Event listener for file input
-        document.getElementById('excel-file').addEventListener('change', function() {
-            const file = this.files[0];
-            if (file) {
-                // Show loading in sheet select
-                document.getElementById('sheet-name').innerHTML = '<option value="">Loading sheets...</option>';
-                
-                // Create FormData and send to server to get sheets
-                const formData = new FormData();
-                formData.append('file', file);
-                
-                // Tampilkan animasi loading
-                const progressBar = document.getElementById('upload-progress-bar');
-                const progressContainer = document.getElementById('upload-progress-container');
-                progressContainer.classList.remove('d-none');
-                document.getElementById('processing-text').textContent = 'Membaca daftar sheet...';
-                
-                // Animasi progress bar
-                let width = 0;
-                const interval = setInterval(() => {
-                    if (width >= 90) {
-                        clearInterval(interval);
-                    } else {
-                        width += 5;
-                        progressBar.style.width = width + '%';
-                    }
-                }, 100);
-                
-                fetch('/api/quran/excel/sheets', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(result => {
-                    clearInterval(interval);
-                    progressBar.style.width = '100%';
-                    
-                    setTimeout(() => {
-                        progressContainer.classList.add('d-none');
-                        
-                        if (result.success) {
-                            const sheetSelect = document.getElementById('sheet-name');
-                            let options = '';
-                            
-                            result.data.forEach(sheet => {
-                                options += `<option value="${sheet}">${sheet}</option>`;
-                            });
-                            
-                            sheetSelect.innerHTML = options;
-                            sheetSelect.disabled = false;
-                        } else {
-                            showAlert('danger', result.message || 'Gagal membaca sheets dari file Excel');
-                        }
-                    }, 500);
-                })
-                .catch(error => {
-                    clearInterval(interval);
-                    progressContainer.classList.add('d-none');
-                    console.error('Error:', error);
-                    showAlert('danger', 'Terjadi kesalahan saat membaca file Excel');
-                });
-            }
-        });
-        
-        // Show modal
-        const modal = new bootstrap.Modal(document.getElementById('excelUploadModal'), {
-            backdrop: 'static',
-            keyboard: false
-        });
-        modal.show();
-        
-        // Event handler for upload button
-        document.getElementById('upload-excel-btn').onclick = function() {
-            const fileInput = document.getElementById('excel-file');
-            const sheetName = document.getElementById('sheet-name').value;
-            const parentId = document.getElementById('parent-index').value || null;
-            
-            if (!fileInput.files.length) {
-                showAlert('danger', 'Pilih file Excel terlebih dahulu');
-                return;
-            }
-            
-            if (!sheetName) {
-                showAlert('danger', 'Pilih sheet yang akan diproses');
-                return;
-            }
-            
-            // Create FormData
-            const formData = new FormData();
-            formData.append('file', fileInput.files[0]);
-            formData.append('sheet_name', sheetName);
-            if (parentId) formData.append('parent_id', parentId);
-            
-            // Tampilkan animasi loading
-            const progressBar = document.getElementById('upload-progress-bar');
-            const progressContainer = document.getElementById('upload-progress-container');
-            progressContainer.classList.remove('d-none');
-            document.getElementById('processing-text').textContent = 'Mengimpor data dari Excel...';
-            progressBar.style.width = '0%';
-            
-            // Disable button dan form
-            document.getElementById('upload-excel-btn').disabled = true;
-            document.getElementById('excel-file').disabled = true;
-            document.getElementById('sheet-name').disabled = true;
-            document.getElementById('parent-index').disabled = true;
-            
-            // Animasi progress bar dengan simulasi persentase
-            let width = 0;
-            const interval = setInterval(() => {
-                if (width >= 95) {
-                    clearInterval(interval);
-                } else {
-                    width += 0.5;
-                    progressBar.style.width = width + '%';
-                    if (width > 50 && width < 70) {
-                        document.getElementById('processing-text').textContent = 'Menyimpan data ke database...';
-                    } else if (width >= 70) {
-                        document.getElementById('processing-text').textContent = 'Menyelesaikan proses...';
-                    }
-                }
-            }, 100);
-            
-            // Upload file
-            fetch('/api/quran/excel/upload', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(result => {
-                clearInterval(interval);
-                progressBar.style.width = '100%';
-                
-                setTimeout(() => {
-                    if (result.success) {
-                        showAlert('success', result.message || 'File berhasil diupload dan data telah diproses');
-                        
-                        // Close modal
-                        bootstrap.Modal.getInstance(document.getElementById('excelUploadModal')).hide();
-                        
-                        // Reload stats jika tab statistik aktif
-                        if (document.getElementById('stats-tab').classList.contains('active')) {
-                            loadStats();
-                        }
-                    } else {
-                        progressContainer.classList.add('d-none');
-                        showAlert('danger', result.message || 'Gagal memproses file Excel');
-                        
-                        // Enable button dan form kembali
-                        document.getElementById('upload-excel-btn').disabled = false;
-                        document.getElementById('excel-file').disabled = false;
-                        document.getElementById('sheet-name').disabled = false;
-                        document.getElementById('parent-index').disabled = false;
-                    }
-                }, 500);
-            })
-            .catch(error => {
-                clearInterval(interval);
-                progressContainer.classList.add('d-none');
-                console.error('Error:', error);
-                showAlert('danger', 'Terjadi kesalahan saat mengupload file');
-                
-                // Enable button dan form kembali
-                document.getElementById('upload-excel-btn').disabled = false;
-                document.getElementById('excel-file').disabled = false;
-                document.getElementById('sheet-name').disabled = false;
-                document.getElementById('parent-index').disabled = false;
-            });
-        };
-    }
-    
-    // Fungsi untuk menampilkan data ayat dari JSON
-    function displayAyatList(jsonString) {
-        if (!jsonString) return '';
-        
-        try {
-            const ayatList = JSON.parse(jsonString);
-            if (!ayatList || !ayatList.length) return '';
-            
-            let html = '<div class="mt-1"><strong>Ayat:</strong> ';
-            ayatList.forEach((ayat, index) => {
-                html += `<span class="badge bg-info me-1">${ayat}</span>`;
-            });
-            html += '</div>';
-            
-            return html;
-        } catch (e) {
-            console.error('Error parsing ayat JSON:', e);
-            return '';
+  // Fungsi untuk menampilkan modal upload Excel
+  function showExcelUploadModal() {
+    // Reset form
+    document.getElementById("excelUploadForm").reset();
+    document.getElementById("sheet-name").innerHTML =
+      '<option value="">Pilih file terlebih dahulu</option>';
+    document.getElementById("sheet-name").disabled = true;
+    document
+      .getElementById("upload-progress-container")
+      .classList.add("d-none");
+    document.getElementById("upload-progress-bar").style.width = "0%";
+    document.getElementById("preview-container").classList.add("d-none");
+
+    // Load daftar indeks root untuk parent (hanya indeks utama)
+    fetch("/api/quran/index/roots")
+      .then((response) => response.json())
+      .then((result) => {
+        if (result.success) {
+          const parentSelect = document.getElementById("parent-index");
+          let options = '<option value="">Root (Tidak ada parent)</option>';
+
+          result.data.forEach((index) => {
+            options += `<option value="${index.id}">${index.title} (Level ${index.level})</option>`;
+          });
+
+          parentSelect.innerHTML = options;
         }
-    }
-    
-    // Fungsi untuk memuat dan menampilkan tree hierarki indeks
-    function loadIndexTree() {
-        const treeContainer = document.getElementById('index-tree-container');
-        const treeLoading = document.getElementById('index-tree-loading');
-        
-        fetch('/api/quran/index/tree')
-            .then(response => response.json())
-            .then(result => {
+      })
+      .catch((error) => {
+        console.error("Error fetching root indexes:", error);
+        showAlert("danger", "Gagal memuat daftar indeks utama");
+      });
+
+    // Event listener for file input
+    document
+      .getElementById("excel-file")
+      .addEventListener("change", function () {
+        const file = this.files[0];
+        if (file) {
+          // Show loading in sheet select
+          document.getElementById("sheet-name").innerHTML =
+            '<option value="">Loading sheets...</option>';
+
+          // Create FormData and send to server to get sheets
+          const formData = new FormData();
+          formData.append("file", file);
+
+          // Tampilkan animasi loading
+          const progressBar = document.getElementById("upload-progress-bar");
+          const progressContainer = document.getElementById(
+            "upload-progress-container"
+          );
+          progressContainer.classList.remove("d-none");
+          document.getElementById("processing-text").textContent =
+            "Membaca daftar sheet...";
+
+          // Animasi progress bar
+          let width = 0;
+          const interval = setInterval(() => {
+            if (width >= 90) {
+              clearInterval(interval);
+            } else {
+              width += 5;
+              progressBar.style.width = width + "%";
+            }
+          }, 100);
+
+          fetch("/api/quran/excel/sheets", {
+            method: "POST",
+            body: formData,
+          })
+            .then((response) => response.json())
+            .then((result) => {
+              clearInterval(interval);
+              progressBar.style.width = "100%";
+
+              setTimeout(() => {
+                progressContainer.classList.add("d-none");
+
                 if (result.success) {
-                    treeContainer.innerHTML = buildTreeHtml(result.data);
-                    
-                    // Inisialisasi event listener untuk expand/collapse
-                    const togglers = document.querySelectorAll('.index-tree-toggler');
-                    togglers.forEach(toggler => {
-                        toggler.addEventListener('click', function() {
-                            const childContainer = this.nextElementSibling;
-                            childContainer.classList.toggle('d-none');
-                            this.querySelector('i').classList.toggle('fa-caret-right');
-                            this.querySelector('i').classList.toggle('fa-caret-down');
-                        });
-                    });
+                  const sheetSelect = document.getElementById("sheet-name");
+                  let options = "";
+
+                  result.data.forEach((sheet) => {
+                    options += `<option value="${sheet}">${sheet}</option>`;
+                  });
+
+                  sheetSelect.innerHTML = options;
+                  sheetSelect.disabled = false;
                 } else {
-                    showAlert('danger', 'Gagal memuat struktur indeks');
-                    treeContainer.innerHTML = '<div class="alert alert-warning">Tidak dapat memuat struktur indeks.</div>';
+                  showAlert(
+                    "danger",
+                    result.message || "Gagal membaca sheets dari file Excel"
+                  );
                 }
+              }, 500);
             })
-            .catch(error => {
-                console.error('Error loading index tree:', error);
-                showAlert('danger', 'Terjadi kesalahan saat memuat struktur indeks');
-                treeContainer.innerHTML = '<div class="alert alert-danger">Error: ' + error.message + '</div>';
-            })
-            .finally(() => {
-                // Sembunyikan loading spinner
-                treeLoading.classList.add('d-none');
+            .catch((error) => {
+              clearInterval(interval);
+              progressContainer.classList.add("d-none");
+              console.error("Error:", error);
+              showAlert("danger", "Terjadi kesalahan saat membaca file Excel");
             });
+        }
+      });
+
+    // Show modal
+    const modal = new bootstrap.Modal(
+      document.getElementById("excelUploadModal"),
+      {
+        backdrop: "static",
+        keyboard: false,
+      }
+    );
+    modal.show();
+
+    // Event handler for upload button
+    document.getElementById("upload-excel-btn").onclick = function () {
+      const fileInput = document.getElementById("excel-file");
+      const sheetName = document.getElementById("sheet-name").value;
+      const parentId = document.getElementById("parent-index").value || null;
+
+      if (!fileInput.files.length) {
+        showAlert("danger", "Pilih file Excel terlebih dahulu");
+        return;
+      }
+
+      if (!sheetName) {
+        showAlert("danger", "Pilih sheet yang akan diproses");
+        return;
+      }
+
+      // Create FormData
+      const formData = new FormData();
+      formData.append("file", fileInput.files[0]);
+      formData.append("sheet_name", sheetName);
+      if (parentId) formData.append("parent_id", parentId);
+
+      // Tampilkan animasi loading
+      const progressBar = document.getElementById("upload-progress-bar");
+      const progressContainer = document.getElementById(
+        "upload-progress-container"
+      );
+      progressContainer.classList.remove("d-none");
+      document.getElementById("processing-text").textContent =
+        "Mengimpor data dari Excel...";
+      progressBar.style.width = "0%";
+
+      // Disable button dan form
+      document.getElementById("upload-excel-btn").disabled = true;
+      document.getElementById("excel-file").disabled = true;
+      document.getElementById("sheet-name").disabled = true;
+      document.getElementById("parent-index").disabled = true;
+
+      // Animasi progress bar dengan simulasi persentase
+      let width = 0;
+      const interval = setInterval(() => {
+        if (width >= 95) {
+          clearInterval(interval);
+        } else {
+          width += 0.5;
+          progressBar.style.width = width + "%";
+          if (width > 50 && width < 70) {
+            document.getElementById("processing-text").textContent =
+              "Menyimpan data ke database...";
+          } else if (width >= 70) {
+            document.getElementById("processing-text").textContent =
+              "Menyelesaikan proses...";
+          }
+        }
+      }, 100);
+
+      // Upload file
+      fetch("/api/quran/excel/upload", {
+        method: "POST",
+        body: formData,
+      })
+        .then((response) => response.json())
+        .then((result) => {
+          clearInterval(interval);
+          progressBar.style.width = "100%";
+
+          setTimeout(() => {
+            if (result.success) {
+              showAlert(
+                "success",
+                result.message ||
+                  "File berhasil diupload dan data telah diproses"
+              );
+
+              // Close modal
+              bootstrap.Modal.getInstance(
+                document.getElementById("excelUploadModal")
+              ).hide();
+
+              // Reload stats jika tab statistik aktif
+              if (
+                document
+                  .getElementById("stats-tab")
+                  .classList.contains("active")
+              ) {
+                loadStats();
+              }
+            } else {
+              progressContainer.classList.add("d-none");
+              showAlert(
+                "danger",
+                result.message || "Gagal memproses file Excel"
+              );
+
+              // Enable button dan form kembali
+              document.getElementById("upload-excel-btn").disabled = false;
+              document.getElementById("excel-file").disabled = false;
+              document.getElementById("sheet-name").disabled = false;
+              document.getElementById("parent-index").disabled = false;
+            }
+          }, 500);
+        })
+        .catch((error) => {
+          clearInterval(interval);
+          progressContainer.classList.add("d-none");
+          console.error("Error:", error);
+          showAlert("danger", "Terjadi kesalahan saat mengupload file");
+
+          // Enable button dan form kembali
+          document.getElementById("upload-excel-btn").disabled = false;
+          document.getElementById("excel-file").disabled = false;
+          document.getElementById("sheet-name").disabled = false;
+          document.getElementById("parent-index").disabled = false;
+        });
+    };
+  }
+
+  // Fungsi untuk menampilkan data ayat dari JSON
+  function displayAyatList(jsonString) {
+    if (!jsonString) return "";
+
+    try {
+      const ayatList = JSON.parse(jsonString);
+      if (!ayatList || !ayatList.length) return "";
+
+      let html = '<div class="mt-1"><strong>Ayat:</strong> ';
+      ayatList.forEach((ayat, index) => {
+        html += `<span class="badge bg-info me-1">${ayat}</span>`;
+      });
+      html += "</div>";
+
+      return html;
+    } catch (e) {
+      console.error("Error parsing ayat JSON:", e);
+      return "";
     }
-    
-    // Fungsi untuk membangun HTML tree dari data hierarki
-    function buildTreeHtml(data, level = 0) {
-        if (!data || !data.length) return '';
-        
-        let html = '<ul class="index-tree list-unstyled ms-' + (level > 0 ? '4' : '0') + '">';
-        
-        data.forEach(item => {
-            const hasChildren = item.has_children && item.children && item.children.length > 0;
-            const ayatHtml = displayAyatList(item.list_ayat);
-            
-            html += '<li class="index-tree-item mb-2">';
-            
-            if (hasChildren) {
-                html += `<div class="index-tree-toggler" style="cursor:pointer">
+  }
+
+  // Fungsi untuk memuat dan menampilkan tree hierarki indeks
+  function loadIndexTree() {
+    const treeContainer = document.getElementById("index-tree-container");
+    const treeLoading = document.getElementById("index-tree-loading");
+
+    fetch("/api/quran/index/tree")
+      .then((response) => response.json())
+      .then((result) => {
+        if (result.success) {
+          treeContainer.innerHTML = buildTreeHtml(result.data);
+
+          // Inisialisasi event listener untuk expand/collapse
+          const togglers = document.querySelectorAll(".index-tree-toggler");
+          togglers.forEach((toggler) => {
+            toggler.addEventListener("click", function () {
+              const childContainer = this.nextElementSibling;
+              childContainer.classList.toggle("d-none");
+              this.querySelector("i").classList.toggle("fa-caret-right");
+              this.querySelector("i").classList.toggle("fa-caret-down");
+            });
+          });
+        } else {
+          showAlert("danger", "Gagal memuat struktur indeks");
+          treeContainer.innerHTML =
+            '<div class="alert alert-warning">Tidak dapat memuat struktur indeks.</div>';
+        }
+      })
+      .catch((error) => {
+        console.error("Error loading index tree:", error);
+        showAlert("danger", "Terjadi kesalahan saat memuat struktur indeks");
+        treeContainer.innerHTML =
+          '<div class="alert alert-danger">Error: ' + error.message + "</div>";
+      })
+      .finally(() => {
+        // Sembunyikan loading spinner
+        treeLoading.classList.add("d-none");
+      });
+  }
+
+  // Fungsi untuk membangun HTML tree dari data hierarki
+  function buildTreeHtml(data, level = 0) {
+    if (!data || !data.length) return "";
+
+    let html =
+      '<ul class="index-tree list-unstyled ms-' +
+      (level > 0 ? "4" : "0") +
+      '">';
+
+    data.forEach((item) => {
+      const hasChildren =
+        item.has_children && item.children && item.children.length > 0;
+      const ayatHtml = displayAyatList(item.list_ayat);
+
+      html += '<li class="index-tree-item mb-2">';
+
+      if (hasChildren) {
+        html += `<div class="index-tree-toggler" style="cursor:pointer">
                             <i class="fas fa-caret-right me-1"></i>
                             <strong>${item.title}</strong> 
                             <span class="text-muted">
@@ -629,148 +1759,159 @@
                          <div class="index-tree-children d-none">
                             ${buildTreeHtml(item.children, level + 1)}
                          </div>`;
-            } else {
-                html += `<div class="ms-3">
+      } else {
+        html += `<div class="ms-3">
                             <strong>${item.title}</strong> 
                             <span class="text-muted">
                                 (Level ${item.level})
                             </span>
                             ${ayatHtml}
                          </div>`;
-            }
-            
-            html += '</li>';
-        });
-        
-        html += '</ul>';
-        return html;
-    }
-    
-    // Fungsi untuk memuat statistik dari API
-    function loadStats() {
-        fetch('/api/statistics')
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                // Update card statistik
-                document.getElementById('total-categories').textContent = data.total_categories;
-                document.getElementById('total-ayat').textContent = data.total_verses;
-                document.getElementById('categories-with-ayat').textContent = data.categories_with_ayat;
-                document.getElementById('root-categories').textContent = data.root_categories;
-                
-                // Render statistik level
-                renderLevelStats(data.level_stats, data.total_categories);
-                
-                // Render statistik surah
-                renderSurahStats(data.surah_stats, data.total_verses);
-                
-                // Sembunyikan spinner loading
-                document.getElementById('stats-loading').style.display = 'none';
-                document.getElementById('stats-content').classList.remove('d-none');
-            })
-            .catch(error => {
-                console.error('Error fetching statistics:', error);
-                document.getElementById('stats-loading').style.display = 'none';
-                // Tampilkan pesan error
-                showAlert('danger', 'Gagal memuat statistik: ' + error.message);
-            });
-    }
-    
-    // Fungsi untuk merender tabel statistik level
-    function renderLevelStats(levelStats, totalCategories) {
-        const tbody = document.getElementById('level-stats-tbody');
-        tbody.innerHTML = '';
-        
-        levelStats.forEach(stat => {
-            const row = document.createElement('tr');
-            const level = document.createElement('td');
-            level.textContent = `Level ${stat.level}`;
-            
-            const count = document.createElement('td');
-            count.textContent = stat.count;
-            
-            const percentage = document.createElement('td');
-            const percentValue = ((stat.count / totalCategories) * 100).toFixed(2);
-            percentage.textContent = `${percentValue}%`;
-            
-            row.appendChild(level);
-            row.appendChild(count);
-            row.appendChild(percentage);
-            tbody.appendChild(row);
-        });
-    }
-    
-    // Fungsi untuk merender tabel statistik surah
-    function renderSurahStats(surahStats, totalVerses) {
-        const tbody = document.getElementById('surah-stats-tbody');
-        tbody.innerHTML = '';
-        
-        surahStats.forEach(stat => {
-            const row = document.createElement('tr');
-            
-            const surah = document.createElement('td');
-            surah.textContent = `${stat.surah_number}. ${stat.surah_name}`;
-            
-            const count = document.createElement('td');
-            count.textContent = stat.verse_count;
-            
-            const percentage = document.createElement('td');
-            const percentValue = ((stat.verse_count / totalVerses) * 100).toFixed(2);
-            percentage.textContent = `${percentValue}%`;
-            
-            row.appendChild(surah);
-            row.appendChild(count);
-            row.appendChild(percentage);
-            tbody.appendChild(row);
-        });
-    }
-    
-    // Fungsi untuk menampilkan alert
-    function showAlert(type, message) {
-        const alertDiv = document.createElement('div');
-        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
-        alertDiv.innerHTML = `
+      }
+
+      html += "</li>";
+    });
+
+    html += "</ul>";
+    return html;
+  }
+
+  // Fungsi untuk memuat statistik dari API
+  function loadStats() {
+    fetch("/api/statistics")
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+        return response.json();
+      })
+      .then((data) => {
+        // Update card statistik
+        document.getElementById("total-categories").textContent =
+          data.total_categories;
+        document.getElementById("total-ayat").textContent = data.total_verses;
+        document.getElementById("categories-with-ayat").textContent =
+          data.categories_with_ayat;
+        document.getElementById("root-categories").textContent =
+          data.root_categories;
+
+        // Render statistik level
+        renderLevelStats(data.level_stats, data.total_categories);
+
+        // Render statistik surah
+        renderSurahStats(data.surah_stats, data.total_verses);
+
+        // Sembunyikan spinner loading
+        document.getElementById("stats-loading").style.display = "none";
+        document.getElementById("stats-content").classList.remove("d-none");
+      })
+      .catch((error) => {
+        console.error("Error fetching statistics:", error);
+        document.getElementById("stats-loading").style.display = "none";
+        // Tampilkan pesan error
+        showAlert("danger", "Gagal memuat statistik: " + error.message);
+      });
+  }
+
+  // Fungsi untuk merender tabel statistik level
+  function renderLevelStats(levelStats, totalCategories) {
+    const tbody = document.getElementById("level-stats-tbody");
+    tbody.innerHTML = "";
+
+    levelStats.forEach((stat) => {
+      const row = document.createElement("tr");
+      const level = document.createElement("td");
+      level.textContent = `Level ${stat.level}`;
+
+      const count = document.createElement("td");
+      count.textContent = stat.count;
+
+      const percentage = document.createElement("td");
+      const percentValue = ((stat.count / totalCategories) * 100).toFixed(2);
+      percentage.textContent = `${percentValue}%`;
+
+      row.appendChild(level);
+      row.appendChild(count);
+      row.appendChild(percentage);
+      tbody.appendChild(row);
+    });
+  }
+
+  // Fungsi untuk merender tabel statistik surah
+  function renderSurahStats(surahStats, totalVerses) {
+    const tbody = document.getElementById("surah-stats-tbody");
+    tbody.innerHTML = "";
+
+    surahStats.forEach((stat) => {
+      const row = document.createElement("tr");
+
+      const surah = document.createElement("td");
+      surah.textContent = `${stat.surah_number}. ${stat.surah_name}`;
+
+      const count = document.createElement("td");
+      count.textContent = stat.verse_count;
+
+      const percentage = document.createElement("td");
+      const percentValue = ((stat.verse_count / totalVerses) * 100).toFixed(2);
+      percentage.textContent = `${percentValue}%`;
+
+      row.appendChild(surah);
+      row.appendChild(count);
+      row.appendChild(percentage);
+      tbody.appendChild(row);
+    });
+  }
+
+  // Fungsi untuk menampilkan alert
+  function showAlert(type, message) {
+    const alertDiv = document.createElement("div");
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.innerHTML = `
             ${message}
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         `;
-        
-        document.querySelector('.container').insertBefore(alertDiv, document.querySelector('.container').firstChild);
-        
-        // Auto close after 5 seconds
-        setTimeout(() => {
-            const alert = bootstrap.Alert.getOrCreateInstance(alertDiv);
-            alert.close();
-        }, 5000);
-    }
-    
-    // Inisialisasi
-    document.addEventListener('DOMContentLoaded', function() {
-        // Event listener untuk refresh statistik
-        document.getElementById('refresh-stats-btn').addEventListener('click', loadStats);
-        
-        // Event listener untuk tab statistik
-        document.getElementById('stats-tab').addEventListener('shown.bs.tab', function() {
-            loadStats();
-        });
-        
-        // Event listener untuk tab index Al-Quran
-        document.getElementById('quran-index-tab').addEventListener('shown.bs.tab', function() {
-            const treeContainer = document.getElementById('index-tree-container');
-            const treeLoading = document.getElementById('index-tree-loading');
-            
-            // Jika belum pernah dimuat atau perlu refresh
-            if (treeContainer.children.length === 0) {
-                treeContainer.innerHTML = '';
-                treeLoading.classList.remove('d-none');
-                
-                // Muat tree hierarki indeks
-                loadIndexTree();
-            }
-        });
-    });
+
+    document
+      .querySelector(".container")
+      .insertBefore(alertDiv, document.querySelector(".container").firstChild);
+
+    // Auto close after 5 seconds
+    setTimeout(() => {
+      const alert = bootstrap.Alert.getOrCreateInstance(alertDiv);
+      alert.close();
+    }, 5000);
+  }
+
+  // Inisialisasi
+  document.addEventListener("DOMContentLoaded", function () {
+    // Event listener untuk refresh statistik
+    document
+      .getElementById("refresh-stats-btn")
+      .addEventListener("click", loadStats);
+
+    // Event listener untuk tab statistik
+    document
+      .getElementById("stats-tab")
+      .addEventListener("shown.bs.tab", function () {
+        loadStats();
+      });
+
+    // Event listener untuk tab index Al-Quran
+    document
+      .getElementById("quran-index-tab")
+      .addEventListener("shown.bs.tab", function () {
+        const treeContainer = document.getElementById("index-tree-container");
+        const treeLoading = document.getElementById("index-tree-loading");
+
+        // Jika belum pernah dimuat atau perlu refresh
+        if (treeContainer.children.length === 0) {
+          treeContainer.innerHTML = "";
+          treeLoading.classList.remove("d-none");
+
+          // Muat tree hierarki indeks
+          loadIndexTree();
+        }
+      });
+  });
 </script>
-{% endblock %} 
+{% endblock %}

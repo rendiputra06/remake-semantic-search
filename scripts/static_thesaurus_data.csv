@@ -1,0 +1,84 @@
+# Format: kata,sinonim1,sinonim2,...
+# Kata sifat
+cantik,indah,rupawan,molek,elok,menawan,bagus
+pintar,cerdas,pandai,cerdik,berakal,cakap,cemerlang
+cepat,lekas,segera,tangkas,kilat,gesit,sigap
+lambat,pelan,perlahan,lamban,malas,santai
+baik,bagus,hebat,cantik,indah,terbaik,beres
+jahat,buruk,jelek,kejam,keji,bengis,zalim
+marah,murka,kesal,geram,berang,gusar,jengkel
+takut,cemas,khawatir,gentar,ciut,panik,ngeri
+senang,gembira,bahagia,ceria,riang,suka,girang
+sedih,pilu,murung,duka,susah,merana,nestapa
+tinggi,menjulang,megah,jangkung,panjang
+rendah,pendek,mungil,kecil,minim
+besar,agung,akbar,raya,luas,tinggi,hebat
+kecil,mungil,mini,sedikit,remeh,sepele,kerdil
+
+# Kata kerja
+pergi,berangkat,berjalan,berlalu,meninggalkan
+datang,tiba,hadir,muncul,mendekat
+buat,bikin,ciptakan,hasilkan,bangun,menciptakan
+lihat,pandang,amati,perhatikan,tatap,memandang
+dengar,simak,menguping,menyimak
+makan,santap,konsumsi,melahap,menyantap
+tidur,bobo,istirahat,berbaring,terlelap,tertidur
+belajar,pelajari,mengkaji,meneliti,mendalami,mempelajari
+mengajar,mendidik,membimbing,melatih,mengarahkan
+bantu,tolong,membantu,menolong,menyokong
+
+# Kata benda
+rumah,kediaman,tempat tinggal,hunian,bangunan
+mobil,kendaraan,kereta,otomobil,kendaran roda empat
+makanan,santapan,hidangan,sajian,konsumsi
+air,cairan,minuman,hidangan cair
+buku,kitab,bacaan,majalah,naskah
+ilmu,pengetahuan,wawasan,pelajaran,edukasi
+pikiran,gagasan,ide,konsep,rencana
+sekolah,lembaga pendidikan,institusi belajar,madrasah
+pasar,tempat berjualan,empat jual beli,pasar tradisional
+kota,perkotaan,pusat kota,metropolitan,urban
+
+# Kata keterangan
+sangat,amat,terlalu,sekali,sungguh
+segera,lekas,cepat,kilat,tangkas
+selalu,senantiasa,terus-menerus,tiap waktu
+hampir,nyaris,kurang lebih,mendekati
+sering,acap,berkali-kali,berulang kali
+
+# Kata penghubung
+tetapi,namun,tapi,akan tetapi,sedangkan
+karena,sebab,lantaran,oleh sebab itu
+jika,apabila,bila,kalau,andai
+meskipun,walaupun,biarpun,kendatipun,sungguhpun
+
+# Kata tanya
+mengapa,kenapa,apa sebab
+bagaimana,gimana,dengan cara apa
+kapan,bila,bilamana,saat mana
+dimana,dimanakah,tempat mana
+siapa,siapakah,orang mana
+
+# Kata keagamaan
+doa,permohonan,harapan,permintaan,pinta
+syukur,terima kasih,berterima kasih,ungkapan terima kasih
+iman,percaya,yakin,kepercayaan,keyakinan
+ibadah,pemujaan,penyembahan,ritual,upacara
+pahala,ganjaran,balasan,imbalan,upah
+surga,firdaus,syurga,kayangan,sorga
+neraka,jahanam,api neraka,lembah hitam
+dosa,kesalahan,pelanggaran,maksiat
+taubat,ampun,maaf,pengampunan,penyesalan
+sabar,tabah,tenang,tekun,tahan
+
+# Kata khusus Al-Quran
+allah,tuhan,ilahi,yang maha kuasa,yang maha esa,pencipta
+rasul,nabi,utusan,pesuruh allah,duta
+kitab,quran,al-quran,wahyu,firman,kitabullah
+shalat,sembahyang,ibadah,doa,solat,salat
+puasa,shaum,menahan diri,berpantang,sawm
+zakat,sedekah,infaq,pemberian,amal
+haji,ibadah haji,ziarah suci,ibadah ke baitullah,umrah
+takwa,ketakwaan,keimanan,ketaatan,takut kepada allah
+islam,agama islam,keislaman,ketundukan,kepasrahan
+akhirat,kehidupan setelah mati,alam baka,yaumil akhir 
