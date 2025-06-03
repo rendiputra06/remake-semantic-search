@@ -138,7 +138,7 @@ def init_db():
     ''')
     
     # Inisialisasi data awal untuk model_status
-    models = ['word2vec', 'fasttext', 'glove']
+    models = ['word2vec', 'fasttext', 'glove', 'lexical', 'thesaurus']
     for model in models:
         cursor.execute('''
         INSERT OR IGNORE INTO model_status (model, initialized, last_updated)
