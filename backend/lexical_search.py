@@ -13,7 +13,9 @@ class LexicalSearch:
     Kelas untuk melakukan pencarian leksikal pada ayat-ayat Al-Quran
     """
     def __init__(self, index_path: str = '../database/lexical/inverted_index.pkl'):
-        self.index_path = index_path
+        # Konversi ke path absolut
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        self.index_path = os.path.normpath(os.path.join(current_dir, index_path))
         self.inverted_index = defaultdict(list)  # kata -> [(id_ayat, posisi), ...]
         self.verse_data = {}  # Menyimpan data ayat untuk hasil
     
@@ -229,4 +231,4 @@ class LexicalSearch:
                 if len(results) >= limit:
                     break
         
-        return results 
+        return results
