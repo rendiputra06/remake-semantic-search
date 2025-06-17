@@ -298,13 +298,13 @@ endblock %} {% block content %}
     // Muat daftar model yang tersedia
     $.ajax({
       type: "GET",
-      url: "/api/models",
+      url: "/api/models/models",
       success: function (data) {
         // Kosongkan dropdown
         $("#modelType").empty();
 
         // Tambahkan model-model yang tersedia
-        data.forEach(function (model) {
+        (data.data || []).forEach(function (model) {
           $("#modelType").append(
             `<option value="${model.id}">${model.name}</option>`
           );
@@ -444,7 +444,7 @@ endblock %} {% block content %}
       $("#loadingSpinner").removeClass("d-none");
       $("#resultsCard").addClass("d-none");
 
-      var apiEndpoint = "/api/search";
+      var apiEndpoint = "/api/search/search";
       var requestData = {
         query: query,
         limit: parseInt(limit) || 9999, // Jika 0 (tanpa batas), gunakan angka besar
@@ -452,16 +452,16 @@ endblock %} {% block content %}
 
       // Set parameter berdasarkan tipe pencarian
       if (searchType === "semantic") {
-        apiEndpoint = "/api/search";
+        apiEndpoint = "/api/search/search";
         requestData.model = model;
         requestData.threshold = 0.5;
       } else if (searchType === "lexical") {
-        apiEndpoint = "/api/search/lexical";
+        apiEndpoint = "/api/search/search/lexical";
         var lexOption = $("#lexicalOption").val();
         requestData.exact_match = lexOption === "exactMatch";
         requestData.use_regex = lexOption === "regex";
       } else if (searchType === "expanded") {
-        apiEndpoint = "/api/search/expanded";
+        apiEndpoint = "/api/search/search/expanded";
         requestData.model = model;
         requestData.threshold = 0.5;
       }
@@ -472,10 +472,22 @@ endblock %} {% block content %}
         url: apiEndpoint,
         contentType: "application/json",
         data: JSON.stringify(requestData),
-        success: function (data) {
+        success: function (response) {
           // Sembunyikan spinner dan reset tombol
           $("#loadingSpinner").addClass("d-none");
           resetSearchButton();
+
+          // Cek apakah response sukses
+          if (!response.success) {
+            alert(
+              "Error: " +
+                (response.error || response.message || "Pencarian gagal")
+            );
+            return;
+          }
+
+          // Ambil data dari response
+          var data = response.data;
 
           // Simpan hasil pencarian di variabel global untuk digunakan fitur ekspor
           window.searchResults = data;
@@ -493,7 +505,20 @@ endblock %} {% block content %}
         error: function (error) {
           $("#loadingSpinner").addClass("d-none");
           resetSearchButton();
-          alert("Error: " + (error.responseJSON?.error || "Pencarian gagal"));
+
+          // Coba parse error response
+          var errorMessage = "Pencarian gagal";
+          try {
+            var errorResponse = error.responseJSON;
+            if (errorResponse) {
+              errorMessage =
+                errorResponse.error || errorResponse.message || errorMessage;
+            }
+          } catch (e) {
+            console.error("Error parsing error response:", e);
+          }
+
+          alert("Error: " + errorMessage);
         },
       });
     });
@@ -509,103 +534,109 @@ endblock %} {% block content %}
     function displaySearchResults(data, searchType) {
       var resultsHtml = "";
 
-      if (data.results && data.results.length > 0) {
-        // Tampilkan header tambahan untuk pencarian dengan ekspansi
-        if (searchType === "expanded" && data.expanded_queries) {
-          resultsHtml += '<div class="list-group-item bg-light">';
-          resultsHtml += "<h6>Query yang diperluas:</h6>";
-          resultsHtml += '<ul class="mb-0">';
-          data.expanded_queries.forEach(function (q) {
-            resultsHtml += `<li>${q}</li>`;
-          });
-          resultsHtml += "</ul></div>";
+      if (!data || !data.results || data.results.length === 0) {
+        resultsHtml = `
+          <div class="list-group-item">
+            <p class="mb-0 text-center py-3">Tidak ditemukan ayat yang sesuai dengan pencarian "${
+              data?.query || ""
+            }".</p>
+          </div>
+        `;
+        $("#searchResults").html(resultsHtml);
+        $("#resultsCard").removeClass("d-none");
+        return;
+      }
+
+      // Tampilkan header tambahan untuk pencarian dengan ekspansi
+      if (searchType === "expanded" && data.expanded_queries) {
+        resultsHtml += '<div class="list-group-item bg-light">';
+        resultsHtml += "<h6>Query yang diperluas:</h6>";
+        resultsHtml += '<ul class="mb-0">';
+        data.expanded_queries.forEach(function (q) {
+          resultsHtml += `<li>${q}</li>`;
+        });
+        resultsHtml += "</ul></div>";
+      }
+
+      // Tambahkan tombol ekspor Excel di bagian atas hasil
+      resultsHtml += '<div class="list-group-item bg-light">';
+      resultsHtml +=
+        '<div class="d-flex justify-content-between align-items-center">';
+      resultsHtml += `<span>Ditemukan <strong>${data.results.length}</strong> hasil untuk pencarian "${data.query}"</span>`;
+      resultsHtml +=
+        '<button id="exportExcelBtn" class="btn btn-sm btn-success"><i class="fas fa-file-excel me-1"></i> Ekspor ke Excel</button>';
+      resultsHtml += "</div></div>";
+
+      // Tampilkan hasil
+      data.results.forEach(function (result, index) {
+        var resultClass = index % 2 === 0 ? "bg-light" : "";
+        var similarityBadge = "";
+
+        // Tampilkan badge kesamaan untuk pencarian semantik
+        if (searchType === "semantic" && result.similarity !== undefined) {
+          var similarityPercentage = Math.round(result.similarity * 100);
+          var badgeClass =
+            similarityPercentage >= 80
+              ? "bg-success"
+              : similarityPercentage >= 60
+              ? "bg-primary"
+              : similarityPercentage >= 40
+              ? "bg-info"
+              : "bg-secondary";
+
+          similarityBadge = `<span class="badge ${badgeClass} float-end">${similarityPercentage}% relevan</span>`;
         }
 
-        // Tambahkan tombol ekspor Excel di bagian atas hasil
-        resultsHtml += '<div class="list-group-item bg-light">';
-        resultsHtml +=
-          '<div class="d-flex justify-content-between align-items-center">';
-        resultsHtml += `<span>Ditemukan <strong>${data.results.length}</strong> hasil untuk pencarian "${data.query}"</span>`;
-        resultsHtml +=
-          '<button id="exportExcelBtn" class="btn btn-sm btn-success"><i class="fas fa-file-excel me-1"></i> Ekspor ke Excel</button>';
-        resultsHtml += "</div></div>";
+        // Tampilkan badge query sumber untuk pencarian expanded
+        if (searchType === "expanded" && result.source_query) {
+          similarityBadge += `<span class="badge bg-info float-end me-2" title="Query sumber">Dari: ${result.source_query}</span>`;
+        }
 
-        // Tampilkan hasil
-        data.results.forEach(function (result, index) {
-          var resultClass = index % 2 === 0 ? "bg-light" : "";
-          var similarityBadge = "";
+        // Tampilkan badge tipe pencocokan untuk pencarian leksikal
+        if (searchType === "lexical" && result.match_type) {
+          var matchTypeLabel =
+            result.match_type === "exact_phrase"
+              ? "Frasa Persis"
+              : result.match_type === "regex"
+              ? "Regex"
+              : "Kata Kunci";
+          similarityBadge += `<span class="badge bg-success float-end me-2">${matchTypeLabel}</span>`;
+        }
 
-          if (result.similarity !== undefined) {
-            var similarityPercentage = Math.round(result.similarity * 100);
-            var badgeClass =
-              similarityPercentage >= 80
-                ? "bg-success"
-                : similarityPercentage >= 60
-                ? "bg-primary"
-                : similarityPercentage >= 40
-                ? "bg-info"
-                : "bg-secondary";
+        // Tampilkan klasifikasi jika ada
+        var classification = "";
+        if (result.classification) {
+          classification = `<div class="small text-muted mt-1">Klasifikasi: ${result.classification.title}</div>`;
+        }
 
-            similarityBadge = `<span class="badge ${badgeClass} float-end">${similarityPercentage}% relevan</span>`;
-          }
-
-          if (searchType === "expanded" && result.source_query) {
-            similarityBadge += `<span class="badge bg-info float-end me-2" title="Query sumber">Dari: ${result.source_query}</span>`;
-          }
-
-          if (searchType === "lexical" && result.match_type) {
-            var matchTypeLabel =
-              result.match_type === "exact_phrase"
-                ? "Frasa Persis"
-                : result.match_type === "regex"
-                ? "Regex"
-                : "Kata Kunci";
-            similarityBadge += `<span class="badge bg-success float-end me-2">${matchTypeLabel}</span>`;
-          }
-
-          var classification = "";
-          if (result.classification) {
-            classification = `<div class="small text-muted mt-1">Klasifikasi: ${result.classification.title}</div>`;
-          }
-
-          resultsHtml += `
-                        <div class="list-group-item ${resultClass}">
-                            <div class="d-flex w-100 justify-content-between">
-                                <h5 class="mb-1">Surah ${result.surah_number} (${result.surah_name}), Ayat ${result.ayat_number}</h5>
-                                ${similarityBadge}
-                            </div>
-                            <p class="mb-1 arabic-text text-end">${result.arabic}</p>
-                            <p class="mb-1">${result.translation}</p>
-                            ${classification}
-                        </div>
-            `;
-        });
-
-        $("#searchResults").html(resultsHtml);
-        $("#resultsCard").removeClass("d-none");
-
-        // Scroll ke hasil
-        $("html, body").animate(
-          {
-            scrollTop: $("#resultsCard").offset().top - 20,
-          },
-          500
-        );
-
-        // Tambahkan handler untuk ekspor ke Excel
-        $("#exportExcelBtn").click(function () {
-          exportToExcel(data);
-        });
-      } else {
-        resultsHtml = `
-                    <div class="list-group-item">
-                        <p class="mb-0 text-center py-3">Tidak ditemukan ayat yang sesuai dengan pencarian "${data.query}".</p>
+        resultsHtml += `
+          <div class="list-group-item ${resultClass}">
+            <div class="d-flex w-100 justify-content-between">
+              <h5 class="mb-1">Surah ${result.surah_number} (${result.surah_name}), Ayat ${result.ayat_number}</h5>
+              ${similarityBadge}
             </div>
+            <p class="mb-1 arabic-text text-end">${result.arabic}</p>
+            <p class="mb-1">${result.translation}</p>
+            ${classification}
+          </div>
         `;
+      });
 
-        $("#searchResults").html(resultsHtml);
-        $("#resultsCard").removeClass("d-none");
-      }
+      $("#searchResults").html(resultsHtml);
+      $("#resultsCard").removeClass("d-none");
+
+      // Scroll ke hasil
+      $("html, body").animate(
+        {
+          scrollTop: $("#resultsCard").offset().top - 20,
+        },
+        500
+      );
+
+      // Tambahkan handler untuk ekspor ke Excel
+      $("#exportExcelBtn").click(function () {
+        exportToExcel(data);
+      });
     }
 
     // Fungsi untuk mengekspor hasil pencarian ke Excel

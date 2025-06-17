@@ -353,42 +353,7 @@ def user_settings():
 
 # Endpoint untuk klasifikasi index Al-Quran
 
-@api_bp.route('/quran/index', methods=['GET'])
-def get_indexes():
-    """
-    Mendapatkan daftar index Al-Quran
-    Query param:
-    - parent_id: ID parent index (opsional)
-    """
-    parent_id = request.args.get('parent_id')
-    
-    # Konversi parent_id ke integer jika ada
-    if parent_id:
-        try:
-            parent_id = int(parent_id)
-        except ValueError:
-            return jsonify({
-                'success': False,
-                'message': 'Parameter parent_id harus berupa angka'
-            }), 400
-    
-    indexes = get_quran_indexes(parent_id)
-    
-    # Tandai apakah index memiliki sub-index atau ayat
-    for index in indexes:
-        sub_indexes = get_quran_indexes(index['id'])
-        ayat = get_quran_ayat_by_index(index['id'])
-        
-        index['has_children'] = len(sub_indexes) > 0
-        index['has_ayat'] = len(ayat) > 0
-        
-        # Tambahkan info jumlah ayat
-        index['ayat_count'] = len(ayat)
-    
-    return jsonify({
-        'success': True,
-        'data': indexes
-    })
+# Endpoint quran/index telah dipindahkan ke app/api/quran_index.py
 
 @api_bp.route('/quran/index/<int:index_id>', methods=['GET'])
 def get_index_by_id(index_id):
@@ -602,62 +567,9 @@ def delete_index(index_id):
             'message': message
         }), 500
 
-@api_bp.route('/quran/index/tree', methods=['GET'])
-def get_index_tree():
-    """
-    Mendapatkan seluruh index Al-Quran dalam format tree
-    """
-    def build_tree(parent_id=None):
-        indexes = get_quran_indexes(parent_id)
-        
-        for index in indexes:
-            index_id = index['id']
-            
-            # Check if has ayat
-            ayat = get_quran_ayat_by_index(index_id)
-            index['has_ayat'] = len(ayat) > 0
-            index['ayat_count'] = len(ayat)
-            
-            # Get children recursively
-            children = build_tree(index_id)
-            if children:
-                index['children'] = children
-                index['has_children'] = True
-            else:
-                index['children'] = []
-                index['has_children'] = False
-        
-        return indexes
-    
-    try:
-        tree = build_tree()
-        return jsonify({
-            'success': True,
-            'data': tree
-        })
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'message': f'Error saat membangun tree: {str(e)}'
-        }), 500
+# Endpoint quran/index/tree telah dipindahkan ke app/api/quran_index.py
 
-@api_bp.route('/quran/index/all', methods=['GET'])
-def get_all_indexes():
-    """
-    Mendapatkan seluruh daftar index untuk keperluan dropdown, dll
-    """
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    cursor.execute('SELECT id, title, parent_id, level FROM quran_index ORDER BY level, title')
-    all_indexes = [dict(row) for row in cursor.fetchall()]
-    
-    conn.close()
-    
-    return jsonify({
-        'success': True,
-        'data': all_indexes
-    })
+# Endpoint quran/index/all telah dipindahkan ke app/api/quran_index.py
 
 @api_bp.route('/quran/excel/sheets', methods=['POST'])
 def get_excel_sheets():
@@ -1048,28 +960,7 @@ def get_surah_detail(surah_number):
             'message': f'Error saat mendapatkan detail surah: {str(e)}'
         }), 500
 
-@api_bp.route('/quran/index/roots', methods=['GET'])
-def get_root_indexes():
-    """
-    Mendapatkan daftar indeks utama/root Al-Quran (tanpa parent)
-    """
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    cursor.execute('''
-    SELECT id, title, level 
-    FROM quran_index 
-    WHERE parent_id IS NULL 
-    ORDER BY title
-    ''')
-    
-    root_indexes = [dict(row) for row in cursor.fetchall()]
-    conn.close()
-    
-    return jsonify({
-        'success': True,
-        'data': root_indexes
-    })
+# Endpoint quran/index/roots telah dipindahkan ke app/api/quran_index.py
 
 # Tambahkan endpoint baru untuk distribusi hasil pencarian berdasarkan klasifikasi
 @api_bp.route('/search/distribution', methods=['POST'])

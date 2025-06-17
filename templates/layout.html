@@ -104,14 +104,14 @@
                 {% if user.role == 'admin' %}
                 <li><hr class="dropdown-divider" /></li>
                 <li>
-                  <a class="dropdown-item" href="{{ url_for('admin') }}"
+                  <a class="dropdown-item" href="{{ url_for('admin.admin') }}"
                     ><i class="fas fa-user-shield me-2"></i>Admin</a
                   >
                 </li>
                 {% endif %}
                 <li><hr class="dropdown-divider" /></li>
                 <li>
-                  <a class="dropdown-item" href="{{ url_for('logout') }}"
+                  <a class="dropdown-item" href="{{ url_for('auth.logout') }}"
                     ><i class="fas fa-sign-out-alt me-2"></i>Keluar</a
                   >
                 </li>
@@ -120,8 +120,8 @@
             {% else %}
             <li class="nav-item">
               <a
-                class="nav-link {% if request.endpoint == 'login' %}active{% endif %}"
-                href="{{ url_for('login') }}"
+                class="nav-link {% if request.endpoint == 'auth.login' %}active{% endif %}"
+                href="{{ url_for('auth.login') }}"
                 >Masuk</a
               >
             </li>

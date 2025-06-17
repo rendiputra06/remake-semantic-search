@@ -1,0 +1,18 @@
+# Docker Compose untuk Production
+# Gunakan: docker-compose up --build
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./database:/app/database
+      - ./static:/app/static
+    environment:
+      - FLASK_DEBUG=0
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

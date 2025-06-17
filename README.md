@@ -1,25 +1,123 @@
-# Mesin Pencarian Semantik Al-Quran
+# Mesin Pencari Semantik Al-Quran
 
-Aplikasi web untuk mencari ayat-ayat Al-Quran berdasarkan makna menggunakan teknologi pembelajaran mesin dan pemrosesan bahasa alami.
+Aplikasi web untuk pencarian ayat Al-Quran menggunakan teknik pencarian semantik dengan model Word2Vec, FastText, dan GloVe. Aplikasi ini juga mendukung pencarian leksikal dan tesaurus sinonim Bahasa Indonesia.
 
 ## Fitur Utama
 
-- Pencarian semantik ayat Al-Quran dalam Bahasa Indonesia, Arab, dan Inggris
-- Tiga model semantik berbeda (Word2Vec, FastText, dan GloVe)
-- Pencarian leksikal (kata kunci, frasa persis, regex)
-- Tesaurus sinonim Bahasa Indonesia dan ekspansi query
-- Tampilan hasil yang responsif dan interaktif
-- Pengaturan lanjutan untuk hasil pencarian
+- 🔍 **Pencarian Semantik**: Temukan ayat berdasarkan makna, bukan hanya kata kunci
+- 📚 **Multi-Model**: Dukungan untuk Word2Vec, FastText, dan GloVe
+- 🔤 **Pencarian Leksikal**: Pencarian berdasarkan kata kunci, frasa, dan regex
+- 📖 **Tesaurus Sinonim**: Ekspansi query otomatis dengan sinonim Bahasa Indonesia
+- 🎯 **Pencarian Hybrid**: Kombinasi pencarian semantik dan leksikal
+- 📊 **Analisis Perbandingan**: Perbandingan performa antar metode pencarian
+- 🐳 **Docker Support**: Deployment mudah dengan Docker
+- 🔧 **Development Mode**: Hot-reload untuk pengembangan
+- 🚀 **Production Ready**: Optimized untuk production dengan Gunicorn
 
 ## Teknologi yang Digunakan
 
-- **Frontend**: HTML, CSS, JavaScript, Bootstrap 5, jQuery
-- **Backend**: Flask (Python)
-- **Model Semantik**: Word2Vec, FastText, GloVe
-- **Pencarian Leksikal**: Inverted Index, Regular Expression
-- **Tesaurus**: Sastrawi (Stemming), Tesaurus Bahasa Indonesia
+- **Backend**: Python Flask
+- **AI/ML**: Word2Vec, FastText, GloVe, NLTK
+- **Database**: SQLite
+- **Frontend**: HTML, CSS, JavaScript, Bootstrap
+- **Container**: Docker & Docker Compose
+- **WSGI Server**: Gunicorn (Production)
 
-## Cara Menjalankan
+## Instalasi & Penggunaan
+
+### Opsi 1: Docker (Direkomendasikan)
+
+#### A. Development Mode (Hot-Reload)
+
+Untuk pengembangan dengan hot-reload:
+
+```bash
+# Clone repositori
+git clone <repository-url>
+cd semantic-quran-search
+
+# Jalankan dalam mode development
+docker-compose -f docker-compose.dev.yml up --build
+
+# Atau jalankan di background
+docker-compose -f docker-compose.dev.yml up -d --build
+```
+
+**Keunggulan Development Mode:**
+
+- ✅ Kode berubah secara realtime (hot-reload)
+- ✅ Debug mode aktif
+- ✅ Volume mounting untuk semua file
+- ✅ Flask development server dengan auto-reload
+- ✅ Mudah untuk debugging
+
+#### B. Production Mode (Optimized)
+
+Untuk production dengan performa optimal:
+
+```bash
+# Clone repositori
+git clone <repository-url>
+cd semantic-quran-search
+
+# Jalankan dalam mode production
+docker-compose up --build
+
+# Atau jalankan di background
+docker-compose up -d --build
+```
+
+**Keunggulan Production Mode:**
+
+- ✅ Performa optimal dengan Gunicorn
+- ✅ Memory usage yang lebih efisien
+- ✅ Security yang lebih baik
+- ✅ Logging yang terstruktur
+
+#### Langkah Selanjutnya (Setelah Container Berjalan)
+
+1. Tunggu beberapa menit sampai aplikasi siap
+
+   - Flask app akan berjalan di `http://localhost:5000`
+
+2. Inisialisasi model
+
+   ```bash
+   # Masuk ke container
+   docker-compose exec web bash
+
+   # Jalankan inisialisasi model
+   python -m backend.initialize all
+   ```
+
+#### Perintah Docker yang Berguna
+
+```bash
+# Development mode
+docker-compose -f docker-compose.dev.yml ps
+docker-compose -f docker-compose.dev.yml logs web
+docker-compose -f docker-compose.dev.yml down
+
+# Production mode
+docker-compose ps
+docker-compose logs web
+docker-compose down
+
+# Umum
+docker-compose down -v
+docker-compose restart
+docker-compose exec web bash
+```
+
+#### Troubleshooting Docker
+
+- **Docker Desktop tidak berjalan**: Pastikan Docker Desktop sudah dibuka dan status menunjukkan "Docker Desktop is running"
+- **Port sudah digunakan**: Pastikan port 5000 tidak digunakan aplikasi lain
+- **Build error**: Coba hapus cache dengan `docker system prune -a` lalu build ulang
+- **Memory tidak cukup**: Pastikan Docker Desktop memiliki alokasi memory minimal 4GB
+- **Hot-reload tidak bekerja**: Pastikan menggunakan `docker-compose.dev.yml` dan volume mounting sudah benar
+
+### Opsi 2: Instalasi Manual
 
 1. Clone repositori ini
 2. Buat lingkungan virtual Python
@@ -42,7 +140,7 @@ Aplikasi web untuk mencari ayat-ayat Al-Quran berdasarkan makna menggunakan tekn
    - Atau gunakan script khusus: `python scripts/init_lexical.py`
 6. Jalankan aplikasi
    ```
-   python app.py
+   python run.py
    ```
 7. Buka browser dan akses `http://localhost:5000`
 
@@ -92,8 +190,13 @@ Script ini akan menghasilkan:
 
 ```
 semantic-quran-search/
-├── app.py                  # File utama aplikasi Flask
+├── run.py                  # File utama aplikasi Flask
 ├── requirements.txt        # Daftar dependensi
+├── Dockerfile              # Konfigurasi Docker untuk production
+├── Dockerfile.dev          # Konfigurasi Docker untuk development
+├── docker-compose.yml      # Konfigurasi multi-container production
+├── docker-compose.dev.yml  # Konfigurasi multi-container development
+├── .dockerignore           # File yang diabaikan saat build Docker
 ├── backend/                # Kode backend
 │   ├── __init__.py
 │   ├── api.py              # API endpoint
@@ -130,7 +233,7 @@ semantic-quran-search/
 
 ## Status Pengembangan
 
-Proyek ini saat ini berada di Fase 3: Pengembangan Fitur Lanjutan. Implementasi pencarian leksikal dan tesaurus sinonim Bahasa Indonesia telah selesai dan siap digunakan.
+Proyek ini saat ini berada di Fase 3: Pengembangan Fitur Lanjutan. Implementasi pencarian leksikal dan tesaurus sinonim Bahasa Indonesia telah selesai dan siap digunakan. Dukungan Docker telah ditambahkan untuk memudahkan deployment dan pengembangan dengan opsi development dan production yang terpisah.
 
 ## Kontribusi
 

@@ -1,0 +1,21 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/app
+      - ./database:/app/database
+      - ./static:/app/static
+    environment:
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+    networks:
+      - app-network
+    command: ["python", "run.py"]
+
+networks:
+  app-network:
+    driver: bridge

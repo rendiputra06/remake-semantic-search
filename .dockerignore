@@ -1,0 +1,44 @@
+# Version control
+.git
+.gitignore
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+env/
+.env
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Logs
+*.log
+
+# Local development
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Dataset and model files (will be mounted as volumes)
+dataset/
+static/models/
+database/wordlists/
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~ 

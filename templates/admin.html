@@ -161,12 +161,7 @@ Al-Quran{% endblock %} {% block head %}
     </div>
 
     <!-- Tab Model AI -->
-    <div
-      class="tab-pane fade"
-      id="models-pane"
-      role="tabpanel"
-      aria-labelledby="models-tab"
-    >
+    <div class="tab-pane fade" id="models-pane" role="tabpanel">
       <div class="card">
         <div class="card-header">
           <h5 class="mb-0">Status Model</h5>
@@ -197,12 +192,12 @@ Al-Quran{% endblock %} {% block head %}
                   {% endif %}
 
                   <form
-                    action="{{ url_for('initialize_model') }}"
+                    action="{{ url_for('admin.run_lexical_command_route') }}"
                     method="post"
                   >
                     <input
                       type="hidden"
-                      name="model_name"
+                      name="command"
                       value="{{ model_name }}"
                     />
                     <button
@@ -230,13 +225,8 @@ Al-Quran{% endblock %} {% block head %}
       </div>
     </div>
 
-    <!-- Tab Data Linguistik -->
-    <div
-      class="tab-pane fade"
-      id="linguistic-pane"
-      role="tabpanel"
-      aria-labelledby="linguistic-tab"
-    >
+    <!-- Tab Linguistic Data -->
+    <div class="tab-pane fade" id="linguistic-pane" role="tabpanel">
       <div class="card mb-4">
         <div class="card-header">
           <h5 class="mb-0">Manajemen Data Linguistik</h5>
@@ -312,7 +302,7 @@ Al-Quran{% endblock %} {% block head %}
                       </div>
                       <div class="d-grid gap-2">
                         <form
-                          action="{{ url_for('run_lexical_command') }}"
+                          action="{{ url_for('admin.run_lexical_command_route') }}"
                           method="post"
                         >
                           <input
@@ -326,7 +316,7 @@ Al-Quran{% endblock %} {% block head %}
                           </button>
                         </form>
                         <form
-                          action="{{ url_for('run_lexical_command') }}"
+                          action="{{ url_for('admin.run_lexical_command_route') }}"
                           method="post"
                         >
                           <input
@@ -352,7 +342,7 @@ Al-Quran{% endblock %} {% block head %}
                     </div>
                     <div class="card-body">
                       <form
-                        action="{{ url_for('import_lexical_data') }}"
+                        action="{{ url_for('admin.import_lexical_data_route') }}"
                         method="post"
                         enctype="multipart/form-data"
                       >
@@ -542,7 +532,7 @@ Al-Quran{% endblock %} {% block head %}
                       </div>
                       <div class="d-grid gap-2">
                         <form
-                          action="{{ url_for('run_lexical_command') }}"
+                          action="{{ url_for('admin.run_lexical_command_route') }}"
                           method="post"
                         >
                           <input
@@ -556,7 +546,7 @@ Al-Quran{% endblock %} {% block head %}
                           </button>
                         </form>
                         <form
-                          action="{{ url_for('run_lexical_command') }}"
+                          action="{{ url_for('admin.run_lexical_command_route') }}"
                           method="post"
                         >
                           <input
@@ -582,7 +572,7 @@ Al-Quran{% endblock %} {% block head %}
                     </div>
                     <div class="card-body">
                       <form
-                        action="{{ url_for('import_thesaurus_data') }}"
+                        action="{{ url_for('admin.import_thesaurus_data_route') }}"
                         method="post"
                         enctype="multipart/form-data"
                       >
@@ -780,7 +770,7 @@ Al-Quran{% endblock %} {% block head %}
                 </div>
                 <div class="card-body">
                   <form
-                    action="{{ url_for('api_thesaurus_enrich') }}"
+                    action="{{ url_for('admin.enrich_thesaurus_route') }}"
                     method="post"
                     id="thesaurusEnrichForm"
                   >
@@ -874,7 +864,7 @@ Al-Quran{% endblock %} {% block head %}
         </div>
         <div class="card-body">
           <form
-            action="{{ url_for('run_wordlist_generator') }}"
+            action="{{ url_for('admin.run_wordlist_generator_route') }}"
             method="post"
             enctype="multipart/form-data"
           >
@@ -1014,7 +1004,7 @@ Al-Quran{% endblock %} {% block head %}
                   <td>
                     <div class="btn-group">
                       <a
-                        href="{{ url_for('download_wordlist', filename=wordlist.filename) }}"
+                        href="{{ url_for('admin.download_wordlist', filename=wordlist.filename) }}"
                         class="btn btn-sm btn-outline-primary"
                       >
                         <i class="fas fa-download"></i> Download
@@ -1437,7 +1427,7 @@ Al-Quran{% endblock %} {% block head %}
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
           Batal
         </button>
-        <form action="{{ url_for('delete_wordlist') }}" method="post">
+        <form action="{{ url_for('admin.delete_wordlist') }}" method="post">
           <input type="hidden" name="filename" id="deleteWordlistFilename" />
           <button type="submit" class="btn btn-danger">Hapus</button>
         </form>

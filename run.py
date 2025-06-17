@@ -1,139 +1,74 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, send_file
-from flask_cors import CORS
-from functools import wraps
+from flask import Flask, render_template, request, redirect, url_for, flash, session, send_file, jsonify
 import os
-import subprocess
 import json
 import datetime
-from werkzeug.utils import secure_filename
-from backend.api import api_bp
-from backend.db import init_db, get_user_by_id, get_user_by_username, authenticate_user, register_user
-from backend.db import get_user_settings, update_user_settings, add_search_history, get_search_history
-from backend.db import get_model_status, update_model_status, get_db_connection
-from backend.monitoring import monitoring_bp  # Import monitoring blueprint
 import sqlite3
+import subprocess
+from werkzeug.utils import secure_filename
+
+from backend.db import (
+    get_db_connection, init_db, get_user_by_id, get_user_settings,
+    get_search_history, update_user_settings, get_model_status,
+    update_model_status
+)
+from app.admin import admin_bp 
+from app.auth import auth_bp
+from app.auth.decorators import login_required, admin_required
+from backend.monitoring import monitoring_bp
+from app.api import init_app as init_api
 
 app = Flask(__name__)
-app.secret_key = 'rahasia_semantic_search' # Ganti dengan secret key yang lebih aman di produksi
-CORS(app)  # Mengaktifkan CORS untuk semua domain
+app.secret_key = os.urandom(24)  # Replace with proper config
 
-# Registrasi blueprint API
-app.register_blueprint(api_bp, url_prefix='/api')
-
-# Daftarkan blueprint monitoring
+# Register blueprints with proper URL prefixes
+app.register_blueprint(auth_bp, url_prefix='/auth')
+app.register_blueprint(admin_bp, url_prefix='/admin')
 app.register_blueprint(monitoring_bp, url_prefix='/monitoring')
 
-# Inisialisasi database
+# Initialize API routes
+init_api(app)
+
+# Initialize database
 init_db()
-
-# Decorator untuk halaman yang membutuhkan autentikasi
-def login_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if 'user_id' not in session:
-            return redirect(url_for('login', next=request.url))
-        return f(*args, **kwargs)
-    return decorated_function
-
-# Decorator untuk halaman yang membutuhkan akses admin
-def admin_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if 'user_id' not in session:
-            return redirect(url_for('login', next=request.url))
-        
-        user = get_user_by_id(session['user_id'])
-        if not user or user.get('role') != 'admin':
-            flash('Anda tidak memiliki akses ke halaman ini.', 'danger')
-            return redirect(url_for('index'))
-        
-        return f(*args, **kwargs)
-    return decorated_function
 
 @app.route('/')
 def index():
-    """Halaman utama mesin pencarian."""
-    return render_template('index.html')
+    """Main search engine page."""
+    user = None
+    if 'user_id' in session:
+        user = get_user_by_id(session['user_id'])
+        user_settings = get_user_settings(session['user_id'])
+        search_history = get_search_history(session['user_id'])
+        user['settings'] = user_settings
+    
+    return render_template('index.html', user=user)
 
 @app.route('/about')
 def about():
-    """Halaman tentang aplikasi."""
-    return render_template('about.html')
-
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    """Halaman login."""
+    """About page."""
+    user = None
     if 'user_id' in session:
-        return redirect(url_for('index'))
+        user = get_user_by_id(session['user_id'])
     
-    if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
-        
-        success, result = authenticate_user(username, password)
-        
-        if success:
-            session['user_id'] = result
-            user = get_user_by_id(result)
-            session['username'] = user['username']
-            session['role'] = user['role']
-            
-            next_page = request.args.get('next')
-            if next_page:
-                return redirect(next_page)
-            return redirect(url_for('index'))
-        else:
-            flash(result, 'danger')
-    
-    return render_template('login.html')
-
-# @app.route('/register', methods=['GET', 'POST'])
-# def register():
-#     """Halaman registrasi."""
-#     if 'user_id' in session:
-#         return redirect(url_for('index'))
-    
-#     if request.method == 'POST':
-#         username = request.form.get('username')
-#         password = request.form.get('password')
-#         confirm_password = request.form.get('confirm_password')
-#         email = request.form.get('email')
-        
-#         if password != confirm_password:
-#             flash('Password tidak cocok.', 'danger')
-#             return render_template('register.html')
-        
-#         success, message = register_user(username, password, email)
-        
-#         if success:
-#             flash(message, 'success')
-#             return redirect(url_for('login'))
-#         else:
-#             flash(message, 'danger')
-    
-#     return render_template('register.html')
-
-@app.route('/logout')
-def logout():
-    """Proses logout."""
-    session.clear()
-    flash('Anda telah keluar dari sistem.', 'success')
-    return redirect(url_for('index'))
+    return render_template('about.html', user=user)
 
 @app.route('/profile')
 @login_required
 def profile():
-    """Halaman profil pengguna."""
+    """User profile page."""
     user = get_user_by_id(session['user_id'])
     user_settings = get_user_settings(session['user_id'])
     search_history = get_search_history(session['user_id'])
     
-    return render_template('profile.html', user=user, settings=user_settings, history=search_history)
+    return render_template('profile.html', 
+                         user=user, 
+                         settings=user_settings,
+                         search_history=search_history)
 
 @app.route('/settings', methods=['GET', 'POST'])
 @login_required
 def settings():
-    """Halaman pengaturan."""
+    """Settings page."""
     user = get_user_by_id(session['user_id'])
     user_settings = get_user_settings(session['user_id'])
     model_status = get_model_status()
@@ -152,35 +87,44 @@ def settings():
         
         return redirect(url_for('settings'))
     
-    return render_template('settings.html', user=user, settings=user_settings, model_status=model_status)
+    return render_template('settings.html', 
+                         user=user,
+                         settings=user_settings,
+                         model_status=model_status)
 
 @app.route('/initialize_model', methods=['POST'])
 @login_required
 def initialize_model():
-    """Memulai inisialisasi model."""
+    """Initialize a model."""
     model_name = request.form.get('model_name')
     
-    if model_name not in ['word2vec', 'fasttext', 'glove', 'lexical', 'thesaurus']:
-        flash('Model tidak valid.', 'danger')
+    if not model_name:
+        flash('Model tidak ditemukan.', 'danger')
         return redirect(url_for('settings'))
     
     try:
-        # Jalankan proses inisialisasi di background
-        script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), f'scripts/init_{model_name}.py'))
+        script_path = os.path.abspath(os.path.join(
+            os.path.dirname(__file__), 
+            'scripts',
+            f'init_{model_name}.py'
+        ))
         
-        # Untuk lexical dan thesaurus, gunakan script lexical
-        if model_name in ['lexical', 'thesaurus']:
-            script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'scripts/init_lexical.py'))
-            subprocess.Popen(['python', script_path, f'--component={model_name}'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if os.path.exists(script_path):
+            # Run the initialization script
+            process = subprocess.Popen(['python', script_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            stdout, stderr = process.communicate()
+            
+            if process.returncode == 0:
+                # Update model status
+                update_model_status(model_name, True)
+                flash(f'Model {model_name} berhasil diinisialisasi.', 'success')
+            else:
+                flash(f'Error saat menginisialisasi model {model_name}: {stderr.decode()}', 'danger')
         else:
-            subprocess.Popen(['python', script_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        
-        # Update status model
-        update_model_status(model_name, True)
-        
-        flash(f'Inisialisasi model {model_name.upper()} sedang berjalan di latar belakang.', 'success')
+            flash(f'Script inisialisasi tidak ditemukan untuk model {model_name}.', 'danger')
+    
     except Exception as e:
-        flash(f'Error saat menginisialisasi model: {str(e)}', 'danger')
+        flash(f'Error: {str(e)}', 'danger')
     
     return redirect(url_for('settings'))
 
@@ -839,4 +783,4 @@ def inject_user():
     return {'user': None}
 
 if __name__ == '__main__':
-    app.run(debug=True, port=7000)
+    app.run(debug=True, port=5000)

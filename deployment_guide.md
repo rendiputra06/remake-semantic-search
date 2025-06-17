@@ -327,9 +327,5 @@ mkdir -p database/vectors
 source venv/bin/activate
 
 # Jalankan script inisialisasi
-python -c "from backend.api import init_model; init_model('word2vec')"
+python -c "from app.api.routes.models import init_model; init_model('word2vec')"
 ```
-
----
-
-Untuk informasi lebih lanjut atau bantuan, hubungi tim dukungan teknis.
