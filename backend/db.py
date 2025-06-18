@@ -169,11 +169,18 @@ def init_db():
     
     print("Database initialized successfully!")
 
-def get_db_connection():
+def get_db_connection(db_type=None):
     """
     Mendapatkan koneksi database
     """
-    conn = sqlite3.connect(DB_PATH)
+    if db_type == 'thesaurus':
+        # Koneksi untuk database thesaurus (lexical.db)
+        db_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'database', 'lexical.db')
+    else:
+        # Koneksi untuk database utama (app.db)
+        db_path = DB_PATH
+    
+    conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     return conn
 

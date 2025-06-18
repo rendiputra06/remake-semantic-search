@@ -1,0 +1,161 @@
+{% extends "layout.html" %} {% block title %}Statistik Tesaurus - Mesin
+Pencarian Semantik Al-Quran{% endblock %} {% block head %}
+<style>
+  .stats-card {
+    transition: transform 0.2s ease-in-out;
+  }
+  .stats-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  .chart-container {
+    position: relative;
+    height: 300px;
+    margin: 20px 0;
+  }
+  .stat-number {
+    font-size: 2.5rem;
+    font-weight: bold;
+  }
+  .stat-label {
+    font-size: 0.9rem;
+    color: #6c757d;
+  }
+  .progress-custom {
+    height: 25px;
+    border-radius: 15px;
+  }
+</style>
+{% endblock %} {% block content %}
+<div class="container mt-4">
+  <!-- Header Section -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="text-center">
+        <h1 class="display-5 fw-bold text-primary">
+          <i class="fas fa-chart-bar"></i> Statistik Tesaurus
+        </h1>
+        <p class="lead text-muted">
+          Analisis mendalam tentang data dan penggunaan tesaurus
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Basic Statistics -->
+  <div class="row mb-4">
+    <div class="col-md-3">
+      <div class="card stats-card text-center">
+        <div class="card-body">
+          <div class="stat-number text-primary" id="totalWords">-</div>
+          <div class="stat-label">Total Kata</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card stats-card text-center">
+        <div class="card-body">
+          <div class="stat-number text-success" id="totalRelations">-</div>
+          <div class="stat-label">Total Relasi</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card stats-card text-center">
+        <div class="card-body">
+          <div class="stat-number text-info" id="avgScore">-</div>
+          <div class="stat-label">Skor Rata-rata</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card stats-card text-center">
+        <div class="card-body">
+          <div class="stat-number text-warning" id="avgRelations">-</div>
+          <div class="stat-label">Rata-rata Relasi/Kata</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- Relation Distribution Chart -->
+    <div class="col-lg-6">
+      <div class="card stats-card">
+        <div class="card-header">
+          <h5 class="mb-0">
+            <i class="fas fa-pie-chart"></i> Distribusi Jenis Relasi
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="chart-container">
+            <canvas id="relationChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top Words Chart -->
+    <div class="col-lg-6">
+      <div class="card stats-card">
+        <div class="card-header">
+          <h5 class="mb-0"><i class="fas fa-trophy"></i> Kata Terpopuler</h5>
+        </div>
+        <div class="card-body">
+          <div class="chart-container">
+            <canvas id="topWordsChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detailed Statistics -->
+  <div class="row mt-4">
+    <div class="col-lg-8">
+      <div class="card stats-card">
+        <div class="card-header">
+          <h5 class="mb-0">
+            <i class="fas fa-list"></i> Daftar Kata Terpopuler
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Kata</th>
+                  <th>Jumlah Relasi</th>
+                  <th>Persentase</th>
+                </tr>
+              </thead>
+              <tbody id="topWordsTable">
+                <!-- Will be populated by JavaScript -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card stats-card">
+        <div class="card-header">
+          <h5 class="mb-0">
+            <i class="fas fa-info-circle"></i> Informasi Tambahan
+          </h5>
+        </div>
+        <div class="card-body">
+          <div id="additionalStats">
+            <!-- Will be populated by JavaScript -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ url_for('static', filename='js/thesaurus-statistics.js') }}"></script>
+{% endblock %}

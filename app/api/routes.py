@@ -9,7 +9,7 @@ import json
 
 from . import api_bp
 from .utils import create_response, error_response, validation_error_response
-from .schemas import (
+from .schemas_main import (
     ThesaurusEnrichRequest, ThesaurusEnrichResponse,
     QuranIndexImportRequest, QuranIndexTreeResponse,
     StatisticsResponse, LexicalDataImportRequest,

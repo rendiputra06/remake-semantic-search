@@ -7,7 +7,7 @@ import os
 from marshmallow import ValidationError
 
 from ..utils import create_response, error_response, validation_error_response
-from ..schemas import (
+from app.api.schemas.thesaurus_admin import (
     ThesaurusEnrichRequest,
     ThesaurusDataImportRequest,
     WordlistDeleteRequest,
@@ -117,7 +117,6 @@ def delete_wordlist():
         return error_response(500, str(e))
 
 @thesaurus_bp.route('/search', methods=['GET'])
-@admin_required
 def search():
     """API endpoint for searching thesaurus data."""
     try:

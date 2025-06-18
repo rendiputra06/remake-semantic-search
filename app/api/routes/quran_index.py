@@ -10,12 +10,12 @@ import time
 import json
 
 from ..utils import create_response, error_response, validation_error_response
-from ..schemas import QuranIndexImportRequest
+from app.api.schemas_main import QuranIndexImportRequest
 from app.auth.decorators import admin_required_api
 from backend.db import (
     get_quran_index_by_id, get_quran_indexes, get_quran_ayat_by_index,
     add_quran_index, update_quran_index, delete_quran_index,
-    update_quran_index_ayat, get_user_by_id
+    update_quran_index_ayat, get_user_by_id, get_db_connection
 )
 from backend.excel_importer import excel_to_hierarchy_db, get_excel_sheets
 

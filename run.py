@@ -13,6 +13,7 @@ from backend.db import (
 )
 from app.admin import admin_bp 
 from app.auth import auth_bp
+from app.public import public_bp
 from app.auth.decorators import login_required, admin_required
 from backend.monitoring import monitoring_bp
 from app.api import init_app as init_api
@@ -23,6 +24,7 @@ app.secret_key = os.urandom(24)  # Replace with proper config
 # Register blueprints with proper URL prefixes
 app.register_blueprint(auth_bp, url_prefix='/auth')
 app.register_blueprint(admin_bp, url_prefix='/admin')
+app.register_blueprint(public_bp, url_prefix='')
 app.register_blueprint(monitoring_bp, url_prefix='/monitoring')
 
 # Initialize API routes

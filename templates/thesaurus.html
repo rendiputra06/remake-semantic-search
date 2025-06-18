@@ -1,0 +1,197 @@
+{% extends "layout.html" %} {% block title %}Tesaurus Bahasa Indonesia - Mesin
+Pencarian Semantik Al-Quran{% endblock %} {% block head %}
+<style>
+  .thesaurus-card {
+    transition: transform 0.2s ease-in-out;
+  }
+  .thesaurus-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  .word-link {
+    color: #007bff;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .word-link:hover {
+    color: #0056b3;
+    text-decoration: underline;
+  }
+  .relation-badge {
+    font-size: 0.75rem;
+  }
+  .stats-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+  }
+</style>
+{% endblock %} {% block content %}
+<div class="container mt-4">
+  <!-- Header Section -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="text-center">
+        <h1 class="display-5 fw-bold text-primary">
+          <i class="fas fa-book-open"></i> Tesaurus Bahasa Indonesia
+        </h1>
+        <p class="lead text-muted">
+          Jelajahi hubungan kata dan temukan sinonim untuk memperkaya kosakata
+          Anda
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- Main Content -->
+    <div class="col-lg-8">
+      <!-- Search Section -->
+      <div class="card mb-4 thesaurus-card">
+        <div class="card-body">
+          <h3 class="card-title">
+            <i class="fas fa-search"></i> Cari Kata dalam Tesaurus
+          </h3>
+          <div class="input-group mb-3">
+            <input
+              type="text"
+              id="thesaurusSearch"
+              class="form-control form-control-lg"
+              placeholder="Masukkan kata yang ingin dicari..."
+              autocomplete="off"
+            />
+            <button class="btn btn-primary btn-lg" type="button" id="searchBtn">
+              <i class="fas fa-search"></i> Cari
+            </button>
+          </div>
+          <div
+            id="searchSuggestions"
+            class="list-group position-absolute w-100"
+            style="z-index: 1000; display: none"
+          ></div>
+          <small class="text-muted">
+            <i class="fas fa-lightbulb"></i>
+            Contoh: baik, cinta, sabar, ilmu, rezeki
+          </small>
+        </div>
+      </div>
+
+      <!-- Search Results -->
+      <div id="searchResults" class="d-none">
+        <!-- Results will be populated by JavaScript -->
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="row mb-4">
+        <div class="col-md-6">
+          <div class="card thesaurus-card">
+            <div class="card-body text-center">
+              <h5 class="card-title">
+                <i class="fas fa-list"></i> Jelajahi Kata
+              </h5>
+              <p class="card-text">
+                Lihat semua kata dalam tesaurus secara alfabetis
+              </p>
+              <a
+                href="{{ url_for('public.thesaurus_browse') }}"
+                class="btn btn-outline-primary"
+              >
+                <i class="fas fa-arrow-right"></i> Mulai Jelajah
+              </a>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card thesaurus-card">
+            <div class="card-body text-center">
+              <h5 class="card-title">
+                <i class="fas fa-chart-bar"></i> Statistik
+              </h5>
+              <p class="card-text">Lihat statistik dan analisis tesaurus</p>
+              <a
+                href="{{ url_for('public.thesaurus_statistics') }}"
+                class="btn btn-outline-info"
+              >
+                <i class="fas fa-arrow-right"></i> Lihat Statistik
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+      <!-- Statistics -->
+      <div class="card mb-4 stats-card">
+        <div class="card-header">
+          <h5 class="mb-0 text-white">
+            <i class="fas fa-chart-pie"></i> Statistik Tesaurus
+          </h5>
+        </div>
+        <div class="card-body">
+          <div id="thesaurusStats">
+            <div class="text-center">
+              <div class="spinner-border text-light" role="status">
+                <span class="visually-hidden">Loading...</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Popular Words -->
+      <div class="card mb-4 thesaurus-card">
+        <div class="card-header">
+          <h5 class="mb-0"><i class="fas fa-fire"></i> Kata Populer</h5>
+        </div>
+        <div class="card-body">
+          <div id="popularWords">
+            <div class="text-center">
+              <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Random Words -->
+      <div class="card thesaurus-card">
+        <div class="card-header">
+          <h5 class="mb-0"><i class="fas fa-random"></i> Eksplorasi Acak</h5>
+        </div>
+        <div class="card-body">
+          <div id="randomWords">
+            <div class="text-center">
+              <div class="spinner-border text-success" role="status">
+                <span class="visually-hidden">Loading...</span>
+              </div>
+            </div>
+          </div>
+          <div class="text-center mt-3">
+            <button class="btn btn-outline-success btn-sm" id="refreshRandom">
+              <i class="fas fa-sync-alt"></i> Kata Baru
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Loading Modal -->
+<div class="modal fade" id="loadingModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-sm modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-body text-center">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-2 mb-0">Mencari kata...</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block scripts %}
+<script src="{{ url_for('static', filename='js/public-thesaurus.js') }}"></script>
+{% endblock %}

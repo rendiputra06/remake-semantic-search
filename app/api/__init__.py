@@ -9,6 +9,7 @@ from marshmallow import ValidationError
 from .routes.search import search_bp
 from .routes.statistics import stats_bp
 from .routes.thesaurus import thesaurus_bp
+from .routes.public_thesaurus import public_thesaurus_bp
 from .routes.export import export_bp
 from .routes.models import models_bp
 from .routes.quran_index import quran_index_bp
@@ -28,6 +29,7 @@ def init_app(app):
     app.register_blueprint(search_bp, url_prefix='/api/search')
     app.register_blueprint(stats_bp, url_prefix='/api/statistics')
     app.register_blueprint(thesaurus_bp, url_prefix='/api/thesaurus')
+    app.register_blueprint(public_thesaurus_bp, url_prefix='/api/public/thesaurus')
     app.register_blueprint(export_bp, url_prefix='/api/export')
     app.register_blueprint(models_bp, url_prefix='/api/models')
     app.register_blueprint(quran_index_bp, url_prefix='/api/quran-index')

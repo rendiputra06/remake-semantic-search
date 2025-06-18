@@ -1,0 +1,170 @@
+{% extends "layout.html" %} {% block title %}{{ word }} - Detail Tesaurus -
+Mesin Pencarian Semantik Al-Quran{% endblock %} {% block head %}
+<style>
+  .thesaurus-card {
+    transition: transform 0.2s ease-in-out;
+  }
+  .thesaurus-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  .word-link {
+    color: #007bff;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .word-link:hover {
+    color: #0056b3;
+    text-decoration: underline;
+  }
+  .relation-badge {
+    font-size: 0.75rem;
+  }
+  .word-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+  }
+  .relation-section {
+    border-left: 4px solid #007bff;
+    padding-left: 15px;
+    margin-bottom: 20px;
+  }
+  .relation-section.synonym {
+    border-left-color: #28a745;
+  }
+  .relation-section.antonym {
+    border-left-color: #dc3545;
+  }
+  .relation-section.hyponym {
+    border-left-color: #ffc107;
+  }
+  .relation-section.hypernym {
+    border-left-color: #17a2b8;
+  }
+</style>
+{% endblock %} {% block content %}
+<div class="container mt-4">
+  <!-- Breadcrumb -->
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item">
+        <a href="{{ url_for('public.thesaurus') }}">
+          <i class="fas fa-book-open"></i> Tesaurus
+        </a>
+      </li>
+      <li class="breadcrumb-item active" aria-current="page">{{ word }}</li>
+    </ol>
+  </nav>
+
+  <!-- Word Header -->
+  <div class="card word-header mb-4">
+    <div class="card-body text-center">
+      <h1 class="display-4 fw-bold">{{ word }}</h1>
+      <p class="lead mb-0">Detail kata dalam tesaurus bahasa Indonesia</p>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- Main Content -->
+    <div class="col-lg-8">
+      <div id="wordDetail">
+        <div class="text-center">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+          <p class="mt-2">Memuat detail kata...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+      <!-- Word Info -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <h5 class="mb-0">
+            <i class="fas fa-info-circle"></i> Informasi Kata
+          </h5>
+        </div>
+        <div class="card-body">
+          <div id="wordInfo">
+            <div class="text-center">
+              <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Related Words -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <h5 class="mb-0"><i class="fas fa-link"></i> Kata Terkait</h5>
+        </div>
+        <div class="card-body">
+          <div id="relatedWords">
+            <div class="text-center">
+              <div class="spinner-border text-success" role="status">
+                <span class="visually-hidden">Loading...</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0"><i class="fas fa-tools"></i> Aksi Cepat</h5>
+        </div>
+        <div class="card-body">
+          <div class="d-grid gap-2">
+            <button class="btn btn-outline-primary" id="searchSimilar">
+              <i class="fas fa-search"></i> Cari Kata Serupa
+            </button>
+            <button class="btn btn-outline-success" id="exportWord">
+              <i class="fas fa-download"></i> Ekspor Data
+            </button>
+            <a
+              href="{{ url_for('public.thesaurus') }}"
+              class="btn btn-outline-secondary"
+            >
+              <i class="fas fa-arrow-left"></i> Kembali ke Tesaurus
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Similar Words Modal -->
+<div class="modal fade" id="similarWordsModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-search"></i> Kata Serupa dengan "{{ word }}"
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <div id="similarWordsContent">
+          <div class="text-center">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block scripts %}
+<script src="{{ url_for('static', filename='js/thesaurus-detail.js') }}"></script>
+{% endblock %}
