@@ -12,8 +12,14 @@ class Word2VecModel:
     """
     Kelas untuk menangani model Word2Vec
     """
-    def __init__(self, model_path: str = '../models/idwiki_word2vec/idwiki_word2vec_200_new_lower.model'):
-        self.model_path = model_path
+    def __init__(self, model_path: str = None, vector_path: str = None):
+        base_dir = os.path.abspath(os.path.dirname(__file__))
+        if model_path is None:
+            model_path = os.path.join(base_dir, '../models/idwiki_word2vec/idwiki_word2vec_200_new_lower.model')
+        if vector_path is None:
+            vector_path = os.path.join(base_dir, '../database/vectors/word2vec_verses.pkl')
+        self.model_path = os.path.abspath(model_path)
+        self.vector_path = os.path.abspath(vector_path)
         self.model = None
         self.verse_vectors = {}
         self.verse_data = {}
@@ -186,18 +192,31 @@ class Word2VecModel:
         
         print(f"Verse vectors saved to {output_path}")
     
-    def load_verse_vectors(self, input_path: str = '../database/vectors/word2vec_verses.pkl') -> None:
+    def load_verse_vectors(self, input_path: str = None) -> None:
         """
         Memuat vektor ayat dari file
         """
+        if input_path is None:
+            input_path = self.vector_path
         try:
             with open(input_path, 'rb') as f:
                 data = pickle.load(f)
-            
             self.verse_vectors = data['verse_vectors']
             self.verse_data = data['verse_data']
-            
             print(f"Loaded vectors for {len(self.verse_vectors)} verses from {input_path}")
         except Exception as e:
             print(f"Error loading verse vectors: {e}")
-            raise e 
+            raise e
+    
+    def print_model_info(self):
+        print("==== Word2VecModel Info ====")
+        print(f"Model path: {self.model_path}")
+        print(f"Vector path: {self.vector_path}")
+        print(f"Model loaded: {'Yes' if self.model is not None else 'No'}")
+        print(f"Verse vectors loaded: {len(self.verse_vectors)} ayat")
+        if self.verse_vectors:
+            first_vec = next(iter(self.verse_vectors.values()))
+            print(f"Vector dimension: {first_vec.shape if hasattr(first_vec, 'shape') else type(first_vec)}")
+        else:
+            print("Vector dimension: -")
+        print("============================") 

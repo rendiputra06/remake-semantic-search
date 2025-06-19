@@ -7,6 +7,7 @@ from backend.lexical_search import LexicalSearch
 from backend.word2vec_model import Word2VecModel
 from backend.fasttext_model import FastTextModel
 from backend.glove_model import GloVeModel
+from backend.ensemble_embedding import EnsembleEmbeddingModel
 import json
 import os
 
@@ -27,87 +28,60 @@ class SearchService:
                 print(f"Error loading lexical index: {e}")
                 raise
     
+    def _init_and_load_model(self, model_key, model_class):
+        if model_key not in self._semantic_models:
+            print(f"[DEBUG] Inisialisasi {model_key} dengan default path dari kelas model.")
+            model = model_class()
+            model.load_model()
+            model.load_verse_vectors()
+            self._semantic_models[model_key] = model
+    
     def _init_semantic_model(self, model_type: str):
         """Initialize semantic model if not initialized."""
         if model_type not in self._semantic_models:
             try:
-                # Gunakan path yang relatif terhadap root project (folder semantic)
-                # Naik 3 levels dari app/api/services/search_service.py ke folder semantic
                 root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
                 print(f"Root directory: {root_dir}")  # Debug: tampilkan root directory
                 
                 if model_type == 'word2vec':
-                    model_path = os.path.join(root_dir, 'models', 'idwiki_word2vec', 'idwiki_word2vec_200_new_lower.model')
-                    vectors_path = os.path.join(root_dir, 'database', 'vectors', 'word2vec_verses.pkl')
-                    
-                    # Debug: tampilkan path lengkap
-                    print(f"Model path: {model_path}")
-                    print(f"Vectors path: {vectors_path}")
-                    
-                    # Periksa keberadaan file model dan vektor
-                    if not os.path.exists(model_path):
-                        raise ValueError(f"File model Word2Vec tidak ditemukan di {model_path}")
-                    if not os.path.exists(vectors_path):
-                        raise ValueError(f"File vektor ayat Word2Vec tidak ditemukan di {vectors_path}")
-                    
                     # Inisialisasi model
-                    self._semantic_models[model_type] = Word2VecModel(model_path=model_path)
-                    
-                    # Muat model dan vektor ayat
-                    print(f"Memuat model Word2Vec dari {model_path}...")
+                    self._semantic_models[model_type] = Word2VecModel()
+                    print(f"Memuat model Word2Vec dari {self._semantic_models[model_type].model_path}...")
                     self._semantic_models[model_type].load_model()
-                    print(f"Memuat vektor ayat dari {vectors_path}...")
-                    self._semantic_models[model_type].load_verse_vectors(vectors_path)
+                    print(f"Memuat vektor ayat dari {self._semantic_models[model_type].verse_vectors}...")
+                    self._semantic_models[model_type].load_verse_vectors()
                     print("Model Word2Vec berhasil dimuat!")
                         
                 elif model_type == 'fasttext':
-                    model_path = os.path.join(root_dir, 'models', 'fasttext', 'fasttext_model.model')
-                    vectors_path = os.path.join(root_dir, 'database', 'vectors', 'fasttext_verses.pkl')
-                    
-                    # Debug: tampilkan path lengkap
-                    print(f"Model path: {model_path}")
-                    print(f"Vectors path: {vectors_path}")
-                    
-                    # Periksa keberadaan file model dan vektor
-                    if not os.path.exists(model_path):
-                        raise ValueError(f"File model FastText tidak ditemukan di {model_path}")
-                    if not os.path.exists(vectors_path):
-                        raise ValueError(f"File vektor ayat FastText tidak ditemukan di {vectors_path}")
-                    
-                    # Inisialisasi model
-                    self._semantic_models[model_type] = FastTextModel(model_path=model_path)
-                    
-                    # Muat model dan vektor ayat
-                    print(f"Memuat model FastText dari {model_path}...")
+                    self._semantic_models[model_type] = FastTextModel()
+                    print(f"Memuat model FastText dari {self._semantic_models[model_type].model_path}...")
                     self._semantic_models[model_type].load_model()
-                    print(f"Memuat vektor ayat dari {vectors_path}...")
-                    self._semantic_models[model_type].load_verse_vectors(vectors_path)
+                    print(f"Memuat vektor ayat dari {self._semantic_models[model_type].verse_vectors}...")
+                    self._semantic_models[model_type].load_verse_vectors()
                     print("Model FastText berhasil dimuat!")
                         
                 elif model_type == 'glove':
-                    model_path = os.path.join(root_dir, 'models', 'glove', 'alquran_vectors.txt')
-                    vectors_path = os.path.join(root_dir, 'database', 'vectors', 'glove_verses.pkl')
-                    
-                    # Debug: tampilkan path lengkap
-                    print(f"Model path: {model_path}")
-                    print(f"Vectors path: {vectors_path}")
-                    
-                    # Periksa keberadaan file model dan vektor
-                    if not os.path.exists(model_path):
-                        raise ValueError(f"File model GloVe tidak ditemukan di {model_path}")
-                    if not os.path.exists(vectors_path):
-                        raise ValueError(f"File vektor ayat GloVe tidak ditemukan di {vectors_path}")
-                    
-                    # Inisialisasi model
-                    self._semantic_models[model_type] = GloVeModel(model_path=model_path)
-                    
-                    # Muat model dan vektor ayat
-                    print(f"Memuat model GloVe dari {model_path}...")
+                    self._semantic_models[model_type] = GloVeModel()
+                    print(f"Memuat model GloVe dari {self._semantic_models[model_type].model_path}...")
                     self._semantic_models[model_type].load_model()
-                    print(f"Memuat vektor ayat dari {vectors_path}...")
-                    self._semantic_models[model_type].load_verse_vectors(vectors_path)
+                    print(f"Memuat vektor ayat dari {self._semantic_models[model_type].verse_vectors}...")
+                    self._semantic_models[model_type].load_verse_vectors()
                     print("Model GloVe berhasil dimuat!")
                         
+                elif model_type == 'ensemble':
+                    # Inisialisasi model-model dasar jika belum
+                    self._init_and_load_model('word2vec', Word2VecModel)
+                    self._init_and_load_model('fasttext', FastTextModel)
+                    self._init_and_load_model('glove', GloVeModel)
+                    # Inisialisasi ensemble
+                    ensemble = EnsembleEmbeddingModel(
+                        self._semantic_models['word2vec'],
+                        self._semantic_models['fasttext'],
+                        self._semantic_models['glove']
+                    )
+                    ensemble.load_models()
+                    ensemble.load_verse_vectors()
+                    self._semantic_models[model_type] = ensemble
                 else:
                     raise ValueError(f"Tipe model tidak didukung: {model_type}")
                     

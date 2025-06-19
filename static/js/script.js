@@ -11,8 +11,6 @@ document.addEventListener("DOMContentLoaded", function () {
   // Animasi untuk hasil pencarian
   setupResultAnimations();
 
-  // Muat model yang tersedia
-  loadAvailableModels();
 });
 
 /**
@@ -243,38 +241,6 @@ function displaySearchResults(data) {
 
   // Scroll ke hasil
   resultsCard.scrollIntoView({ behavior: "smooth", block: "nearest" });
-}
-
-/**
- * Muat model yang tersedia dari API
- */
-function loadAvailableModels() {
-  const modelSelect = document.getElementById("modelSelect");
-  if (!modelSelect) return;
-
-  fetch("/api/models")
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
-      }
-      return response.json();
-    })
-    .then((models) => {
-      // Bersihkan pilihan yang ada
-      modelSelect.innerHTML = "";
-
-      // Tambahkan pilihan model
-      models.forEach((model) => {
-        const option = document.createElement("option");
-        option.value = model.id;
-        option.textContent = model.name;
-        option.title = model.description;
-        modelSelect.appendChild(option);
-      });
-    })
-    .catch((error) => {
-      console.error("Error loading models:", error);
-    });
 }
 
 /**

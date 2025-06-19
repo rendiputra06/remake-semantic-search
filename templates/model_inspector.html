@@ -1,0 +1,163 @@
+{% extends "layout.html" %}
+
+{% block title %}Model Inspector{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Model Inspector</h2>
+    <p class="lead">Inspeksi representasi vektor kata dalam model embedding</p>
+
+    <div class="card">
+        <div class="card-body">
+            <form id="inspectForm">
+                <div class="form-group mb-3">
+                    <label for="word">Kata</label>
+                    <input type="text" class="form-control" id="word" name="word" required>
+                    <small class="form-text text-muted">Masukkan kata yang ingin diinspeksi vektornya</small>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="modelType">Model</label>
+                    <select class="form-control" id="modelType" name="modelType">
+                        <option value="word2vec">Word2Vec</option>
+                        <option value="fasttext">FastText</option>
+                        <option value="glove">GloVe</option>
+                        <option value="ensemble">Ensemble</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Inspeksi</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="results" class="mt-4" style="display: none;">
+        <div class="card">
+            <div class="card-body">
+                <h4>Hasil Inspeksi</h4>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5>Informasi Vektor</h5>
+                        <table class="table">
+                            <tr>
+                                <th>Kata</th>
+                                <td id="resultWord"></td>
+                            </tr>
+                            <tr>
+                                <th>Model</th>
+                                <td id="resultModel"></td>
+                            </tr>
+                            <tr>
+                                <th>Dimensi</th>
+                                <td id="resultDimension"></td>
+                            </tr>
+                            <tr>
+                                <th>Norm</th>
+                                <td id="resultNorm"></td>
+                            </tr>
+                        </table>
+                    </div>
+                    
+                    <div class="col-md-6" id="similarWordsSection">
+                        <h5>Kata-kata Serupa</h5>
+                        <table class="table" id="similarWordsTable">
+                            <thead>
+                                <tr>
+                                    <th>Kata</th>
+                                    <th>Kesamaan</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <h5>Visualisasi Vektor</h5>
+                    <div id="vectorVisualization" style="height: 300px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script>
+document.getElementById('inspectForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const word = document.getElementById('word').value;
+    const modelType = document.getElementById('modelType').value;
+    
+    try {
+        const response = await fetch('/api/models/inspect', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                word: word,
+                model_type: modelType
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            // Tampilkan hasil
+            document.getElementById('results').style.display = 'block';
+            
+            // Update informasi dasar
+            document.getElementById('resultWord').textContent = data.data.word;
+            document.getElementById('resultModel').textContent = data.data.model_type;
+            document.getElementById('resultDimension').textContent = data.data.vector_dimension;
+            document.getElementById('resultNorm').textContent = data.data.vector_norm.toFixed(4);
+            
+            // Update similar words jika ada
+            const similarWordsSection = document.getElementById('similarWordsSection');
+            if (data.data.similar_words) {
+                similarWordsSection.style.display = 'block';
+                const tbody = document.querySelector('#similarWordsTable tbody');
+                tbody.innerHTML = '';
+                data.data.similar_words.forEach(item => {
+                    const row = tbody.insertRow();
+                    row.insertCell(0).textContent = item.word;
+                    row.insertCell(1).textContent = item.similarity.toFixed(4);
+                });
+            } else {
+                similarWordsSection.style.display = 'none';
+            }
+            
+            // Visualisasi vektor
+            const vector = data.data.vector;
+            const trace = {
+                y: vector,
+                type: 'bar',
+                name: 'Dimensi Vektor'
+            };
+            
+            const layout = {
+                title: 'Visualisasi Dimensi Vektor',
+                xaxis: {
+                    title: 'Dimensi'
+                },
+                yaxis: {
+                    title: 'Nilai'
+                }
+            };
+            
+            Plotly.newPlot('vectorVisualization', [trace], layout);
+            
+        } else {
+            alert(data.message || 'Terjadi error saat menginspeksi model');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Terjadi error saat menghubungi server');
+    }
+});
+</script>
+{% endblock %} 

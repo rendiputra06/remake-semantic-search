@@ -51,6 +51,10 @@ def search():
         if not query:
             return error_response(400, 'Query tidak boleh kosong')
         
+        # Validasi model_type
+        if model_type not in ['word2vec', 'fasttext', 'glove', 'ensemble']:
+            return error_response(400, f"Model '{model_type}' tidak didukung")
+        
         try:
             # Menggunakan semantic_search dari SearchService
             results = search_service.semantic_search(

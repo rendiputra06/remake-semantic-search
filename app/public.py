@@ -7,6 +7,27 @@ from backend.db import get_db_connection, get_user_by_id
 # Create blueprint
 public_bp = Blueprint('public', __name__)
 
+@public_bp.route('/')
+def index():
+    """
+    Halaman utama aplikasi
+    """
+    return render_template('index.html')
+
+@public_bp.route('/about')
+def about():
+    """
+    Halaman tentang aplikasi
+    """
+    return render_template('about.html')
+
+@public_bp.route('/model-inspector')
+def model_inspector():
+    """
+    Halaman untuk menginspeksi model dan vektor
+    """
+    return render_template('model_inspector.html')
+
 @public_bp.route('/thesaurus')
 def thesaurus():
     """Public thesaurus page."""

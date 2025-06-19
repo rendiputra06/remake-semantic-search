@@ -79,6 +79,13 @@
                 >Tentang</a
               >
             </li>
+            <li class="nav-item">
+              <a
+                class="nav-link {% if request.endpoint == 'public.model_inspector' %}active{% endif %}"
+                href="{{ url_for('public.model_inspector') }}"
+                ><i class="fas fa-cogs me-1"></i>Model Inspector</a
+              >
+            </li>
           </ul>
 
           <ul class="navbar-nav">

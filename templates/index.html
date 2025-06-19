@@ -59,6 +59,7 @@ endblock %} {% block content %}
                   <option value="word2vec" selected>Word2Vec</option>
                   <option value="fasttext">FastText</option>
                   <option value="glove">GloVe</option>
+                  <option value="ensemble">Ensemble (Averaging)</option>
                 </select>
                 <label for="modelType">Model Semantik</label>
               </div>
@@ -206,6 +207,9 @@ endblock %} {% block content %}
             <li>
               GloVe: Menangkap pola statistik global dan keseimbangan semantik
               lokal dan global
+            </li>
+            <li>
+              <strong>Ensemble (Averaging):</strong> Gabungan Word2Vec, FastText, dan GloVe untuk hasil yang lebih robust dan akurat
             </li>
           </ul>
         </div>
