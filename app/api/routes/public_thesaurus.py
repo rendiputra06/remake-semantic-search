@@ -62,7 +62,7 @@ def browse():
     except Exception as e:
         return error_response(500, f'Error: {str(e)}')
 
-@public_thesaurus_bp.route('/statistics', methods=['GET'])
+@public_thesaurus_bp.route('/stats', methods=['GET'])
 def statistics():
     """Public endpoint for thesaurus statistics."""
     try:

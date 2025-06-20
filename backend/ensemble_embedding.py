@@ -50,7 +50,7 @@ class EnsembleEmbeddingModel:
                 continue
             shapes = [v.shape for v in vectors]
             if not all(s == shapes[0] for s in shapes):
-                print(f"[Ensemble] Shape mismatch for verse_id {verse_id}: {[v.shape for v in vectors]}")
+                # print(f"[Ensemble] Shape mismatch for verse_id {verse_id}: {[v.shape for v in vectors]}")
                 continue
             avg_vec = np.mean(vectors, axis=0)
             self.verse_vectors[verse_id] = avg_vec
@@ -71,48 +71,61 @@ class EnsembleEmbeddingModel:
 
     def search(self, query: str, language: str = 'id', limit: int = 10, threshold: float = 0.5) -> List[Dict[str, Any]]:
         """
-        Melakukan pencarian ensemble dengan metode voting.
+        Melakukan pencarian ensemble.
+        Mengumpulkan hasil dari setiap model, menggabungkannya, dan menghitung skor rata-rata serta menyimpan skor individual.
         """
-        from collections import Counter, defaultdict
-        # Ambil hasil pencarian dari masing-masing model
-        results_w2v = self.word2vec_model.search(query, language, limit=limit*2, threshold=threshold)
-        results_ft = self.fasttext_model.search(query, language, limit=limit*2, threshold=threshold)
-        results_glove = self.glove_model.search(query, language, limit=limit*2, threshold=threshold)
-        all_results = []
-        similarity_map = defaultdict(list)
-        verse_info_map = {}
-        for res in results_w2v:
-            all_results.append(res['verse_id'])
-            similarity_map[res['verse_id']].append(res['similarity'])
-            verse_info_map[res['verse_id']] = res
-        for res in results_ft:
-            all_results.append(res['verse_id'])
-            similarity_map[res['verse_id']].append(res['similarity'])
-            verse_info_map[res['verse_id']] = res
-        for res in results_glove:
-            all_results.append(res['verse_id'])
-            similarity_map[res['verse_id']].append(res['similarity'])
-            verse_info_map[res['verse_id']] = res
-        # Hitung voting
-        vote_counts = Counter(all_results)
-        # Urutkan berdasarkan voting dan rata-rata similarity
-        sorted_verse_ids = sorted(
-            vote_counts.keys(),
-            key=lambda vid: (vote_counts[vid], sum(similarity_map[vid])/len(similarity_map[vid])),
-            reverse=True
-        )
-        # Ambil hasil
-        final_results = []
-        for vid in sorted_verse_ids[:limit]:
-            info = verse_info_map[vid]
-            final_results.append({
+        # 1. Dapatkan hasil dari setiap model
+        results_w2v = {res['verse_id']: res for res in self.word2vec_model.search(query, language, limit=limit*3, threshold=threshold)}
+        results_ft = {res['verse_id']: res for res in self.fasttext_model.search(query, language, limit=limit*3, threshold=threshold)}
+        results_glove = {res['verse_id']: res for res in self.glove_model.search(query, language, limit=limit*3, threshold=threshold)}
+
+        # 2. Gabungkan semua verse_id yang unik
+        all_verse_ids = set(results_w2v.keys()) | set(results_ft.keys()) | set(results_glove.keys())
+
+        # 3. Bangun hasil gabungan dengan skor individual dan rata-rata
+        combined_results = []
+        for vid in all_verse_ids:
+            scores = []
+            individual_scores = {}
+            
+            # Ambil informasi ayat dari salah satu hasil (misal w2v)
+            # Jika tidak ada di w2v, coba dari ft, lalu glove
+            info = results_w2v.get(vid) or results_ft.get(vid) or results_glove.get(vid)
+            if not info:
+                continue
+
+            # Kumpulkan skor dari setiap model
+            w2v_sim = results_w2v.get(vid, {}).get('similarity', 0.0)
+            ft_sim = results_ft.get(vid, {}).get('similarity', 0.0)
+            glove_sim = results_glove.get(vid, {}).get('similarity', 0.0)
+
+            individual_scores['word2vec'] = w2v_sim
+            individual_scores['fasttext'] = ft_sim
+            individual_scores['glove'] = glove_sim
+            
+            # Hanya sertakan skor > 0 dalam perhitungan rata-rata
+            valid_scores = [s for s in [w2v_sim, ft_sim, glove_sim] if s > 0]
+            if not valid_scores:
+                continue # Lewati jika tidak ada skor valid
+
+            avg_similarity = sum(valid_scores) / len(valid_scores)
+            
+            # Hanya tambahkan jika rata-rata skor di atas threshold
+            if avg_similarity < threshold:
+                continue
+
+            combined_results.append({
                 'verse_id': vid,
                 'surah_number': info['surah_number'],
                 'surah_name': info['surah_name'],
                 'ayat_number': info['ayat_number'],
                 'arabic': info['arabic'],
                 'translation': info['translation'],
-                'similarity': sum(similarity_map[vid])/len(similarity_map[vid]),
-                'votes': vote_counts[vid]
+                'similarity': avg_similarity, # Skor rata-rata
+                'individual_scores': individual_scores # Skor dari masing-masing model
             })
-        return final_results 
+
+        # 4. Urutkan hasil berdasarkan skor rata-rata
+        combined_results.sort(key=lambda x: x['similarity'], reverse=True)
+
+        return combined_results[:limit] 

@@ -10,6 +10,7 @@ from ..services.search_service import SearchService
 from ..utils import create_response, error_response
 import json
 import traceback
+import time
 
 search_bp = Blueprint('search', __name__)
 
@@ -37,6 +38,7 @@ def search():
     """
     Endpoint untuk pencarian semantik
     """
+    start_time = time.time()
     try:
         # Get data from JSON request
         data = request.get_json()
@@ -57,16 +59,29 @@ def search():
         
         try:
             # Menggunakan semantic_search dari SearchService
-            results = search_service.semantic_search(
+            search_results = search_service.semantic_search(
                 query=query,
                 model_type=model_type,
                 limit=result_limit,
                 threshold=threshold,
                 user_id=session.get('user_id')
             )
+
+            end_time = time.time()
+            execution_time = end_time - start_time
+
+            # Memperbarui struktur respons sesuai rencana
+            response_data = {
+                'query': query,
+                'model': model_type,
+                'threshold': threshold,
+                'execution_time': round(execution_time, 4),
+                'results': search_results.get('results', []),
+                'count': search_results.get('count', 0)
+            }
             
             return create_response(
-                data=results,
+                data=response_data,
                 message='Pencarian berhasil'
             )
             
@@ -77,15 +92,28 @@ def search():
                 try:
                     search_service._init_semantic_model(model_type)
                     # Coba pencarian lagi
-                    results = search_service.semantic_search(
+                    search_results = search_service.semantic_search(
                         query=query,
                         model_type=model_type,
                         limit=result_limit,
                         threshold=threshold,
                         user_id=session.get('user_id')
                     )
+
+                    end_time = time.time()
+                    execution_time = end_time - start_time
+                    
+                    response_data = {
+                        'query': query,
+                        'model': model_type,
+                        'threshold': threshold,
+                        'execution_time': round(execution_time, 4),
+                        'results': search_results.get('results', []),
+                        'count': search_results.get('count', 0)
+                    }
+
                     return create_response(
-                        data=results,
+                        data=response_data,
                         message='Pencarian berhasil'
                     )
                 except Exception as retry_error:

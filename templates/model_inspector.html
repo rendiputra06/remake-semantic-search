@@ -1,81 +1,101 @@
 {% extends "layout.html" %}
 
-{% block title %}Model Inspector{% endblock %}
+{% block title %}Perbandingan Model Inspector{% endblock %}
+
+{% block extra_css %}
+<style>
+    .result-column {
+        border-radius: .25rem;
+        padding: 1rem;
+    }
+    .heatmap-container {
+        height: 200px; /* Atur tinggi heatmap */
+    }
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
-    <h2>Model Inspector</h2>
-    <p class="lead">Inspeksi representasi vektor kata dalam model embedding</p>
+    <div class="text-center mb-4">
+        <h2 class="display-5">Perbandingan Model Inspector</h2>
+        <p class="lead">Bandingkan representasi vektor sebuah kata pada dua model embedding yang berbeda.</p>
+    </div>
 
-    <div class="card">
+    <div class="card shadow-sm">
         <div class="card-body">
             <form id="inspectForm">
-                <div class="form-group mb-3">
-                    <label for="word">Kata</label>
-                    <input type="text" class="form-control" id="word" name="word" required>
-                    <small class="form-text text-muted">Masukkan kata yang ingin diinspeksi vektornya</small>
+                <div class="row align-items-end">
+                    <div class="col-md-5">
+                        <label for="modelLeft" class="form-label">Model Kiri</label>
+                        <select class="form-select" id="modelLeft"></select>
+                    </div>
+                    <div class="col-md-5">
+                        <label for="modelRight" class="form-label">Model Kanan</label>
+                        <select class="form-select" id="modelRight"></select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="word" class="form-label">Kata</label>
+                        <input type="text" class="form-control" id="word" name="word" required placeholder="Contoh: ilmu">
+                    </div>
                 </div>
-
-                <div class="form-group mb-3">
-                    <label for="modelType">Model</label>
-                    <select class="form-control" id="modelType" name="modelType">
-                        <option value="word2vec">Word2Vec</option>
-                        <option value="fasttext">FastText</option>
-                        <option value="glove">GloVe</option>
-                        <option value="ensemble">Ensemble</option>
-                    </select>
+                <div class.row>
+                    <div class="col-12 text-center mt-4">
+                         <button type="submit" class="btn btn-primary btn-lg" id="inspectButton">
+                            <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                            <i class="fas fa-search me-1"></i> Bandingkan
+                        </button>
+                    </div>
                 </div>
-
-                <button type="submit" class="btn btn-primary">Inspeksi</button>
             </form>
         </div>
     </div>
+    
+    <div id="error-container" class="alert alert-danger mt-4 d-none" role="alert"></div>
 
     <div id="results" class="mt-4" style="display: none;">
-        <div class="card">
-            <div class="card-body">
-                <h4>Hasil Inspeksi</h4>
-                
-                <div class="row">
-                    <div class="col-md-6">
-                        <h5>Informasi Vektor</h5>
-                        <table class="table">
-                            <tr>
-                                <th>Kata</th>
-                                <td id="resultWord"></td>
-                            </tr>
-                            <tr>
-                                <th>Model</th>
-                                <td id="resultModel"></td>
-                            </tr>
-                            <tr>
-                                <th>Dimensi</th>
-                                <td id="resultDimension"></td>
-                            </tr>
-                            <tr>
-                                <th>Norm</th>
-                                <td id="resultNorm"></td>
-                            </tr>
-                        </table>
-                    </div>
-                    
-                    <div class="col-md-6" id="similarWordsSection">
-                        <h5>Kata-kata Serupa</h5>
-                        <table class="table" id="similarWordsTable">
-                            <thead>
-                                <tr>
-                                    <th>Kata</th>
-                                    <th>Kesamaan</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                </div>
+        <h4 class="text-center mb-3">Hasil Perbandingan untuk Kata: "<span id="comparedWord" class="fw-bold"></span>"</h4>
+        <div class="row">
+            <!-- Kolom Kiri -->
+            <div class="col-md-6">
+                <div class="bg-light result-column">
+                    <h5 id="modelNameLeft" class="text-center"></h5>
+                    <hr>
+                    <h6>Informasi Vektor</h6>
+                    <table class="table table-sm">
+                        <tr><th>Dimensi</th><td id="dimLeft"></td></tr>
+                        <tr><th>Norm</th><td id="normLeft"></td></tr>
+                    </table>
 
-                <div class="mt-4">
-                    <h5>Visualisasi Vektor</h5>
-                    <div id="vectorVisualization" style="height: 300px;"></div>
+                    <h6>Kata-kata Serupa</h6>
+                    <table class="table table-sm" id="similarWordsTableLeft">
+                        <thead><tr><th>Kata</th><th>Kesamaan</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+
+                    <h6>Visualisasi Vektor (Heatmap)</h6>
+                    <div id="visLeft" class="heatmap-container"></div>
+                </div>
+            </div>
+
+            <!-- Kolom Kanan -->
+            <div class="col-md-6">
+                <div class="bg-light result-column">
+                    <h5 id="modelNameRight" class="text-center"></h5>
+                    <hr>
+                    <h6>Informasi Vektor</h6>
+                    <table class="table table-sm">
+                        <tr><th>Dimensi</th><td id="dimRight"></td></tr>
+                        <tr><th>Norm</th><td id="normRight"></td></tr>
+                    </table>
+
+                    <h6>Kata-kata Serupa</h6>
+                    <table class="table table-sm" id="similarWordsTableRight">
+                        <thead><tr><th>Kata</th><th>Kesamaan</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                    
+                    <h6>Visualisasi Vektor (Heatmap)</h6>
+                    <div id="visRight" class="heatmap-container"></div>
                 </div>
             </div>
         </div>
@@ -83,81 +103,137 @@
 </div>
 {% endblock %}
 
-{% block scripts %}
+{% block extra_js %}
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 <script>
-document.getElementById('inspectForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    const word = document.getElementById('word').value;
-    const modelType = document.getElementById('modelType').value;
-    
-    try {
-        const response = await fetch('/api/models/inspect', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                word: word,
-                model_type: modelType
-            })
-        });
-        
-        const data = await response.json();
-        
-        if (response.ok) {
-            // Tampilkan hasil
-            document.getElementById('results').style.display = 'block';
-            
-            // Update informasi dasar
-            document.getElementById('resultWord').textContent = data.data.word;
-            document.getElementById('resultModel').textContent = data.data.model_type;
-            document.getElementById('resultDimension').textContent = data.data.vector_dimension;
-            document.getElementById('resultNorm').textContent = data.data.vector_norm.toFixed(4);
-            
-            // Update similar words jika ada
-            const similarWordsSection = document.getElementById('similarWordsSection');
-            if (data.data.similar_words) {
-                similarWordsSection.style.display = 'block';
-                const tbody = document.querySelector('#similarWordsTable tbody');
-                tbody.innerHTML = '';
-                data.data.similar_words.forEach(item => {
-                    const row = tbody.insertRow();
-                    row.insertCell(0).textContent = item.word;
-                    row.insertCell(1).textContent = item.similarity.toFixed(4);
+document.addEventListener('DOMContentLoaded', async () => {
+    const modelLeftSelect = document.getElementById('modelLeft');
+    const modelRightSelect = document.getElementById('modelRight');
+    const inspectForm = document.getElementById('inspectForm');
+    const inspectButton = document.getElementById('inspectButton');
+    const errorContainer = document.getElementById('error-container');
+    const resultsContainer = document.getElementById('results');
+
+    // 1. Muat model secara dinamis
+    async function loadModels() {
+        try {
+            const response = await fetch('/api/models/models');
+            const data = await response.json();
+            if (data.success) {
+                const models = data.data;
+                modelLeftSelect.innerHTML = '';
+                modelRightSelect.innerHTML = '';
+                models.forEach((model, index) => {
+                    modelLeftSelect.add(new Option(model.name, model.id));
+                    modelRightSelect.add(new Option(model.name, model.id));
                 });
-            } else {
-                similarWordsSection.style.display = 'none';
-            }
-            
-            // Visualisasi vektor
-            const vector = data.data.vector;
-            const trace = {
-                y: vector,
-                type: 'bar',
-                name: 'Dimensi Vektor'
-            };
-            
-            const layout = {
-                title: 'Visualisasi Dimensi Vektor',
-                xaxis: {
-                    title: 'Dimensi'
-                },
-                yaxis: {
-                    title: 'Nilai'
+                // Set default berbeda jika memungkinkan
+                if (models.length > 1) {
+                    modelLeftSelect.value = 'word2vec';
+                    modelRightSelect.value = 'fasttext';
                 }
-            };
-            
-            Plotly.newPlot('vectorVisualization', [trace], layout);
-            
-        } else {
-            alert(data.message || 'Terjadi error saat menginspeksi model');
+            }
+        } catch (error) {
+            showError('Gagal memuat daftar model.');
+            console.error('Error loading models:', error);
         }
-    } catch (error) {
-        console.error('Error:', error);
-        alert('Terjadi error saat menghubungi server');
     }
+
+    // 2. Tampilkan error
+    function showError(message) {
+        errorContainer.textContent = message;
+        errorContainer.classList.remove('d-none');
+        resultsContainer.style.display = 'none';
+    }
+    
+    // 3. Kontrol loading state
+    function setLoading(isLoading) {
+        const spinner = inspectButton.querySelector('.spinner-border');
+        if (isLoading) {
+            inspectButton.disabled = true;
+            spinner.classList.remove('d-none');
+        } else {
+            inspectButton.disabled = false;
+            spinner.classList.add('d-none');
+        }
+    }
+
+    // 4. Render hasil untuk satu sisi (kiri/kanan)
+    function renderResult(side, data) {
+        document.getElementById(`modelName${side}`).textContent = data.model_type;
+        document.getElementById(`dim${side}`).textContent = data.vector_dimension;
+        document.getElementById(`norm${side}`).textContent = data.vector_norm.toFixed(4);
+
+        const similarWordsTbody = document.querySelector(`#similarWordsTable${side} tbody`);
+        similarWordsTbody.innerHTML = '';
+        if (data.similar_words && data.similar_words.length > 0) {
+            data.similar_words.forEach(item => {
+                const row = similarWordsTbody.insertRow();
+                row.insertCell(0).textContent = item.word;
+                row.insertCell(1).textContent = item.similarity.toFixed(4);
+            });
+        } else {
+             const row = similarWordsTbody.insertRow();
+             const cell = row.insertCell(0);
+             cell.colSpan = 2;
+             cell.textContent = 'Tidak ada kata serupa.';
+        }
+
+        // Visualisasi Heatmap
+        const trace = {
+            z: [data.vector], // Vektor harus dalam array 2D untuk heatmap
+            type: 'heatmap',
+            colorscale: 'Viridis',
+            showscale: false
+        };
+        const layout = {
+            margin: { t: 5, b: 5, l: 5, r: 5 },
+            xaxis: { ticks: '', showticklabels: false },
+            yaxis: { ticks: '', showticklabels: false }
+        };
+        Plotly.newPlot(`vis${side}`, [trace], layout, {responsive: true});
+    }
+
+    // 5. Event listener untuk form submit
+    inspectForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        errorContainer.classList.add('d-none');
+
+        const word = document.getElementById('word').value;
+        const modelLeft = modelLeftSelect.value;
+        const modelRight = modelRightSelect.value;
+
+        try {
+            const response = await fetch('/api/models/inspect', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    word: word,
+                    model_left: modelLeft,
+                    model_right: modelRight
+                })
+            });
+            const resultData = await response.json();
+
+            if (response.ok) {
+                document.getElementById('comparedWord').textContent = resultData.data.word;
+                renderResult('Left', resultData.data.left);
+                renderResult('Right', resultData.data.right);
+                resultsContainer.style.display = 'block';
+            } else {
+                showError(resultData.error || 'Terjadi kesalahan');
+            }
+        } catch (error) {
+            showError('Tidak dapat terhubung ke server.');
+            console.error('Error during inspection:', error);
+        } finally {
+            setLoading(false);
+        }
+    });
+
+    // Inisialisasi
+    await loadModels();
 });
 </script>
 {% endblock %} 

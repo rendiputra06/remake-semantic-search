@@ -44,6 +44,67 @@ def init_models():
         ensemble_model.load_models()
         ensemble_model.load_verse_vectors()
 
+def get_word_inspection_data(word: str, model_type: str) -> dict:
+    """
+    Helper function to get inspection data for a single word and model.
+    """
+    if not word:
+        raise ValueError("Kata tidak boleh kosong")
+
+    # This function assumes models are initialized. A global init call might be needed.
+    # init_models() # Uncomment if you want to ensure models are loaded on every call
+
+    # Determine which model to use
+    model_map = {
+        'word2vec': word2vec_model,
+        'fasttext': fasttext_model,
+        'glove': glove_model,
+        'ensemble': ensemble_model
+    }
+    model = model_map.get(model_type)
+    if not model:
+        raise ValueError(f"Model type '{model_type}' tidak valid.")
+
+    # Calculate vector
+    if model_type == 'ensemble':
+        vector = model._calculate_query_vector([word])
+    else:
+        # Check if word is in vocabulary
+        if word not in model.model.wv:
+            raise ValueError(f"Kata '{word}' tidak ditemukan dalam vocabulary model {model_type}")
+        vector = model.model.wv[word]
+        
+    if vector is None:
+        raise ValueError(f"Kata '{word}' tidak ditemukan dalam model {model_type}")
+
+    vector_list = vector.tolist()
+    result = {
+        'model_type': model_type,
+        'vector': vector_list,
+        'vector_dimension': len(vector_list),
+        'vector_norm': float(np.linalg.norm(vector))
+    }
+
+    # Get similar words
+    try:
+        if model_type == 'ensemble':
+            # For ensemble, find most similar from the pre-calculated verse vectors
+            similar_verses = model.search(word, limit=10, threshold=0.1) # Use search as a proxy
+            # This is an approximation; a true 'similar word' isn't directly available.
+            # We can extract keywords from the top verses as a substitute.
+            # For now, we'll return an empty list as a placeholder.
+            result['similar_words'] = [] # Placeholder
+        else:
+            similar_items = model.model.wv.most_similar(word, topn=10)
+            result['similar_words'] = [
+                {'word': w, 'similarity': float(s)} 
+                for w, s in similar_items
+            ]
+    except Exception:
+        result['similar_words'] = [] # If a word has no similar words
+
+    return result
+
 @models_bp.route('/models', methods=['GET'])
 def get_models():
     """
@@ -77,61 +138,38 @@ def get_models():
         message='Daftar model berhasil diambil'
     )
 
-@models_bp.route('/models/inspect', methods=['POST'])
-def inspect_model():
+@models_bp.route('/inspect', methods=['POST'])
+def inspect_model_comparison():
     """
-    Endpoint untuk menginspeksi model dan vektor
+    Endpoint untuk menginspeksi dan membandingkan sebuah kata pada dua model.
     """
     data = request.get_json()
     word = data.get('word')
-    model_type = data.get('model_type', 'word2vec')
+    model_left = data.get('model_left')
+    model_right = data.get('model_right')
+
+    if not all([word, model_left, model_right]):
+        return error_response('Parameter "word", "model_left", dan "model_right" dibutuhkan', 400)
     
-    if not word:
-        return error_response('Kata tidak boleh kosong', 400)
-        
     try:
-        # Inisialisasi model yang dipilih
-        if model_type == 'ensemble':
-            word2vec = init_model('word2vec')
-            fasttext = init_model('fasttext')
-            glove = init_model('glove')
-            model = EnsembleEmbeddingModel(word2vec, fasttext, glove)
-            model.load_models()
-            vector = model._calculate_query_vector([word])
-        else:
-            model = init_model(model_type)
-            vector = model._calculate_verse_vector([word])
-            
-        if vector is None:
-            return error_response('Kata tidak ditemukan dalam model', 404)
-            
-        # Konversi vektor numpy ke list untuk JSON serialization
-        vector = vector.tolist()
+        # Ensure all models are loaded before inspection
+        init_models()
         
-        # Tambahkan informasi tambahan
-        result = {
+        data_left = get_word_inspection_data(word, model_left)
+        data_right = get_word_inspection_data(word, model_right)
+        
+        response_data = {
             'word': word,
-            'model_type': model_type,
-            'vector': vector,
-            'vector_dimension': len(vector),
-            'vector_norm': float(np.linalg.norm(vector))
+            'left': data_left,
+            'right': data_right
         }
         
-        # Jika bukan ensemble, tambahkan similar words
-        if model_type != 'ensemble':
-            similar_words = model.model.wv.most_similar(word, topn=10)
-            result['similar_words'] = [
-                {'word': w, 'similarity': float(s)} 
-                for w, s in similar_words
-            ]
-            
-        return create_response(
-            data=result,
-            message='Inspeksi model berhasil'
-        )
-        
+        return create_response(data=response_data, message='Inspeksi perbandingan model berhasil')
+
+    except ValueError as e:
+        return error_response(str(e), 404)
     except Exception as e:
-        return error_response(f'Error saat menginspeksi model: {str(e)}', 500)
+        return error_response(f'Error internal: {str(e)}', 500)
 
 @models_bp.route('/user_settings', methods=['GET'])
 def user_settings():

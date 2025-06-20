@@ -457,7 +457,7 @@ endblock %} {% block content %}
     }
 
     // Ambil semua data index untuk membangun tree
-    fetch("/api/quran/index/index/tree")
+    fetch("/api/public/quran/tree")
       .then((response) => response.json())
       .then((result) => {
         if (result.success) {
@@ -652,7 +652,7 @@ endblock %} {% block content %}
             </div>
         `;
 
-    fetch(`/api/quran/index/index/${indexId}`)
+    fetch(`/api/quran-index/${indexId}`)
       .then((response) => response.json())
       .then((result) => {
         if (result.success) {
@@ -755,7 +755,7 @@ endblock %} {% block content %}
     }
 
     // Dapatkan informasi tentang parent
-    fetch(`/api/quran/index/index/${parentId}`)
+    fetch(`/api/quran-index/${parentId}`)
       .then((response) => response.json())
       .then((result) => {
         if (result.success) {
@@ -843,7 +843,7 @@ endblock %} {% block content %}
       .querySelector(".progress-bar").style.width = "0%";
 
     // Load daftar index untuk parent
-    fetch("/api/quran/index/index/all")
+    fetch("/api/quran-index/index/all")
       .then((response) => response.json())
       .then((result) => {
         if (result.success) {
@@ -1000,7 +1000,7 @@ endblock %} {% block content %}
     document.getElementById("indexForm").reset();
 
     // Ambil data index
-    fetch(`/api/quran/index/index/${indexId}`)
+    fetch(`/api/quran-index/${indexId}`)
       .then((response) => response.json())
       .then((result) => {
         if (result.success) {
@@ -1056,8 +1056,8 @@ endblock %} {% block content %}
 
     // Endpoint dan method
     const url = isEdit
-      ? `/api/quran/index/index/${indexId}`
-      : "/api/quran/index/index";
+      ? `/api/quran-index/${indexId}`
+      : "/api/quran-index";
     const method = isEdit ? "PUT" : "POST";
 
     // Kirim request
@@ -1094,7 +1094,7 @@ endblock %} {% block content %}
 
   function showDeleteIndexModal(indexId) {
     // Ambil data index
-    fetch(`/api/quran/index/index/${indexId}`)
+    fetch(`/api/quran-index/${indexId}`)
       .then((response) => response.json())
       .then((result) => {
         if (result.success) {
@@ -1145,7 +1145,7 @@ endblock %} {% block content %}
   }
 
   function deleteIndex(indexId) {
-    fetch(`/api/quran/index/index/${indexId}`, {
+    fetch(`/api/quran-index/${indexId}`, {
       method: "DELETE",
     })
       .then((response) => response.json())
@@ -1196,7 +1196,7 @@ endblock %} {% block content %}
 
   function showEditAyatModal(ayatId) {
     // Ambil data ayat
-    fetch(`/api/quran/index/index/${currentParentId}`)
+    fetch(`/api/quran-index/${currentParentId}`)
       .then((response) => response.json())
       .then((result) => {
         if (result.success) {
@@ -1257,8 +1257,8 @@ endblock %} {% block content %}
 
     // Endpoint dan method
     const url = isEdit
-      ? `/api/quran/index/index/${ayatId}`
-      : "/api/quran/index/index";
+      ? `/api/quran-index/ayat/${ayatId}`
+      : "/api/quran-index/ayat";
     const method = isEdit ? "PUT" : "POST";
 
     // Kirim request
@@ -1295,7 +1295,7 @@ endblock %} {% block content %}
 
   function showDeleteAyatModal(ayatId) {
     // Ambil data ayat
-    fetch(`/api/quran/index/index/${currentParentId}`)
+    fetch(`/api/quran-index/${currentParentId}`)
       .then((response) => response.json())
       .then((result) => {
         if (result.success) {
@@ -1335,7 +1335,7 @@ endblock %} {% block content %}
   }
 
   function deleteAyat(ayatId, indexId) {
-    fetch(`/api/quran/index/index/${ayatId}`, {
+    fetch(`/api/quran-index/ayat/${ayatId}`, {
       method: "DELETE",
     })
       .then((response) => response.json())

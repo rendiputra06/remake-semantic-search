@@ -11,7 +11,7 @@ import os
 
 export_bp = Blueprint('export', __name__)
 
-@export_bp.route('/export/excel', methods=['POST'])
+@export_bp.route('/excel', methods=['POST'])
 def export_excel():
     """
     Ekspor hasil pencarian ke Excel
@@ -48,8 +48,9 @@ def export_excel():
             title = f"Hasil Pencarian untuk '{query}'"
             
         # Format data for Excel
-        for result in results:
+        for i, result in enumerate(results):
             row = {
+                'Peringkat': i + 1,
                 'Surah': result.get('surah_number'),
                 'Nama Surah': result.get('surah_name'),
                 'Ayat': result.get('ayat_number'),
@@ -59,10 +60,19 @@ def export_excel():
             }
             
             # Add specific data based on search type
-            if 'similarity' in result:
+            if search_type == 'semantic':
+                model_type = data.get('model', '').lower()
                 row['Skor Kesamaan'] = result.get('similarity')
-                row['Persentase Kesamaan'] = f"{int(result.get('similarity', 0) * 100)}%"
-                
+
+                if model_type == 'ensemble' and 'individual_scores' in result:
+                    # Ganti nama kolom dan tambahkan skor individual
+                    row['Skor Rata-rata (Ensemble)'] = row.pop('Skor Kesamaan')
+                    row['Skor Word2Vec'] = result['individual_scores'].get('word2vec')
+                    row['Skor FastText'] = result['individual_scores'].get('fasttext')
+                    row['Skor GloVe'] = result['individual_scores'].get('glove')
+                else:
+                    row['Persentase Kesamaan'] = f"{int(result.get('similarity', 0) * 100)}%"
+
             if 'source_query' in result:
                 row['Query Sumber'] = result.get('source_query')
                 
@@ -85,36 +95,45 @@ def export_excel():
         
         # Create Excel file in memory
         output = io.BytesIO()
-        writer = pd.ExcelWriter(output, engine='openpyxl')
         
-        # Create info sheet
-        info_df = pd.DataFrame({
-            'Informasi': ['Query Pencarian', 'Tipe Pencarian', 'Jumlah Hasil', 'Waktu Ekspor'],
-            'Nilai': [
-                query,
-                search_type,
-                len(results),
-                datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            ]
-        })
-        
-        # Add expanded queries info if available
-        if search_type == 'expanded' and 'expanded_queries' in data:
-            expanded_queries = ', '.join(data['expanded_queries'])
-            new_row = pd.DataFrame({
-                'Informasi': ['Query Diperluas'],
-                'Nilai': [expanded_queries]
-            })
-            info_df = pd.concat([info_df, new_row], ignore_index=True)
-        
-        # Write info sheet
-        info_df.to_excel(writer, sheet_name='Informasi Pencarian', index=False)
-        
-        # Write main results sheet
-        df = pd.DataFrame(df_data)
-        df.to_excel(writer, sheet_name='Hasil Pencarian', index=False)
-        
-        # Reset file pointer
+        # Gunakan context manager agar file tidak korup
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            # Create info sheet
+            info_data = {
+                'Informasi': ['Query Pencarian', 'Tipe Pencarian', 'Jumlah Hasil', 'Waktu Ekspor'],
+                'Nilai': [
+                    query,
+                    search_type,
+                    len(results),
+                    datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                ]
+            }
+
+            if search_type == 'semantic':
+                info_data['Informasi'].extend(['Model', 'Durasi Pencarian (detik)', 'Threshold'])
+                info_data['Nilai'].extend([
+                    data.get('model', 'N/A'),
+                    data.get('execution_time', 'N/A'),
+                    data.get('threshold', 'N/A')
+                ])
+
+            info_df = pd.DataFrame(info_data)
+            
+            # Add expanded queries info if available
+            if search_type == 'expanded' and 'expanded_queries' in data:
+                expanded_queries = ', '.join(data['expanded_queries'])
+                new_row = pd.DataFrame({
+                    'Informasi': ['Query Diperluas'],
+                    'Nilai': [expanded_queries]
+                })
+                info_df = pd.concat([info_df, new_row], ignore_index=True)
+            info_df.to_excel(writer, sheet_name='Informasi Pencarian', index=False)
+
+            # Write main results sheet
+            df = pd.DataFrame(df_data)
+            df.to_excel(writer, sheet_name='Hasil Pencarian', index=False)
+
+        # Pastikan pointer file di awal
         output.seek(0)
         
         # Set safe filename
