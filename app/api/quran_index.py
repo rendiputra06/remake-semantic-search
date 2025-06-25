@@ -4,6 +4,7 @@ from backend.db import (
     get_quran_indexes,
     get_quran_index_by_id,
     get_quran_ayat_by_index,
+    get_quran_ayat_detail_by_index,
     add_quran_index,
     update_quran_index
 )
@@ -138,9 +139,9 @@ def get_index_by_id(index_id):
             'message': 'Index tidak ditemukan'
         }), 404
     
-    # Dapatkan sub-index dan ayat
+    # Dapatkan sub-index dan ayat dengan detail lengkap
     sub_indexes = get_quran_indexes(index_id)
-    ayat = get_quran_ayat_by_index(index_id)
+    ayat = get_quran_ayat_detail_by_index(index_id)
     
     # Dapatkan parent jika ada
     parent = None

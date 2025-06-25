@@ -269,7 +269,7 @@ class PublicThesaurusManager {
 
   async loadStatistics() {
     try {
-      const response = await fetch("/api/public/thesaurus/statistics");
+      const response = await fetch("/api/public/thesaurus/stats");
       const data = await response.json();
 
       if (data.success) {

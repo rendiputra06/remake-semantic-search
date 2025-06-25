@@ -1,1 +1,103 @@
- 
+{% extends "layout.html" %}
+
+{% block title %}Browse Tesaurus{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Browse Tesaurus</h2>
+
+    <!-- Filter dan Pencarian -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="sortBy">Urutkan berdasarkan:</label>
+                        <select class="form-control" id="sortBy">
+                            <option value="word">Kata</option>
+                            <option value="relations">Jumlah Relasi</option>
+                            <option value="score">Skor</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="filterType">Filter:</label>
+                        <select class="form-control" id="filterType">
+                            <option value="all">Semua</option>
+                            <option value="synonym">Sinonim</option>
+                            <option value="antonym">Antonim</option>
+                            <option value="hyponym">Hiponim</option>
+                            <option value="hypernym">Hipernim</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="perPage">Item per halaman:</label>
+                        <select class="form-control" id="perPage">
+                            <option value="10">10</option>
+                            <option value="20" selected>20</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>&nbsp;</label>
+                        <button class="btn btn-primary btn-block" id="applyFilters">
+                            Terapkan Filter
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col">
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="browseSearch" placeholder="Cari kata...">
+                        <div class="input-group-append">
+                            <button class="btn btn-outline-secondary" type="button" id="browseSearchBtn">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistik -->
+    <div class="card mb-4">
+        <div class="card-body" id="browseStats">
+            <div class="text-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="sr-only">Loading...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hasil Browse -->
+    <div class="card">
+        <div class="card-body">
+            <div id="browseResults">
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="sr-only">Loading...</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Pagination -->
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center" id="pagination"></ul>
+            </nav>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/thesaurus-browse.js') }}"></script>
+{% endblock %} 

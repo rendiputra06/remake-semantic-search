@@ -505,6 +505,60 @@ def get_quran_ayat_by_index(index_id):
         print(f"Error parsing list_ayat: {e}")
         return []
 
+def get_quran_ayat_detail_by_index(index_id):
+    """
+    Mendapatkan ayat-ayat Al-Quran lengkap dengan teks dan terjemahan berdasarkan index_id
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    cursor.execute('SELECT list_ayat FROM quran_index WHERE id = ?', (index_id,))
+    result = cursor.fetchone()
+    
+    if not result or not result['list_ayat']:
+        conn.close()
+        return []
+    
+    try:
+        import json
+        ayat_list = json.loads(result['list_ayat'])
+        
+        # Ambil detail ayat dari database
+        detailed_ayat = []
+        for ayat_ref in ayat_list:
+            parts = ayat_ref.split(':')
+            if len(parts) == 2:
+                surah_num, ayat_num = int(parts[0]), int(parts[1])
+                
+                # Ambil data ayat dari tabel quran_verses
+                cursor.execute('''
+                    SELECT v.*, s.surah_name_en 
+                    FROM quran_verses v 
+                    JOIN quran_surah s ON v.surah_id = s.surah_number 
+                    WHERE v.surah_id = ? AND v.verse_number = ?
+                ''', (surah_num, ayat_num))
+                
+                verse_data = cursor.fetchone()
+                if verse_data:
+                    detailed_ayat.append({
+                        'id': verse_data['id'],
+                        'surah': surah_num,
+                        'surah_name': verse_data['surah_name'],
+                        'surah_name_en': verse_data['surah_name_en'],
+                        'ayat': ayat_num,
+                        'text': verse_data['verse_text'],
+                        'translation': verse_data['verse_translation'],
+                        'ayat_ref': ayat_ref
+                    })
+        
+        conn.close()
+        return detailed_ayat
+        
+    except (json.JSONDecodeError, Exception) as e:
+        print(f"Error parsing list_ayat: {e}")
+        conn.close()
+        return []
+
 def add_quran_index(title, description=None, parent_id=None, level=1, sort_order=0):
     """
     Menambahkan index Al-Quran baru

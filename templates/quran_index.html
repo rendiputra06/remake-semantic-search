@@ -63,6 +63,11 @@ endblock %} {% block content %}
   </div>
 </div>
 
+<!-- Tombol Kembali ke Atas -->
+<button id="back-to-top" class="btn btn-primary btn-lg" style="position: fixed; bottom: 40px; right: 40px; display: none; z-index: 9999; border-radius: 50%;">
+  <i class="fas fa-arrow-up"></i>
+</button>
+
 {% if user and user.role == 'admin' %}
 <!-- Modal untuk tambah/edit index -->
 <div
@@ -696,37 +701,17 @@ endblock %} {% block content %}
               html += `
                                 <div class="card mb-2">
                                     <div class="card-header d-flex justify-content-between align-items-center">
-                                        <span>Q.S. ${ayat.surah}:${
-                ayat.ayat
-              }</span>
-                                        {% if user and user.role == 'admin' %}
-                                        <div>
-                                            <button class="btn btn-info btn-sm btn-sm" onclick="showEditAyatModal(${
-                                              ayat.id
-                                            })">
-                                                <i class="fas fa-edit"></i>
-                                            </button>
-                                            <button class="btn btn-danger btn-sm btn-sm" onclick="showDeleteAyatModal(${
-                                              ayat.id
-                                            })">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </div>
-                                        {% endif %}
+                                        <span>Q.S. ${ayat.surah}:$${ayat.ayat} <span class='text-muted'>(${ayat.surah_name_en || ''})</span></span>
                                     </div>
                                     <div class="card-body">
-                                        <p class="text-end" dir="rtl">${
-                                          ayat.text
-                                        }</p>
-                                        ${
-                                          ayat.translation
-                                            ? `<p>${ayat.translation}</p>`
-                                            : ""
-                                        }
+                                        <p class="text-end fs-5" dir="rtl">${ayat.text || "<em>Tidak ada teks</em>"}</p>
+                                        ${ayat.translation ? `<p class='mb-0'>${ayat.translation}</p>` : "<p class='mb-0 text-muted'><em>Tidak ada terjemahan</em></p>"}
                                     </div>
                                 </div>
                             `;
             });
+          } else {
+            html += `<div class='alert alert-warning mt-3'>Tidak ada ayat terkait pada index ini.</div>`;
           }
 
           detailContainer.innerHTML = html;
@@ -1361,6 +1346,19 @@ endblock %} {% block content %}
         showAlert("danger", "Terjadi kesalahan saat menghapus data");
       });
   }
+
+  // Tombol Kembali ke Atas
+  const backToTopBtn = document.getElementById("back-to-top");
+  window.addEventListener("scroll", function () {
+    if (window.scrollY > 300) {
+      backToTopBtn.style.display = "block";
+    } else {
+      backToTopBtn.style.display = "none";
+    }
+  });
+  backToTopBtn.addEventListener("click", function () {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
 </script>
 {% endblock %} {% block body_attributes %} data-is-admin="{% if user and
 user.role == 'admin' %}true{% else %}false{% endif %}" {% endblock %}

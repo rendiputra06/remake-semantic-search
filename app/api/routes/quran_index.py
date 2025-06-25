@@ -295,8 +295,24 @@ def delete_index(index_id):
     except Exception as e:
         return error_response(500, f'Error saat menghapus index: {str(e)}')
 
+@quran_index_bp.route('/excel/check-deps', methods=['GET'])
+def check_excel_dependencies():
+    """
+    Endpoint untuk mengecek dependency Excel
+    """
+    try:
+        import pandas as pd
+        return create_response(
+            data={'pandas_available': True, 'version': pd.__version__},
+            message='Dependency Excel tersedia'
+        )
+    except ImportError as e:
+        return error_response(500, f'Dependency tidak tersedia: {str(e)}')
+    except Exception as e:
+        return error_response(500, f'Error saat mengecek dependency: {str(e)}')
+
 @quran_index_bp.route('/excel/sheets', methods=['POST'])
-def get_excel_sheets():
+def get_excel_sheets_endpoint():
     """
     Endpoint untuk mendapatkan daftar sheet dari file Excel yang diupload
     """
@@ -315,24 +331,35 @@ def get_excel_sheets():
         # Simpan file sementara dengan timestamp untuk mencegah konflik nama file
         timestamp = int(time.time())
         temp_dir = tempfile.gettempdir()
-        temp_path = os.path.join(temp_dir, f"{timestamp}_{file.filename}")
+        temp_path = os.path.join(temp_dir, f"{timestamp}_{secure_filename(file.filename)}")
         
         try:
             # Simpan file ke tempat sementara
             file.save(temp_path)
             
-            # Gunakan fungsi dari excel_importer.py
-            success, result = get_excel_sheets(temp_path)
+            # Cek apakah file berhasil disimpan
+            if not os.path.exists(temp_path):
+                return error_response(500, 'Gagal menyimpan file sementara')
             
-            if success:
-                return create_response(
-                    data=result,
-                    message='Daftar sheet berhasil diambil'
-                )
-            else:
-                return error_response(500, result)
+            # Gunakan fungsi dari excel_importer.py
+            try:
+                success, result = get_excel_sheets(temp_path)
+                
+                if success:
+                    return create_response(
+                        data=result,
+                        message='Daftar sheet berhasil diambil'
+                    )
+                else:
+                    return error_response(500, result)
+            except ImportError as e:
+                # Fallback jika pandas tidak tersedia
+                return error_response(500, f'Dependency tidak tersedia: {str(e)}. Pastikan pandas terinstall.')
+            except Exception as e:
+                return error_response(500, f'Error saat membaca file Excel: {str(e)}')
+                
         except Exception as e:
-            return error_response(500, f'Error saat membaca file Excel: {str(e)}')
+            return error_response(500, f'Error saat memproses file: {str(e)}')
         finally:
             # Coba hapus file sementara
             try:

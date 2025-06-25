@@ -61,38 +61,40 @@ class ThesaurusBrowseManager {
   }
 
   displayBrowseStats(stats) {
+    // Extract relation counts from relation_distribution
+    const relationCounts = {};
+    stats.relation_distribution.forEach(rel => {
+      relationCounts[rel.relation_type] = rel.count;
+    });
+
     const html = `
             <div class="row text-center">
-                <div class="col-6">
-                    <div class="h4 text-primary">${stats.total_words}</div>
+                <div class="col-4">
+                    <div class="h4 text-primary">${stats.basic_stats.unique_words.toLocaleString()}</div>
                     <small class="text-muted">Total Kata</small>
                 </div>
-                <div class="col-6">
-                    <div class="h4 text-success">${stats.total_relations}</div>
+                <div class="col-4">
+                    <div class="h4 text-success">${stats.basic_stats.total_relations.toLocaleString()}</div>
                     <small class="text-muted">Total Relasi</small>
+                </div>
+                <div class="col-4">
+                    <div class="h4 text-info">${stats.basic_stats.avg_score.toFixed(2)}</div>
+                    <small class="text-muted">Skor Rata-rata</small>
                 </div>
             </div>
             <hr>
             <div class="small">
                 <div class="mb-1">
-                    <strong>Sinonim:</strong> ${
-                      stats.relation_counts.synonym || 0
-                    }
+                    <strong>Sinonim:</strong> ${(relationCounts.synonym || 0).toLocaleString()}
                 </div>
                 <div class="mb-1">
-                    <strong>Antonim:</strong> ${
-                      stats.relation_counts.antonym || 0
-                    }
+                    <strong>Antonim:</strong> ${(relationCounts.antonym || 0).toLocaleString()}
                 </div>
                 <div class="mb-1">
-                    <strong>Hiponim:</strong> ${
-                      stats.relation_counts.hyponym || 0
-                    }
+                    <strong>Hiponim:</strong> ${(relationCounts.hyponym || 0).toLocaleString()}
                 </div>
                 <div class="mb-1">
-                    <strong>Hipernim:</strong> ${
-                      stats.relation_counts.hypernym || 0
-                    }
+                    <strong>Hipernim:</strong> ${(relationCounts.hypernym || 0).toLocaleString()}
                 </div>
             </div>
         `;
@@ -108,8 +110,7 @@ class ThesaurusBrowseManager {
         page: this.currentPage,
         per_page: this.perPage,
         sort_by: this.sortBy,
-        filter_type: this.filterType,
-        search: this.searchQuery,
+        filter_type: this.filterType
       });
 
       const response = await fetch(`/api/public/thesaurus/browse?${params}`);
@@ -137,141 +138,118 @@ class ThesaurusBrowseManager {
                     <p class="text-muted">Coba ubah filter atau kata kunci pencarian</p>
                 </div>
             `;
+      this.pagination.innerHTML = '';
       return;
     }
 
     let html = '<div class="row">';
 
-    words.forEach((word, index) => {
-      const relationCount = word.relation_count || 0;
-      const avgScore = word.avg_score ? word.avg_score.toFixed(2) : "0.00";
-
+    words.forEach((word) => {
       html += `
                 <div class="col-md-6 col-lg-4 mb-3">
-                    <div class="card thesaurus-card h-100">
+                    <div class="card h-100">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-start mb-2">
-                                <h6 class="card-title mb-0">
-                                    <a href="/thesaurus/word/${encodeURIComponent(
-                                      word.word
-                                    )}" 
-                                       class="word-link">${word.word}</a>
-                                </h6>
-                                <span class="badge bg-primary">${relationCount}</span>
+                                <h5 class="card-title mb-0">
+                                    <a href="/thesaurus/word/${encodeURIComponent(word.word)}" 
+                                       class="text-decoration-none">${word.word}</a>
+                                </h5>
+                                <span class="badge bg-primary">${word.relation_count}</span>
                             </div>
-                            <div class="small text-muted">
-                                <div class="mb-1">
-                                    <i class="fas fa-chart-line"></i> Skor: ${avgScore}
-                                </div>
-                                <div class="mb-1">
-                                    <i class="fas fa-link"></i> ${relationCount} relasi
-                                </div>
+                            ${word.definition ? `
+                            <p class="card-text small text-muted mb-2">
+                                ${word.definition}
+                            </p>
+                            ` : ''}
+                            <div class="small text-muted mb-3">
+                                <div><i class="fas fa-link"></i> ${word.relation_count} relasi</div>
                             </div>
-                            <div class="mt-2">
-                                <button class="btn btn-sm btn-outline-primary" 
-                                        onclick="browseManager.viewWord('${
-                                          word.word
-                                        }')">
-                                    <i class="fas fa-eye"></i> Lihat Detail
-                                </button>
-                            </div>
+                            <button class="btn btn-sm btn-outline-primary" 
+                                    onclick="browseManager.viewWord('${word.word}')">
+                                <i class="fas fa-eye"></i> Lihat Detail
+                            </button>
                         </div>
                     </div>
                 </div>
             `;
     });
 
-    html += "</div>";
+    html += '</div>';
     this.browseResults.innerHTML = html;
 
-    this.displayPagination(pagination);
+    // Update pagination
+    this.displayPagination({
+      current_page: pagination.page,
+      total_pages: pagination.pages,
+      total: pagination.total
+    });
   }
 
   displayPagination(pagination) {
     if (!pagination || pagination.total_pages <= 1) {
-      this.pagination.innerHTML = "";
+      this.pagination.innerHTML = '';
       return;
     }
 
-    let html = "";
     const currentPage = pagination.current_page;
     const totalPages = pagination.total_pages;
+    let html = '';
 
     // Previous button
     html += `
-            <li class="page-item ${currentPage === 1 ? "disabled" : ""}">
-                <a class="page-link" href="#" onclick="browseManager.goToPage(${
-                  currentPage - 1
-                })">
-                    <i class="fas fa-chevron-left"></i>
-                </a>
-            </li>
-        `;
+      <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+        <a class="page-link" href="#" onclick="event.preventDefault(); browseManager.goToPage(${currentPage - 1})">
+          <i class="fas fa-chevron-left"></i>
+        </a>
+      </li>
+    `;
 
     // Page numbers
-    const startPage = Math.max(1, currentPage - 2);
-    const endPage = Math.min(totalPages, currentPage + 2);
-
-    if (startPage > 1) {
-      html += `
-                <li class="page-item">
-                    <a class="page-link" href="#" onclick="browseManager.goToPage(1)">1</a>
-                </li>
-            `;
-      if (startPage > 2) {
-        html +=
-          '<li class="page-item disabled"><span class="page-link">...</span></li>';
+    for (let i = 1; i <= totalPages; i++) {
+      if (
+        i === 1 || // First page
+        i === totalPages || // Last page
+        (i >= currentPage - 2 && i <= currentPage + 2) // Pages around current
+      ) {
+        html += `
+          <li class="page-item ${i === currentPage ? 'active' : ''}">
+            <a class="page-link" href="#" onclick="event.preventDefault(); browseManager.goToPage(${i})">${i}</a>
+          </li>
+        `;
+      } else if (
+        (i === currentPage - 3 && currentPage > 4) ||
+        (i === currentPage + 3 && currentPage < totalPages - 3)
+      ) {
+        html += '<li class="page-item disabled"><span class="page-link">...</span></li>';
       }
-    }
-
-    for (let i = startPage; i <= endPage; i++) {
-      html += `
-                <li class="page-item ${i === currentPage ? "active" : ""}">
-                    <a class="page-link" href="#" onclick="browseManager.goToPage(${i})">${i}</a>
-                </li>
-            `;
-    }
-
-    if (endPage < totalPages) {
-      if (endPage < totalPages - 1) {
-        html +=
-          '<li class="page-item disabled"><span class="page-link">...</span></li>';
-      }
-      html += `
-                <li class="page-item">
-                    <a class="page-link" href="#" onclick="browseManager.goToPage(${totalPages})">${totalPages}</a>
-                </li>
-            `;
     }
 
     // Next button
     html += `
-            <li class="page-item ${
-              currentPage === totalPages ? "disabled" : ""
-            }">
-                <a class="page-link" href="#" onclick="browseManager.goToPage(${
-                  currentPage + 1
-                })">
-                    <i class="fas fa-chevron-right"></i>
-                </a>
-            </li>
-        `;
+      <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+        <a class="page-link" href="#" onclick="event.preventDefault(); browseManager.goToPage(${currentPage + 1})">
+          <i class="fas fa-chevron-right"></i>
+        </a>
+      </li>
+    `;
 
     this.pagination.innerHTML = html;
   }
 
   applyFilters() {
+    this.currentPage = 1;
     this.sortBy = this.sortBySelect.value;
     this.filterType = this.filterTypeSelect.value;
     this.perPage = parseInt(this.perPageSelect.value);
-    this.currentPage = 1;
     this.loadWords();
   }
 
   searchWords() {
-    this.searchQuery = this.browseSearch.value.trim();
-    this.currentPage = 1;
-    this.loadWords();
+    const query = this.browseSearch.value.trim();
+    if (query) {
+      // Redirect to search page or use search endpoint
+      window.location.href = `/thesaurus?word=${encodeURIComponent(query)}`;
+    }
   }
 
   goToPage(page) {

@@ -34,14 +34,14 @@ class ThesaurusDetailManager {
   async loadWordDetail() {
     try {
       const response = await fetch(
-        `/api/public/thesaurus/word/${encodeURIComponent(this.word)}`
+        `/api/public/thesaurus/search?word=${encodeURIComponent(this.word)}`
       );
       const data = await response.json();
 
       if (data.success) {
-        this.displayWordDetail(data.data);
-        this.loadWordInfo(data.data);
-        this.loadRelatedWords(data.data);
+        this.displayWordDetail(data.data.results);
+        this.loadWordInfo(data.data.results);
+        this.loadRelatedWords(data.data.results);
       } else {
         this.showWordNotFound();
       }

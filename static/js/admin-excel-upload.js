@@ -12,7 +12,7 @@ function showExcelUploadModal() {
   document.getElementById("preview-container").classList.add("d-none");
 
   // Load daftar indeks root untuk parent
-  fetch("/api/quran/index/roots")
+  fetch("/api/quran-index/roots")
     .then((response) => response.json())
     .then((result) => {
       if (result.success) {
@@ -49,8 +49,55 @@ function showExcelUploadModal() {
 function handleFileSelect() {
   const file = this.files[0];
   if (file) {
-    // Handle file selection logic here
-    // You can add additional validation and preview functionality
+    // Validate file type
+    const allowedTypes = [
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-excel'
+    ];
+    
+    if (!allowedTypes.includes(file.type)) {
+      showAlert("danger", "File harus berupa Excel (.xlsx atau .xls)");
+      this.value = '';
+      return;
+    }
+    
+    // Enable sheet selection
+    document.getElementById("sheet-name").disabled = false;
+    
+    // Get sheet names from Excel file
+    const formData = new FormData();
+    formData.append("file", file);
+    
+    fetch("/api/quran-index/excel/sheets", {
+      method: "POST",
+      body: formData
+    })
+    .then(response => {
+      if (!response.ok) {
+        return response.json().then(errorData => {
+          throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+        });
+      }
+      return response.json();
+    })
+    .then(result => {
+      if (result.success) {
+        const sheetSelect = document.getElementById("sheet-name");
+        let options = '<option value="">Pilih sheet</option>';
+        
+        result.data.forEach(sheet => {
+          options += `<option value="${sheet}">${sheet}</option>`;
+        });
+        
+        sheetSelect.innerHTML = options;
+      } else {
+        showAlert("danger", result.message || "Gagal membaca file Excel");
+      }
+    })
+    .catch(error => {
+      console.error("Error reading Excel file:", error);
+      showAlert("danger", `Terjadi kesalahan saat membaca file Excel: ${error.message}`);
+    });
   }
 }
 
@@ -116,7 +163,7 @@ function simulateProgress() {
 }
 
 function uploadExcelFile(formData) {
-  fetch("/api/quran/index/import-excel", {
+  fetch("/api/quran-index/import-excel", {
     method: "POST",
     body: formData,
   })
@@ -138,6 +185,20 @@ function uploadExcelFile(formData) {
 }
 
 function showAlert(type, message) {
-  // Implement your alert display logic here
-  console.log(`${type}: ${message}`);
+  const alertDiv = document.createElement("div");
+  alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+  alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+
+  document
+    .querySelector(".container")
+    .insertBefore(alertDiv, document.querySelector(".container").firstChild);
+
+  setTimeout(() => {
+    if (alertDiv.parentNode) {
+      alertDiv.remove();
+    }
+  }, 5000);
 }

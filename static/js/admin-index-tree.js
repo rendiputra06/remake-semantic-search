@@ -6,7 +6,7 @@ function loadIndexTree() {
   const treeContainer = document.getElementById("index-tree-container");
   const treeLoading = document.getElementById("index-tree-loading");
 
-  fetch("/api/quran/index/tree")
+  fetch("/api/quran-index/tree")
     .then((response) => response.json())
     .then((result) => {
       if (result.success) {
