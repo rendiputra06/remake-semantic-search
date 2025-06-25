@@ -17,6 +17,7 @@ from app.public import public_bp
 from app.auth.decorators import login_required, admin_required
 from backend.monitoring import monitoring_bp
 from app.api import init_app as init_api
+from app.api.routes.ontology import ontology_bp
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)  # Replace with proper config
@@ -26,6 +27,7 @@ app.register_blueprint(auth_bp, url_prefix='/auth')
 app.register_blueprint(admin_bp, url_prefix='/admin')
 app.register_blueprint(public_bp, url_prefix='')
 app.register_blueprint(monitoring_bp, url_prefix='/monitoring')
+app.register_blueprint(ontology_bp, url_prefix='/api/ontology')
 
 # Initialize API routes
 init_api(app)
@@ -770,6 +772,27 @@ def get_statistics():
         'level_stats': [dict(row) for row in level_stats],
         'surah_stats': [dict(row) for row in top_surahs]
     })
+
+@app.route('/ontology')
+def ontology_search():
+    user = None
+    if 'user_id' in session:
+        user = get_user_by_id(session['user_id'])
+    return render_template('ontology_search.html', user=user)
+
+@app.route('/ontology-info')
+def ontology_info():
+    """Halaman informasi detail tentang pencarian ontologi."""
+    user = None
+    if 'user_id' in session:
+        user = get_user_by_id(session['user_id'])
+    return render_template('info.html', user=user)
+
+@app.route('/admin/ontology')
+@admin_required
+def ontology_admin():
+    user = get_user_by_id(session['user_id']) if 'user_id' in session else None
+    return render_template('ontology_admin.html', user=user)
 
 @app.context_processor
 def inject_user():

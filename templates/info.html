@@ -1,0 +1,618 @@
+{% extends "layout.html" %}
+{% block title %}Informasi Pencarian Ontologi{% endblock %}
+{% block content %}
+<div class="container mt-4">
+  <div class="row">
+    <div class="col-lg-8 mx-auto">
+      <!-- Header -->
+      <div class="text-center mb-5">
+        <h1 class="display-4 mb-3">
+          <i class="fas fa-brain text-primary me-3"></i>
+          Pencarian Ontologi Al-Quran
+        </h1>
+        <p class="lead text-muted">
+          Sistem pencarian semantik canggih yang mengintegrasikan ontologi untuk memahami makna dan relasi antar konsep dalam Al-Quran
+        </p>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <ul class="nav nav-tabs mb-4" id="ontologyTab" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab">
+            <i class="fas fa-info-circle me-2"></i>Overview
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="ontology-tab" data-bs-toggle="tab" data-bs-target="#ontology" type="button" role="tab">
+            <i class="fas fa-sitemap me-2"></i>Ontologi
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="search-tab" data-bs-toggle="tab" data-bs-target="#search" type="button" role="tab">
+            <i class="fas fa-search me-2"></i>Pencarian
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="visualization-tab" data-bs-toggle="tab" data-bs-target="#visualization" type="button" role="tab">
+            <i class="fas fa-project-diagram me-2"></i>Visualisasi
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="examples-tab" data-bs-toggle="tab" data-bs-target="#examples" type="button" role="tab">
+            <i class="fas fa-lightbulb me-2"></i>Contoh
+          </button>
+        </li>
+      </ul>
+
+      <!-- Tab Content -->
+      <div class="tab-content" id="ontologyTabContent">
+        
+        <!-- Overview Tab -->
+        <div class="tab-pane fade show active" id="overview" role="tabpanel">
+          <div class="card">
+            <div class="card-body">
+              <h3 class="card-title mb-4">
+                <i class="fas fa-star text-warning me-2"></i>
+                Apa itu Pencarian Ontologi?
+              </h3>
+              
+              <div class="row mb-4">
+                <div class="col-md-6">
+                  <div class="alert alert-info">
+                    <h5><i class="fas fa-lightbulb me-2"></i>Definisi</h5>
+                    <p class="mb-0">
+                      Pencarian ontologi adalah sistem pencarian yang menggunakan pengetahuan semantik (ontologi) 
+                      untuk memahami makna dan relasi antar konsep, bukan hanya pencocokan kata secara literal.
+                    </p>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="alert alert-success">
+                    <h5><i class="fas fa-target me-2"></i>Tujuan</h5>
+                    <p class="mb-0">
+                      Meningkatkan akurasi pencarian dengan memahami konteks, sinonim, dan relasi hierarkis 
+                      antar konsep dalam Al-Quran.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <h4 class="mb-3">Keunggulan Pencarian Ontologi</h4>
+              <div class="row">
+                <div class="col-md-4 mb-3">
+                  <div class="card h-100 border-primary">
+                    <div class="card-body text-center">
+                      <i class="fas fa-brain fa-2x text-primary mb-2"></i>
+                      <h6>Pemahaman Semantik</h6>
+                      <small class="text-muted">Memahami makna, bukan hanya kata</small>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                  <div class="card h-100 border-success">
+                    <div class="card-body text-center">
+                      <i class="fas fa-expand-arrows-alt fa-2x text-success mb-2"></i>
+                      <h6>Ekspansi Query</h6>
+                      <small class="text-muted">Otomatis menambahkan sinonim dan relasi</small>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                  <div class="card h-100 border-warning">
+                    <div class="card-body text-center">
+                      <i class="fas fa-chart-line fa-2x text-warning mb-2"></i>
+                      <h6>Akurasi Tinggi</h6>
+                      <small class="text-muted">Hasil yang lebih relevan dan kontekstual</small>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ontologi Tab -->
+        <div class="tab-pane fade" id="ontology" role="tabpanel">
+          <div class="card">
+            <div class="card-body">
+              <h3 class="card-title mb-4">
+                <i class="fas fa-sitemap text-primary me-2"></i>
+                Struktur Ontologi Al-Quran
+              </h3>
+
+              <div class="row mb-4">
+                <div class="col-md-8">
+                  <h5>Komponen Ontologi</h5>
+                  <div class="table-responsive">
+                    <table class="table table-bordered">
+                      <thead class="table-light">
+                        <tr>
+                          <th>Komponen</th>
+                          <th>Deskripsi</th>
+                          <th>Contoh</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td><strong>Konsep (Concept)</strong></td>
+                          <td>Entitas utama dalam ontologi</td>
+                          <td><span class="badge bg-primary">iman</span></td>
+                        </tr>
+                        <tr>
+                          <td><strong>Label</strong></td>
+                          <td>Nama atau istilah konsep</td>
+                          <td><span class="badge bg-secondary">Iman</span></td>
+                        </tr>
+                        <tr>
+                          <td><strong>Sinonim</strong></td>
+                          <td>Kata-kata dengan makna sama</td>
+                          <td><span class="badge bg-info">keimanan</span></td>
+                        </tr>
+                        <tr>
+                          <td><strong>Broader</strong></td>
+                          <td>Konsep yang lebih luas</td>
+                          <td><span class="badge bg-warning">taqwa</span></td>
+                        </tr>
+                        <tr>
+                          <td><strong>Narrower</strong></td>
+                          <td>Konsep yang lebih spesifik</td>
+                          <td><span class="badge bg-success">tauhid</span></td>
+                        </tr>
+                        <tr>
+                          <td><strong>Related</strong></td>
+                          <td>Konsep yang berkaitan</td>
+                          <td><span class="badge bg-danger">amal_shalih</span></td>
+                        </tr>
+                        <tr>
+                          <td><strong>Ayat</strong></td>
+                          <td>Referensi ayat terkait</td>
+                          <td><span class="badge bg-dark">2:177, 3:102</span></td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <h5>Relasi Hierarkis</h5>
+                  <div class="card bg-light">
+                    <div class="card-body">
+                      <div class="text-center mb-3">
+                        <div class="badge bg-primary p-2 mb-2">Taqwa</div>
+                        <div class="text-muted">↓ broader</div>
+                        <div class="badge bg-success p-2 mb-2">Iman</div>
+                        <div class="text-muted">↓ narrower</div>
+                        <div class="badge bg-warning p-2">Tauhid</div>
+                      </div>
+                      <small class="text-muted">
+                        Struktur hierarkis menunjukkan relasi "lebih luas" dan "lebih spesifik" antar konsep.
+                      </small>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <h5 class="mb-3">Contoh Konsep Ontologi</h5>
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <div class="card">
+                    <div class="card-header">
+                      <strong>Konsep: Iman</strong>
+                    </div>
+                    <div class="card-body">
+                      <p><strong>Label:</strong> Iman</p>
+                      <p><strong>Sinonim:</strong> keimanan</p>
+                      <p><strong>Broader:</strong> taqwa</p>
+                      <p><strong>Related:</strong> amal_shalih, taqwa</p>
+                      <p><strong>Ayat:</strong> 2:177, 3:102, 49:15</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <div class="card">
+                    <div class="card-header">
+                      <strong>Konsep: Ilmu</strong>
+                    </div>
+                    <div class="card-body">
+                      <p><strong>Label:</strong> Ilmu</p>
+                      <p><strong>Sinonim:</strong> pengetahuan, ilmu pengetahuan</p>
+                      <p><strong>Narrower:</strong> hikmah</p>
+                      <p><strong>Related:</strong> iman, hikmah</p>
+                      <p><strong>Ayat:</strong> 2:31, 20:114</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Search Tab -->
+        <div class="tab-pane fade" id="search" role="tabpanel">
+          <div class="card">
+            <div class="card-body">
+              <h3 class="card-title mb-4">
+                <i class="fas fa-search text-success me-2"></i>
+                Proses Pencarian Ontologi
+              </h3>
+
+              <div class="row mb-4">
+                <div class="col-md-12">
+                  <h5>Alur Pencarian</h5>
+                  <div class="timeline">
+                    <div class="timeline-item">
+                      <div class="timeline-marker bg-primary"></div>
+                      <div class="timeline-content">
+                        <h6>1. Input Query</h6>
+                        <p>User memasukkan kata kunci pencarian</p>
+                        <div class="alert alert-light">
+                          <strong>Contoh:</strong> "iman"
+                        </div>
+                      </div>
+                    </div>
+                    <div class="timeline-item">
+                      <div class="timeline-marker bg-success"></div>
+                      <div class="timeline-content">
+                        <h6>2. Ontologi Lookup</h6>
+                        <p>Sistem mencari konsep dalam ontologi</p>
+                        <div class="alert alert-light">
+                          <strong>Ditemukan:</strong> Konsep "iman" dengan sinonim "keimanan"
+                        </div>
+                      </div>
+                    </div>
+                    <div class="timeline-item">
+                      <div class="timeline-marker bg-warning"></div>
+                      <div class="timeline-content">
+                        <h6>3. Query Expansion</h6>
+                        <p>Ekspansi query dengan sinonim dan relasi</p>
+                        <div class="alert alert-light">
+                          <strong>Expanded:</strong> ["iman", "keimanan", "taqwa", "amal_shalih"]
+                        </div>
+                      </div>
+                    </div>
+                    <div class="timeline-item">
+                      <div class="timeline-marker bg-info"></div>
+                      <div class="timeline-content">
+                        <h6>4. Multiple Searches</h6>
+                        <p>Pencarian untuk setiap term ekspansi</p>
+                        <div class="alert alert-light">
+                          <strong>Searches:</strong> 4 pencarian paralel
+                        </div>
+                      </div>
+                    </div>
+                    <div class="timeline-item">
+                      <div class="timeline-marker bg-danger"></div>
+                      <div class="timeline-content">
+                        <h6>5. Result Aggregation</h6>
+                        <p>Gabungkan dan ranking hasil</p>
+                        <div class="alert alert-light">
+                          <strong>Output:</strong> Hasil terbaik dengan skor boosted
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <h5 class="mb-3">Teknik Ekspansi Query</h5>
+              <div class="row">
+                <div class="col-md-4 mb-3">
+                  <div class="card border-primary">
+                    <div class="card-header bg-primary text-white">
+                      <i class="fas fa-sync me-2"></i>Sinonim
+                    </div>
+                    <div class="card-body">
+                      <p class="mb-0">Menambahkan kata-kata dengan makna sama</p>
+                      <small class="text-muted">iman → keimanan</small>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                  <div class="card border-success">
+                    <div class="card-header bg-success text-white">
+                      <i class="fas fa-arrow-up me-2"></i>Broader
+                    </div>
+                    <div class="card-body">
+                      <p class="mb-0">Konsep yang lebih luas</p>
+                      <small class="text-muted">iman → taqwa</small>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                  <div class="card border-warning">
+                    <div class="card-header bg-warning text-white">
+                      <i class="fas fa-link me-2"></i>Related
+                    </div>
+                    <div class="card-body">
+                      <p class="mb-0">Konsep yang berkaitan</p>
+                      <small class="text-muted">iman → amal_shalih</small>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <h5 class="mb-3">Scoring dan Ranking</h5>
+              <div class="alert alert-info">
+                <h6><i class="fas fa-chart-bar me-2"></i>Sistem Scoring</h6>
+                <ul class="mb-0">
+                  <li><strong>Base Score:</strong> Skor dari model embedding (0-1)</li>
+                  <li><strong>Boost Score:</strong> +0.1 untuk hasil dari ekspansi ontologi</li>
+                  <li><strong>Final Score:</strong> Base Score + Boost Score (maksimal 1.0)</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Visualization Tab -->
+        <div class="tab-pane fade" id="visualization" role="tabpanel">
+          <div class="card">
+            <div class="card-body">
+              <h3 class="card-title mb-4">
+                <i class="fas fa-project-diagram text-warning me-2"></i>
+                Visualisasi Bubble Net
+              </h3>
+
+              <div class="row mb-4">
+                <div class="col-md-8">
+                  <h5>Komponen Visualisasi</h5>
+                  <div class="row">
+                    <div class="col-md-4 mb-3">
+                      <div class="text-center">
+                        <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                          <i class="fas fa-search"></i>
+                        </div>
+                        <h6 class="mt-2">Query Utama</h6>
+                        <small class="text-muted">Node biru di tengah</small>
+                      </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                      <div class="text-center">
+                        <div class="bg-success text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                          <i class="fas fa-expand"></i>
+                        </div>
+                        <h6 class="mt-2">Ekspansi</h6>
+                        <small class="text-muted">Node hijau di sekeliling</small>
+                      </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                      <div class="text-center">
+                        <div class="bg-warning text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                          <i class="fas fa-book"></i>
+                        </div>
+                        <h6 class="mt-2">Hasil</h6>
+                        <small class="text-muted">Node kuning/abu di luar</small>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <h5>Interaktivitas</h5>
+                  <div class="list-group list-group-flush">
+                    <div class="list-group-item d-flex align-items-center">
+                      <i class="fas fa-mouse-pointer text-primary me-2"></i>
+                      <div>
+                        <strong>Hover</strong>
+                        <small class="d-block text-muted">Lihat detail node</small>
+                      </div>
+                    </div>
+                    <div class="list-group-item d-flex align-items-center">
+                      <i class="fas fa-search-plus text-success me-2"></i>
+                      <div>
+                        <strong>Zoom</strong>
+                        <small class="d-block text-muted">Mouse wheel</small>
+                      </div>
+                    </div>
+                    <div class="list-group-item d-flex align-items-center">
+                      <i class="fas fa-arrows-alt text-warning me-2"></i>
+                      <div>
+                        <strong>Pan</strong>
+                        <small class="d-block text-muted">Drag untuk pindah</small>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <h5 class="mb-3">Keunggulan Bubble Net</h5>
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <div class="card border-success">
+                    <div class="card-header bg-success text-white">
+                      <i class="fas fa-eye me-2"></i>Visual Clarity
+                    </div>
+                    <div class="card-body">
+                      <ul class="mb-0">
+                        <li>Struktur hierarkis yang jelas</li>
+                        <li>Color coding untuk jenis node</li>
+                        <li>Ukuran node mencerminkan importance</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <div class="card border-info">
+                    <div class="card-header bg-info text-white">
+                      <i class="fas fa-mouse me-2"></i>Interaktivitas
+                    </div>
+                    <div class="card-body">
+                      <ul class="mb-0">
+                        <li>Zoom, pan, hover yang natural</li>
+                        <li>Tooltip dengan detail lengkap</li>
+                        <li>Drag nodes untuk eksplorasi</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Examples Tab -->
+        <div class="tab-pane fade" id="examples" role="tabpanel">
+          <div class="card">
+            <div class="card-body">
+              <h3 class="card-title mb-4">
+                <i class="fas fa-lightbulb text-info me-2"></i>
+                Contoh Penggunaan
+              </h3>
+
+              <div class="row mb-4">
+                <div class="col-md-6">
+                  <h5>Contoh 1: Pencarian "Iman"</h5>
+                  <div class="card border-primary">
+                    <div class="card-body">
+                      <h6>Input Query:</h6>
+                      <span class="badge bg-primary fs-6">iman</span>
+                      
+                      <h6 class="mt-3">Ekspansi Ontologi:</h6>
+                      <div class="mb-2">
+                        <span class="badge bg-success me-1">keimanan</span>
+                        <span class="badge bg-warning me-1">taqwa</span>
+                        <span class="badge bg-info me-1">amal_shalih</span>
+                      </div>
+                      
+                      <h6>Hasil Pencarian:</h6>
+                      <ul class="mb-0">
+                        <li>Q.S. 2:177 (Skor: 95%) - Boosted</li>
+                        <li>Q.S. 3:102 (Skor: 88%) - Boosted</li>
+                        <li>Q.S. 49:15 (Skor: 82%) - Normal</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <h5>Contoh 2: Pencarian "Ilmu"</h5>
+                  <div class="card border-success">
+                    <div class="card-body">
+                      <h6>Input Query:</h6>
+                      <span class="badge bg-success fs-6">ilmu</span>
+                      
+                      <h6 class="mt-3">Ekspansi Ontologi:</h6>
+                      <div class="mb-2">
+                        <span class="badge bg-info me-1">pengetahuan</span>
+                        <span class="badge bg-warning me-1">hikmah</span>
+                        <span class="badge bg-primary me-1">iman</span>
+                      </div>
+                      
+                      <h6>Hasil Pencarian:</h6>
+                      <ul class="mb-0">
+                        <li>Q.S. 2:31 (Skor: 92%) - Boosted</li>
+                        <li>Q.S. 20:114 (Skor: 85%) - Boosted</li>
+                        <li>Q.S. 2:269 (Skor: 78%) - Normal</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <h5 class="mb-3">Perbandingan: Pencarian Tradisional vs Ontologi</h5>
+              <div class="table-responsive">
+                <table class="table table-bordered">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Aspect</th>
+                      <th>Pencarian Tradisional</th>
+                      <th>Pencarian Ontologi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>Query "iman"</strong></td>
+                      <td>Hanya mencari kata "iman"</td>
+                      <td>Mencari "iman", "keimanan", "taqwa", "amal_shalih"</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Hasil</strong></td>
+                      <td>5-10 ayat dengan kata "iman"</td>
+                      <td>15-25 ayat dengan konsep iman</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Relevansi</strong></td>
+                      <td>Literal match</td>
+                      <td>Semantic understanding</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Coverage</strong></td>
+                      <td>Terbatas pada kata yang dicari</td>
+                      <td>Mencakup konsep dan relasinya</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="alert alert-warning">
+                <h6><i class="fas fa-exclamation-triangle me-2"></i>Tips Penggunaan</h6>
+                <ul class="mb-0">
+                  <li>Gunakan kata kunci konsep utama (iman, ilmu, amal, dll)</li>
+                  <li>Manfaatkan quick search untuk eksplorasi cepat</li>
+                  <li>Perhatikan visualisasi untuk memahami relasi</li>
+                  <li>Gunakan filter model untuk hasil yang berbeda</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Call to Action -->
+      <div class="text-center mt-5">
+        <div class="card bg-primary text-white">
+          <div class="card-body">
+            <h4 class="card-title">
+              <i class="fas fa-rocket me-2"></i>
+              Siap Mencoba Pencarian Ontologi?
+            </h4>
+            <p class="card-text">
+              Jelajahi kekuatan pencarian semantik dengan ontologi untuk menemukan makna mendalam dalam Al-Quran.
+            </p>
+            <a href="{{ url_for('ontology_search') }}" class="btn btn-light btn-lg">
+              <i class="fas fa-search me-2"></i>
+              Mulai Pencarian Ontologi
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.timeline {
+  position: relative;
+  padding-left: 30px;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 15px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: #dee2e6;
+}
+
+.timeline-item {
+  position: relative;
+  margin-bottom: 30px;
+}
+
+.timeline-marker {
+  position: absolute;
+  left: -22px;
+  top: 0;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+}
+
+.timeline-content {
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 5px;
+  border-left: 3px solid #007bff;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,427 @@
+{
+  "concepts": [
+    {
+      "id": "taqwa",
+      "label": "Taqwa",
+      "synonyms": ["takwa", "ketakwaan"],
+      "broader": [],
+      "narrower": ["iman"],
+      "related": ["iman", "amal_shalih"],
+      "verses": ["2:2", "2:177", "3:102"]
+    },
+    {
+      "id": "iman",
+      "label": "Iman",
+      "synonyms": ["keimanan"],
+      "broader": ["taqwa"],
+      "narrower": [],
+      "related": ["taqwa", "amal_shalih"],
+      "verses": ["2:177", "3:102", "49:15"]
+    },
+    {
+      "id": "amal_shalih",
+      "label": "Amal Shalih",
+      "synonyms": ["amal saleh", "perbuatan baik"],
+      "broader": [],
+      "narrower": [],
+      "related": ["iman", "taqwa"],
+      "verses": ["2:25", "18:30"]
+    },
+    {
+      "id": "ilmu",
+      "label": "Ilmu",
+      "synonyms": ["pengetahuan", "ilmu pengetahuan"],
+      "broader": [],
+      "narrower": ["hikmah"],
+      "related": ["iman", "hikmah"],
+      "verses": ["2:31", "20:114"]
+    },
+    {
+      "id": "hikmah",
+      "label": "Hikmah",
+      "synonyms": ["kebijaksanaan"],
+      "broader": ["ilmu"],
+      "narrower": [],
+      "related": ["ilmu", "amal_shalih"],
+      "verses": ["2:269"]
+    },
+    {
+      "id": "doa",
+      "label": "Doa",
+      "synonyms": ["berdoa", "memohon"],
+      "broader": [],
+      "narrower": [],
+      "related": ["ibadah", "sabar"],
+      "verses": ["2:186", "40:60"]
+    },
+    {
+      "id": "sabar",
+      "label": "Sabar",
+      "synonyms": ["kesabaran"],
+      "broader": [],
+      "narrower": [],
+      "related": ["syukur", "doa"],
+      "verses": ["2:153", "3:200"]
+    },
+    {
+      "id": "syukur",
+      "label": "Syukur",
+      "synonyms": ["bersyukur"],
+      "broader": [],
+      "narrower": [],
+      "related": ["sabar", "nikmat"],
+      "verses": ["14:7", "2:152"]
+    },
+    {
+      "id": "shalat",
+      "label": "Shalat",
+      "synonyms": ["salat", "sembahyang"],
+      "broader": ["ibadah"],
+      "narrower": [],
+      "related": ["zakat", "puasa"],
+      "verses": ["2:43", "2:110"]
+    },
+    {
+      "id": "zakat",
+      "label": "Zakat",
+      "synonyms": ["infaq", "sedekah"],
+      "broader": ["ibadah"],
+      "narrower": [],
+      "related": ["shalat", "puasa"],
+      "verses": ["2:43", "9:60"]
+    },
+    {
+      "id": "puasa",
+      "label": "Puasa",
+      "synonyms": ["shaum", "ramadhan"],
+      "broader": ["ibadah"],
+      "narrower": [],
+      "related": ["shalat", "zakat"],
+      "verses": ["2:183", "2:185"]
+    },
+    {
+      "id": "haji",
+      "label": "Haji",
+      "synonyms": ["umrah"],
+      "broader": ["ibadah"],
+      "narrower": [],
+      "related": ["shalat", "zakat"],
+      "verses": ["2:196", "3:97"]
+    },
+    {
+      "id": "ibadah",
+      "label": "Ibadah",
+      "synonyms": ["penghambaan", "pengabdian"],
+      "broader": [],
+      "narrower": ["shalat", "zakat", "puasa", "haji"],
+      "related": ["iman", "amal_shalih"],
+      "verses": ["51:56"]
+    },
+    {
+      "id": "aqidah",
+      "label": "Aqidah",
+      "synonyms": ["keyakinan", "keimanan"],
+      "broader": [],
+      "narrower": ["tauhid"],
+      "related": ["iman", "tauhid"],
+      "verses": ["2:285"]
+    },
+    {
+      "id": "tauhid",
+      "label": "Tauhid",
+      "synonyms": ["mengesakan Allah"],
+      "broader": ["aqidah"],
+      "narrower": [],
+      "related": ["iman", "syirik"],
+      "verses": ["112:1-4"]
+    },
+    {
+      "id": "syirik",
+      "label": "Syirik",
+      "synonyms": ["menyekutukan Allah"],
+      "broader": [],
+      "narrower": [],
+      "related": ["tauhid", "kafir"],
+      "verses": ["4:48", "31:13"]
+    },
+    {
+      "id": "kafir",
+      "label": "Kafir",
+      "synonyms": ["kekafiran"],
+      "broader": [],
+      "narrower": [],
+      "related": ["munafik", "musyrik"],
+      "verses": ["2:6", "2:39"]
+    },
+    {
+      "id": "munafik",
+      "label": "Munafik",
+      "synonyms": ["kemunafikan"],
+      "broader": [],
+      "narrower": [],
+      "related": ["kafir", "fasik"],
+      "verses": ["2:8", "4:145"]
+    },
+    {
+      "id": "musyrik",
+      "label": "Musyrik",
+      "synonyms": ["kemusyrikan"],
+      "broader": [],
+      "narrower": [],
+      "related": ["kafir", "syirik"],
+      "verses": ["9:28"]
+    },
+    {
+      "id": "fasik",
+      "label": "Fasik",
+      "synonyms": ["kefasikan"],
+      "broader": [],
+      "narrower": [],
+      "related": ["munafik", "zalim"],
+      "verses": ["2:26", "5:47"]
+    },
+    {
+      "id": "zalim",
+      "label": "Zalim",
+      "synonyms": ["kezaliman", "aniaya"],
+      "broader": [],
+      "narrower": [],
+      "related": ["fasik", "kafir"],
+      "verses": ["2:35", "3:117"]
+    },
+    {
+      "id": "adil",
+      "label": "Adil",
+      "synonyms": ["keadilan"],
+      "broader": [],
+      "narrower": [],
+      "related": ["zalim", "rahmat"],
+      "verses": ["4:58"]
+    },
+    {
+      "id": "rahmat",
+      "label": "Rahmat",
+      "synonyms": ["kasih sayang", "belas kasih"],
+      "broader": [],
+      "narrower": [],
+      "related": ["adil", "nikmat"],
+      "verses": ["21:107"]
+    },
+    {
+      "id": "nikmat",
+      "label": "Nikmat",
+      "synonyms": ["anugerah", "karunia"],
+      "broader": [],
+      "narrower": [],
+      "related": ["rahmat", "syukur"],
+      "verses": ["16:18"]
+    },
+    {
+      "id": "rezeki",
+      "label": "Rezeki",
+      "synonyms": ["rizki", "sustenance"],
+      "broader": [],
+      "narrower": [],
+      "related": ["nikmat", "syukur"],
+      "verses": ["2:3", "51:22"]
+    },
+    {
+      "id": "musibah",
+      "label": "Musibah",
+      "synonyms": ["bencana", "cobaan"],
+      "broader": [],
+      "narrower": [],
+      "related": ["ujian", "fitnah"],
+      "verses": ["2:155"]
+    },
+    {
+      "id": "fitnah",
+      "label": "Fitnah",
+      "synonyms": ["ujian", "godaan"],
+      "broader": [],
+      "narrower": [],
+      "related": ["musibah", "ujian"],
+      "verses": ["8:25"]
+    },
+    {
+      "id": "ujian",
+      "label": "Ujian",
+      "synonyms": ["tes", "cobaan"],
+      "broader": [],
+      "narrower": [],
+      "related": ["fitnah", "musibah"],
+      "verses": ["2:155"]
+    },
+    {
+      "id": "dosa",
+      "label": "Dosa",
+      "synonyms": ["kesalahan", "maksiat"],
+      "broader": [],
+      "narrower": [],
+      "related": ["pahala", "taubat"],
+      "verses": ["4:31"]
+    },
+    {
+      "id": "pahala",
+      "label": "Pahala",
+      "synonyms": ["ganjaran", "balasan baik"],
+      "broader": [],
+      "narrower": [],
+      "related": ["dosa", "amal_shalih"],
+      "verses": ["18:30"]
+    },
+    {
+      "id": "taubat",
+      "label": "Taubat",
+      "synonyms": ["bertobat", "pengampunan"],
+      "broader": [],
+      "narrower": [],
+      "related": ["dosa", "ampunan"],
+      "verses": ["66:8"]
+    },
+    {
+      "id": "ampunan",
+      "label": "Ampunan",
+      "synonyms": ["pengampunan", "maghfirah"],
+      "broader": [],
+      "narrower": [],
+      "related": ["taubat", "rahmat"],
+      "verses": ["39:53"]
+    },
+    {
+      "id": "petunjuk",
+      "label": "Petunjuk",
+      "synonyms": ["hidayah", "bimbingan"],
+      "broader": [],
+      "narrower": [],
+      "related": ["hidayah", "ilmu"],
+      "verses": ["2:2"]
+    },
+    {
+      "id": "hidayah",
+      "label": "Hidayah",
+      "synonyms": ["petunjuk", "bimbingan"],
+      "broader": [],
+      "narrower": [],
+      "related": ["petunjuk", "ilmu"],
+      "verses": ["2:2"]
+    },
+    {
+      "id": "berkah",
+      "label": "Berkah",
+      "synonyms": ["barakah", "keberkahan"],
+      "broader": [],
+      "narrower": [],
+      "related": ["nikmat", "rahmat"],
+      "verses": ["7:96"]
+    },
+    {
+      "id": "surga",
+      "label": "Surga",
+      "synonyms": ["jannah", "paradise"],
+      "broader": [],
+      "narrower": [],
+      "related": ["neraka", "pahala"],
+      "verses": ["2:25"]
+    },
+    {
+      "id": "neraka",
+      "label": "Neraka",
+      "synonyms": ["jahannam", "hell"],
+      "broader": [],
+      "narrower": [],
+      "related": ["surga", "dosa"],
+      "verses": ["2:39"]
+    },
+    {
+      "id": "akhirat",
+      "label": "Akhirat",
+      "synonyms": ["hari akhir", "kehidupan akhirat"],
+      "broader": [],
+      "narrower": [],
+      "related": ["dunia", "surga", "neraka"],
+      "verses": ["2:4", "2:201"]
+    },
+    {
+      "id": "dunia",
+      "label": "Dunia",
+      "synonyms": ["kehidupan dunia"],
+      "broader": [],
+      "narrower": [],
+      "related": ["akhirat"],
+      "verses": ["2:201"]
+    },
+    {
+      "id": "nabi",
+      "label": "Nabi",
+      "synonyms": ["anbiya", "rasul"],
+      "broader": [],
+      "narrower": ["rasul"],
+      "related": ["rasul", "wahyu"],
+      "verses": ["2:87", "3:144"]
+    },
+    {
+      "id": "rasul",
+      "label": "Rasul",
+      "synonyms": ["utusan", "nabi"],
+      "broader": ["nabi"],
+      "narrower": [],
+      "related": ["wahyu", "kitab"],
+      "verses": ["2:87", "3:144"]
+    },
+    {
+      "id": "wahyu",
+      "label": "Wahyu",
+      "synonyms": ["revelation"],
+      "broader": [],
+      "narrower": [],
+      "related": ["rasul", "kitab"],
+      "verses": ["42:51"]
+    },
+    {
+      "id": "kitab",
+      "label": "Kitab",
+      "synonyms": ["al-kitab", "buku suci"],
+      "broader": [],
+      "narrower": [],
+      "related": ["wahyu", "rasul"],
+      "verses": ["2:2"]
+    },
+    {
+      "id": "malaikat",
+      "label": "Malaikat",
+      "synonyms": ["malaikat Allah"],
+      "broader": [],
+      "narrower": [],
+      "related": ["jin", "manusia"],
+      "verses": ["2:30", "35:1"]
+    },
+    {
+      "id": "jin",
+      "label": "Jin",
+      "synonyms": ["makhluk halus"],
+      "broader": [],
+      "narrower": [],
+      "related": ["malaikat", "syaitan"],
+      "verses": ["51:56", "72:1"]
+    },
+    {
+      "id": "syaitan",
+      "label": "Syaitan",
+      "synonyms": ["iblis", "setan"],
+      "broader": [],
+      "narrower": [],
+      "related": ["jin", "manusia"],
+      "verses": ["2:168", "7:27"]
+    },
+    {
+      "id": "manusia",
+      "label": "Manusia",
+      "synonyms": ["insan", "bani adam"],
+      "broader": [],
+      "narrower": [],
+      "related": ["jin", "malaikat"],
+      "verses": ["2:21", "114:1"]
+    }
+  ]
+} 
