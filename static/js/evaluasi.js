@@ -11,6 +11,10 @@ document.addEventListener('DOMContentLoaded', function () {
   const logContent = document.getElementById('log-content');
   const ayatDetailModal = new bootstrap.Modal(document.getElementById('ayatDetailModal'));
   const ayatDetailContent = document.getElementById('ayat-detail-content');
+  const formEvaluasi = document.getElementById('form-evaluasi');
+  const inputQueryText = document.getElementById('input-query-text');
+  const inputResultLimit = document.getElementById('input-result-limit');
+  const inputThreshold = document.getElementById('input-threshold');
 
   let selectedQueryId = null;
 
@@ -54,6 +58,11 @@ document.addEventListener('DOMContentLoaded', function () {
         logBtn.classList.remove('d-none');
         evaluasiResult.innerHTML = '';
         loadEvaluationResults(selectedQueryId);
+        // Tampilkan form evaluasi
+        formEvaluasi.classList.remove('d-none');
+        // Autoisi query_text jika ada di list
+        const q = queries.find(q => q.id === selectedQueryId);
+        if (q) inputQueryText.value = q.text;
       });
     });
     // Event hapus query
@@ -206,31 +215,63 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 
-  evaluasiBtn.addEventListener('click', function () {
+  formEvaluasi.addEventListener('submit', function (e) {
+    e.preventDefault();
     if (!selectedQueryId) return;
-    evaluasiBtn.disabled = true;
-    evaluasiBtn.textContent = 'Evaluasi...';
-    evaluasiResult.innerHTML = '<div class="text-center py-3"><div class="spinner-border text-warning" role="status"></div><div>Memproses evaluasi...</div></div>';
-    fetch(`/api/query/${selectedQueryId}/evaluate`, { method: 'POST' })
-      .then((res) => res.json())
-      .then((data) => {
-        evaluasiBtn.disabled = false;
-        evaluasiBtn.textContent = 'Evaluasi';
+    const query_text = inputQueryText.value.trim();
+    const result_limit = parseInt(inputResultLimit.value) || 10;
+    const threshold = parseFloat(inputThreshold.value) || 0.5;
+    if (!query_text) {
+      alert('Query evaluasi wajib diisi!');
+      return;
+    }
+    showSpinner(evaluasiResult, 'Menjalankan evaluasi...');
+    fetch(`/api/evaluation/${selectedQueryId}/run`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query_text, result_limit, threshold })
+    })
+      .then(res => res.json())
+      .then(data => {
         if (data.success) {
-          let html = '<h5>Hasil Evaluasi</h5>';
-          html += '<table class="table table-bordered"><thead><tr><th>Model</th><th>Precision</th><th>Recall</th><th>F1</th><th>Waktu (s)</th></tr></thead><tbody>';
-          data.results.forEach(r => {
-            html += `<tr><td>${r.model}</td><td>${r.precision}</td><td>${r.recall}</td><td>${r.f1}</td><td>${r.exec_time}</td></tr>`;
+          let html = '<table class="table table-bordered table-sm"><thead><tr>' +
+            '<th>Metode</th><th>TP</th><th>FP</th><th>FN</th><th>Precision</th><th>Recall</th><th>F1</th><th>Waktu (s)</th><th>Total Relevan</th><th>Total Ditemukan</th><th>Ayat Hasil</th></tr></thead><tbody>';
+          data.results.forEach((r, idx) => {
+            if (r.error) {
+              html += `<tr><td colspan='11' class='text-danger'>${r.label}: ${r.error}</td></tr>`;
+            } else {
+              html += `<tr><td>${r.label}</td><td>${r.true_positive}</td><td>${r.false_positive}</td><td>${r.false_negative}</td><td>${r.precision}</td><td>${r.recall}</td><td>${r.f1}</td><td>${r.exec_time}</td><td>${r.total_relevant}</td><td>${r.total_found}</td>` +
+                `<td><button class='btn btn-sm btn-info btn-show-found-verses' data-idx='${idx}'>Lihat</button></td></tr>`;
+            }
           });
           html += '</tbody></table>';
           evaluasiResult.innerHTML = html;
+
+          // Event listener tombol lihat ayat hasil
+          document.querySelectorAll('.btn-show-found-verses').forEach(btn => {
+            btn.addEventListener('click', function() {
+              const idx = this.getAttribute('data-idx');
+              const found = data.results[idx].found_verses || [];
+              let content = '';
+              if (found.length === 0) {
+                content = '<div class="text-muted">Tidak ada ayat ditemukan.</div>';
+              } else {
+                content = '<ul class="list-group">';
+                found.forEach(ref => {
+                  content += `<li class='list-group-item'>${ref}</li>`;
+                });
+                content += '</ul>';
+              }
+              document.getElementById('found-verses-content').innerHTML = content;
+              const modal = new bootstrap.Modal(document.getElementById('modalFoundVerses'));
+              modal.show();
+            });
+          });
         } else {
           evaluasiResult.innerHTML = `<div class='alert alert-danger'>${data.message}</div>`;
         }
       })
       .catch(() => {
-        evaluasiBtn.disabled = false;
-        evaluasiBtn.textContent = 'Evaluasi';
         evaluasiResult.innerHTML = `<div class='alert alert-danger'>Terjadi kesalahan saat evaluasi.</div>`;
       });
   });
