@@ -62,4 +62,8 @@ def thesaurus_word_detail(word):
     if 'user_id' in session:
         user = get_user_by_id(session['user_id'])
     
-    return render_template('thesaurus_detail.html', user=user, word=word) 
+    return render_template('thesaurus_detail.html', user=user, word=word)
+
+@public_bp.route('/evaluasi')
+def evaluasi():
+    return render_template('evaluasi.html') 

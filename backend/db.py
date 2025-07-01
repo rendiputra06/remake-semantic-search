@@ -137,6 +137,53 @@ def init_db():
     )
     ''')
     
+    # Buat tabel queries untuk evaluasi benchmark
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS queries (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        text TEXT NOT NULL,
+        created_at TEXT NOT NULL
+    )
+    ''')
+    
+    # Buat tabel relevant_verses
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS relevant_verses (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        query_id INTEGER NOT NULL,
+        verse_ref TEXT NOT NULL,
+        FOREIGN KEY (query_id) REFERENCES queries (id)
+    )
+    ''')
+    
+    # Buat tabel evaluation_results
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS evaluation_results (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        query_id INTEGER NOT NULL,
+        model TEXT NOT NULL,
+        precision REAL,
+        recall REAL,
+        f1 REAL,
+        exec_time REAL,
+        evaluated_at TEXT NOT NULL,
+        FOREIGN KEY (query_id) REFERENCES queries (id)
+    )
+    ''')
+    
+    # Buat tabel evaluation_log
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS evaluation_log (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        query_id INTEGER NOT NULL,
+        model TEXT NOT NULL,
+        old_score REAL,
+        new_score REAL,
+        changed_at TEXT NOT NULL,
+        FOREIGN KEY (query_id) REFERENCES queries (id)
+    )
+    ''')
+    
     # Inisialisasi data awal untuk model_status
     models = ['word2vec', 'fasttext', 'glove', 'lexical', 'thesaurus']
     for model in models:
@@ -1169,6 +1216,133 @@ def get_overall_statistics():
         'popular_model': popular_model,
         'avg_results': avg_results
     }
+
+def add_query(text: str):
+    """
+    Menambahkan query evaluasi ke tabel queries
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    now = datetime.datetime.now().isoformat()
+    try:
+        cursor.execute('''
+        INSERT INTO queries (text, created_at)
+        VALUES (?, ?)
+        ''', (text, now))
+        query_id = cursor.lastrowid
+        conn.commit()
+        conn.close()
+        return True, query_id
+    except Exception as e:
+        conn.rollback()
+        conn.close()
+        return False, f"Error saat menambahkan query: {str(e)}"
+
+def get_all_queries():
+    """
+    Mengambil semua query evaluasi dari tabel queries
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM queries ORDER BY created_at DESC')
+    queries = cursor.fetchall()
+    conn.close()
+    return [dict(row) for row in queries]
+
+def add_relevant_verse(query_id: int, verse_ref: str):
+    """
+    Menambahkan ayat relevan untuk query tertentu
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute('''
+        INSERT INTO relevant_verses (query_id, verse_ref)
+        VALUES (?, ?)
+        ''', (query_id, verse_ref))
+        rel_id = cursor.lastrowid
+        conn.commit()
+        conn.close()
+        return True, rel_id
+    except Exception as e:
+        conn.rollback()
+        conn.close()
+        return False, f"Error saat menambahkan relevant verse: {str(e)}"
+
+def get_relevant_verses_by_query(query_id: int):
+    """
+    Mengambil semua ayat relevan untuk query tertentu
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM relevant_verses WHERE query_id = ?', (query_id,))
+    verses = cursor.fetchall()
+    conn.close()
+    return [dict(row) for row in verses]
+
+def add_evaluation_result(query_id: int, model: str, precision: float, recall: float, f1: float, exec_time: float):
+    """
+    Menambahkan hasil evaluasi untuk query dan model tertentu
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    now = datetime.datetime.now().isoformat()
+    try:
+        cursor.execute('''
+        INSERT INTO evaluation_results (query_id, model, precision, recall, f1, exec_time, evaluated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        ''', (query_id, model, precision, recall, f1, exec_time, now))
+        eval_id = cursor.lastrowid
+        conn.commit()
+        conn.close()
+        return True, eval_id
+    except Exception as e:
+        conn.rollback()
+        conn.close()
+        return False, f"Error saat menambahkan evaluation result: {str(e)}"
+
+def get_evaluation_results_by_query(query_id: int):
+    """
+    Mengambil semua hasil evaluasi untuk query tertentu
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM evaluation_results WHERE query_id = ?', (query_id,))
+    results = cursor.fetchall()
+    conn.close()
+    return [dict(row) for row in results]
+
+def add_evaluation_log(query_id: int, model: str, old_score: float, new_score: float):
+    """
+    Menambahkan log perubahan skor evaluasi
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    now = datetime.datetime.now().isoformat()
+    try:
+        cursor.execute('''
+        INSERT INTO evaluation_log (query_id, model, old_score, new_score, changed_at)
+        VALUES (?, ?, ?, ?, ?)
+        ''', (query_id, model, old_score, new_score, now))
+        log_id = cursor.lastrowid
+        conn.commit()
+        conn.close()
+        return True, log_id
+    except Exception as e:
+        conn.rollback()
+        conn.close()
+        return False, f"Error saat menambahkan evaluation log: {str(e)}"
+
+def get_evaluation_logs_by_query(query_id: int):
+    """
+    Mengambil semua log perubahan evaluasi untuk query tertentu
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM evaluation_log WHERE query_id = ?', (query_id,))
+    logs = cursor.fetchall()
+    conn.close()
+    return [dict(row) for row in logs]
 
 if __name__ == "__main__":
     # Inisialisasi database jika dijalankan langsung
