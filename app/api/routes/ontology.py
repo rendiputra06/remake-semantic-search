@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify, session
 from app.api.services.ontology_service import OntologyService
 from app.api.services.search_service import SearchService
 from app.auth.decorators import admin_required_api
-from app.auth.utils import get_user_by_id
+from backend.db import get_user_by_id
 
 ontology_bp = Blueprint('ontology', __name__)
 # Gunakan database sebagai default storage

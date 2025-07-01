@@ -4,11 +4,13 @@ from backend.db import get_relevant_verses_by_query
 from backend.lexical_search import LexicalSearch
 from backend.thesaurus import IndonesianThesaurus
 from app.api.services.search_service import SearchService
+from app.api.services.ontology_service import OntologyService
 
 # Inisialisasi engine global
 search_service = SearchService()
 lexical_search_engine = None
 thesaurus = None
+ontology_service = OntologyService(storage_type='database')
 
 def init_lexical_search():
     global lexical_search_engine
@@ -81,6 +83,7 @@ def run_evaluation(query_id):
     data = request.json or {}
     result_limit = int(data.get('result_limit', 10))
     threshold = float(data.get('threshold', 0.5))
+    selected_methods = data.get('selected_methods', [])
 
     # Ambil ground truth ayat relevan
     ayat_relevan = get_relevant_verses_by_query(query_id)
@@ -96,108 +99,149 @@ def run_evaluation(query_id):
     results = []
 
     # --- 1. Evaluasi Lexical ---
-    try:
-        search_engine = init_lexical_search()
-        start = time.time()
-        lexical_results = search_engine.search(query_text, exact_match=False, use_regex=False, limit=result_limit)
-        exec_time = round(time.time() - start, 3)
-        found = set()
-        for r in lexical_results:
-            ref = extract_verse_ref(r)
-            if ref:
-                found.add(ref)
-            else:
-                raise Exception(f"Format hasil lexical tidak sesuai: {r}")
-        results.append(format_eval_result('lexical', 'Lexical', found, ground_truth, exec_time))
-    except Exception as e:
-        results.append({'method': 'lexical', 'label': 'Lexical', 'error': str(e)})
+    if not selected_methods or 'lexical' in selected_methods:
+        try:
+            search_engine = init_lexical_search()
+            start = time.time()
+            lexical_results = search_engine.search(query_text, exact_match=False, use_regex=False, limit=result_limit)
+            exec_time = round(time.time() - start, 3)
+            found = set()
+            for r in lexical_results:
+                ref = extract_verse_ref(r)
+                if ref:
+                    found.add(ref)
+                else:
+                    raise Exception(f"Format hasil lexical tidak sesuai: {r}")
+            results.append(format_eval_result('lexical', 'Lexical', found, ground_truth, exec_time))
+        except Exception as e:
+            results.append({'method': 'lexical', 'label': 'Lexical', 'error': str(e)})
 
     # --- 2. Evaluasi Sinonim (Expanded Query) ---
-    try:
-        thesaurus = init_thesaurus()
-        start = time.time()
-        query_words = query_text.split()
-        expanded_queries = [query_text]
-        # Ekspansi query dengan sinonim per kata
-        for word in query_words:
+    if not selected_methods or 'synonym' in selected_methods:
+        try:
+            thesaurus = init_thesaurus()
+            start = time.time()
+            query_words = query_text.split()
+            expanded_queries = [query_text]
+            # Ekspansi query dengan sinonim per kata
+            for word in query_words:
+                try:
+                    synonyms = thesaurus.get_synonyms(word)
+                    if synonyms:
+                        for synonym in synonyms:
+                            new_query = query_text.replace(word, synonym)
+                            expanded_queries.append(new_query)
+                except Exception:
+                    continue
+            expanded_queries = list(dict.fromkeys(expanded_queries))  # Unik
+            all_results = []
+            # Jalankan semantic search untuk setiap query hasil ekspansi
+            for expanded_query in expanded_queries:
+                try:
+                    res = search_service.semantic_search(
+                        query=expanded_query,
+                        model_type='word2vec',
+                        limit=result_limit,
+                        threshold=threshold,
+                        user_id=None
+                    )
+                    for r in res['results']:
+                        r['source_query'] = expanded_query
+                    all_results.extend(res['results'])
+                except Exception:
+                    continue
+            unique_refs = set()
+            for r in all_results:
+                ref = extract_verse_ref(r)
+                if ref:
+                    unique_refs.add(ref)
+            found = set(list(unique_refs)[:result_limit])
+            exec_time = round(time.time() - start, 3)
+            results.append(format_eval_result('synonym', 'Sinonim', found, ground_truth, exec_time))
+        except Exception as e:
+            results.append({'method': 'synonym', 'label': 'Sinonim', 'error': str(e)})
+
+    # --- 3. Evaluasi Semantic (word2vec, fasttext, glove, ensemble) ---
+    for model in ['word2vec', 'fasttext', 'glove', 'ensemble']:
+        if not selected_methods or model in selected_methods:
             try:
-                synonyms = thesaurus.get_synonyms(word)
-                if synonyms:
-                    for synonym in synonyms:
-                        new_query = query_text.replace(word, synonym)
-                        expanded_queries.append(new_query)
-            except Exception:
-                continue
-        expanded_queries = list(dict.fromkeys(expanded_queries))  # Unik
-        all_results = []
-        # Jalankan semantic search untuk setiap query hasil ekspansi
-        for expanded_query in expanded_queries:
-            try:
+                start = time.time()
                 res = search_service.semantic_search(
-                    query=expanded_query,
-                    model_type='word2vec',
+                    query=query_text,
+                    model_type=model,
                     limit=result_limit,
                     threshold=threshold,
                     user_id=None
                 )
+                found = set()
                 for r in res['results']:
-                    r['source_query'] = expanded_query
-                all_results.extend(res['results'])
-            except Exception:
-                continue
-        unique_refs = set()
-        for r in all_results:
-            ref = extract_verse_ref(r)
-            if ref:
-                unique_refs.add(ref)
-        found = set(list(unique_refs)[:result_limit])
-        print(found)
-        exec_time = round(time.time() - start, 3)
-        results.append(format_eval_result('synonym', 'Sinonim', found, ground_truth, exec_time))
-    except Exception as e:
-        results.append({'method': 'synonym', 'label': 'Sinonim', 'error': str(e)})
+                    ref = extract_verse_ref(r)
+                    if ref:
+                        found.add(ref)
+                exec_time = round(time.time() - start, 3)
+                label = f'Semantic ({model})' if model != 'ensemble' else 'Semantic (Ensemble)'
+                results.append(format_eval_result(model, label, found, ground_truth, exec_time))
+            except Exception as e:
+                label = f'Semantic ({model})' if model != 'ensemble' else 'Semantic (Ensemble)'
+                results.append({'method': model, 'label': label, 'error': str(e)})
 
-    # --- 3. Evaluasi Semantic (word2vec, fasttext, glove) ---
-    for model in ['word2vec', 'fasttext', 'glove']:
-        try:
-            start = time.time()
-            res = search_service.semantic_search(
-                query=query_text,
-                model_type=model,
-                limit=result_limit,
-                threshold=threshold,
-                user_id=None
-            )
-            found = set()
-            for r in res['results']:
-                ref = extract_verse_ref(r)
-                if ref:
-                    found.add(ref)
-            exec_time = round(time.time() - start, 3)
-            print(model, found)
-            results.append(format_eval_result(model, f'Semantic ({model})', found, ground_truth, exec_time))
-        except Exception as e:
-            results.append({'method': model, 'label': f'Semantic ({model})', 'error': str(e)})
-
-    # --- 4. Evaluasi Semantic+Ontologi (dummy: filter hasil semantic dengan ayat di ground_truth) ---
-    for model in ['word2vec', 'fasttext', 'glove']:
-        try:
-            start = time.time()
-            res = search_service.semantic_search(
-                query=query_text,
-                model_type=model,
-                limit=result_limit,
-                threshold=threshold,
-                user_id=None
-            )
-            found = set()
-            for r in res['results']:
-                ref = extract_verse_ref(r)
-                if ref and ref in ground_truth:
-                    found.add(ref)
-            exec_time = round(time.time() - start, 3)
-            results.append(format_eval_result(f'{model}_ont', f'Semantic+Ontologi ({model})', found, ground_truth, exec_time))
-        except Exception as e:
-            results.append({'method': f'{model}_ont', 'label': f'Semantic+Ontologi ({model})', 'error': str(e)})
+    # --- 4. Evaluasi Semantic+Ontologi (mengikuti logika ontology.py, termasuk ensemble) ---
+    if not selected_methods or 'ontology' in selected_methods:
+        for model in ['word2vec', 'fasttext', 'glove', 'ensemble']:
+            try:
+                start = time.time()
+                # Ekspansi query dengan ontologi
+                main_concept = ontology_service.find_concept(query_text)
+                expanded_queries = [query_text]
+                if main_concept:
+                    expanded_queries = set([main_concept['label']] + main_concept.get('synonyms', []) + main_concept.get('related', []))
+                    expanded_queries = [q for q in expanded_queries if q]
+                else:
+                    # Coba cari konsep dari setiap kata di query
+                    for word in query_text.split():
+                        c = ontology_service.find_concept(word)
+                        if c:
+                            expanded_queries += [c['label']] + c.get('synonyms', []) + c.get('related', [])
+                    expanded_queries = list(set(expanded_queries))
+                # Lakukan pencarian untuk semua query ekspansi
+                all_results = []
+                for q in expanded_queries:
+                    res = search_service.semantic_search(
+                        query=q,
+                        model_type=model,
+                        limit=result_limit,
+                        threshold=threshold,
+                        user_id=None
+                    )
+                    for r in res['results']:
+                        r['source_query'] = q
+                        all_results.append(r)
+                # Gabungkan hasil berdasarkan verse_id, boost skor jika hasil dari ekspansi ontologi
+                result_map = {}
+                for r in all_results:
+                    vid = r['verse_id']
+                    if vid not in result_map or r['similarity'] > result_map[vid]['similarity']:
+                        result_map[vid] = r
+                    # Boost skor jika source_query adalah sinonim/related
+                    if r['source_query'] != query_text:
+                        result_map[vid]['similarity'] = min(result_map[vid]['similarity'] + 0.1, 1.0)
+                        result_map[vid]['boosted'] = True
+                    else:
+                        result_map[vid]['boosted'] = False
+                # Urutkan hasil
+                final_results = list(result_map.values())
+                final_results.sort(key=lambda x: x['similarity'], reverse=True)
+                final_results = final_results[:result_limit]
+                found = set()
+                for r in final_results:
+                    ref = extract_verse_ref(r)
+                    if ref:
+                        found.add(ref)
+                exec_time = round(time.time() - start, 3)
+                label = f'Semantic+Ontologi ({model})' if model != 'ensemble' else 'Semantic+Ontologi (Ensemble)'
+                results.append(format_eval_result(f'{model}_ont', label, found, ground_truth, exec_time))
+            except Exception as e:
+                label = f'Semantic+Ontologi ({model})' if model != 'ensemble' else 'Semantic+Ontologi (Ensemble)'
+                results.append({'method': f'{model}_ont', 'label': label, 'error': str(e)})
 
     return jsonify({'success': True, 'results': results}) 
