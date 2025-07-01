@@ -1,0 +1,85 @@
+{% extends "layout.html" %}
+{% block title %}Evaluasi Pencarian{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2 class="mb-4">Evaluasi Pencarian</h2>
+  <div class="row g-4">
+    <div class="col-md-4">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <h4 class="card-title mb-3">Query Evaluasi <span class="badge bg-secondary" id="query-count">0</span></h4>
+          <form id="form-add-query" class="mb-3">
+            <div class="mb-2">
+              <input type="text" class="form-control" id="query-text" placeholder="Masukkan query evaluasi" required />
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Tambah Query</button>
+          </form>
+          <div id="query-list" class="mt-2">
+            <!-- Daftar query akan dimuat di sini -->
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-8">
+      <div class="card shadow-sm mb-4">
+        <div class="card-body">
+          <h4 class="card-title mb-3">Ayat Relevan <span class="badge bg-secondary" id="ayat-count">0</span></h4>
+          <div id="relevant-verse-section">
+            <p class="text-muted small">Pilih query untuk melihat/mengelola ayat relevan.</p>
+            <div id="relevant-verse-list"></div>
+            <div class="d-flex flex-wrap gap-2 mt-3">
+              <button class="btn btn-warning d-none" id="evaluasi-btn">Evaluasi</button>
+              <button class="btn btn-outline-secondary d-none" id="log-btn">Lihat Log Perubahan</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h4 class="card-title mb-3">Hasil Evaluasi</h4>
+          <div id="evaluasi-result" class="mb-2"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Modal Log Perubahan -->
+  <div class="modal fade" id="logModal" tabindex="-1" aria-labelledby="logModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="logModalLabel">Log Perubahan Evaluasi</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div id="log-content">Memuat log...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Modal Detail Ayat Relevan -->
+  <div class="modal fade" id="ayatDetailModal" tabindex="-1" aria-labelledby="ayatDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="ayatDetailModalLabel">Detail Ayat Relevan</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="form-add-verse-modal" class="mb-3">
+            <div class="input-group">
+              <input type="text" class="form-control" id="verse-ref-modal" placeholder="Format: surah:ayat (misal: 2:255)" required />
+              <button class="btn btn-success" type="submit">Tambah Ayat</button>
+            </div>
+          </form>
+          <div id="ayat-detail-content">Memuat detail ayat...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/evaluasi.js') }}"></script>
+{% endblock %} 
