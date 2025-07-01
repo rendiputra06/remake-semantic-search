@@ -1,5 +1,5 @@
-{% extends "layout.html" %} {% block title %}Admin - Mesin Pencarian Semantik
-Al-Quran{% endblock %} {% block head %}
+{% extends "layout_loggedin.html" %} {% block title %}Admin - Mesin Pencarian
+Semantik Al-Quran{% endblock %} {% block head %}
 <!-- vis-network for thesaurus visualization -->
 <script
   type="text/javascript"
@@ -9,7 +9,7 @@ Al-Quran{% endblock %} {% block head %}
   rel="stylesheet"
   href="https://unpkg.com/vis-network/styles/vis-network.min.css"
 />
-{% endblock %} {% block content %}
+{% endblock %} {% block page_content %}
 <div class="container mt-4">
   <h1 class="mb-4">Admin Panel</h1>
 

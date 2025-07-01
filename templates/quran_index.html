@@ -1,5 +1,5 @@
-{% extends "layout.html" %} {% block title %}Klasifikasi Index Al-Quran{%
-endblock %} {% block content %}
+{% extends "layout_loggedin.html" %} {% block title %}Klasifikasi Index
+Al-Quran{% endblock %} {% block page_content %}
 <div class="container mt-4">
   <h1 class="mb-4">Klasifikasi Index Al-Quran</h1>
 
@@ -64,7 +64,18 @@ endblock %} {% block content %}
 </div>
 
 <!-- Tombol Kembali ke Atas -->
-<button id="back-to-top" class="btn btn-primary btn-lg" style="position: fixed; bottom: 40px; right: 40px; display: none; z-index: 9999; border-radius: 50%;">
+<button
+  id="back-to-top"
+  class="btn btn-primary btn-lg"
+  style="
+    position: fixed;
+    bottom: 40px;
+    right: 40px;
+    display: none;
+    z-index: 9999;
+    border-radius: 50%;
+  "
+>
   <i class="fas fa-arrow-up"></i>
 </button>
 
@@ -701,11 +712,21 @@ endblock %} {% block content %}
               html += `
                                 <div class="card mb-2">
                                     <div class="card-header d-flex justify-content-between align-items-center">
-                                        <span>Q.S. ${ayat.surah}:$${ayat.ayat} <span class='text-muted'>(${ayat.surah_name_en || ''})</span></span>
+                                        <span>Q.S. ${ayat.surah}:$${
+                ayat.ayat
+              } <span class='text-muted'>(${
+                ayat.surah_name_en || ""
+              })</span></span>
                                     </div>
                                     <div class="card-body">
-                                        <p class="text-end fs-5" dir="rtl">${ayat.text || "<em>Tidak ada teks</em>"}</p>
-                                        ${ayat.translation ? `<p class='mb-0'>${ayat.translation}</p>` : "<p class='mb-0 text-muted'><em>Tidak ada terjemahan</em></p>"}
+                                        <p class="text-end fs-5" dir="rtl">${
+                                          ayat.text || "<em>Tidak ada teks</em>"
+                                        }</p>
+                                        ${
+                                          ayat.translation
+                                            ? `<p class='mb-0'>${ayat.translation}</p>`
+                                            : "<p class='mb-0 text-muted'><em>Tidak ada terjemahan</em></p>"
+                                        }
                                     </div>
                                 </div>
                             `;
@@ -1040,9 +1061,7 @@ endblock %} {% block content %}
     }
 
     // Endpoint dan method
-    const url = isEdit
-      ? `/api/quran-index/${indexId}`
-      : "/api/quran-index";
+    const url = isEdit ? `/api/quran-index/${indexId}` : "/api/quran-index";
     const method = isEdit ? "PUT" : "POST";
 
     // Kirim request

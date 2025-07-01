@@ -1,9 +1,8 @@
-{% extends "layout.html" %}
-{% block title %}Pencarian Ontologi{% endblock %}
-{% block content %}
+{% extends "layout.html" %} {% block title %}Pencarian Ontologi{% endblock %} {%
+block content %}
 <div class="container mt-4">
   <h1 class="mb-4">Pencarian Ontologi (Eksperimen)</h1>
-  
+
   <!-- Quick Search Section -->
   <div class="card mb-4">
     <div class="card-header">
@@ -12,31 +11,98 @@
     <div class="card-body">
       <p class="text-muted mb-3">Klik kata di bawah untuk pencarian cepat:</p>
       <div class="quick-search-tags">
-        <span class="badge bg-primary clickable-example me-2 mb-2" style="cursor:pointer; font-size: 0.9em;">iman</span>
-        <span class="badge bg-primary clickable-example me-2 mb-2" style="cursor:pointer; font-size: 0.9em;">ilmu</span>
-        <span class="badge bg-primary clickable-example me-2 mb-2" style="cursor:pointer; font-size: 0.9em;">amal</span>
-        <span class="badge bg-primary clickable-example me-2 mb-2" style="cursor:pointer; font-size: 0.9em;">doa</span>
-        <span class="badge bg-primary clickable-example me-2 mb-2" style="cursor:pointer; font-size: 0.9em;">sabar</span>
-        <span class="badge bg-primary clickable-example me-2 mb-2" style="cursor:pointer; font-size: 0.9em;">syukur</span>
-        <span class="badge bg-primary clickable-example me-2 mb-2" style="cursor:pointer; font-size: 0.9em;">taqwa</span>
-        <span class="badge bg-primary clickable-example me-2 mb-2" style="cursor:pointer; font-size: 0.9em;">hikmah</span>
-        <span class="badge bg-primary clickable-example me-2 mb-2" style="cursor:pointer; font-size: 0.9em;">shalat</span>
-        <span class="badge bg-primary clickable-example me-2 mb-2" style="cursor:pointer; font-size: 0.9em;">zakat</span>
-        <span class="badge bg-primary clickable-example me-2 mb-2" style="cursor:pointer; font-size: 0.9em;">puasa</span>
-        <span class="badge bg-primary clickable-example me-2 mb-2" style="cursor:pointer; font-size: 0.9em;">haji</span>
-        <span class="badge bg-primary clickable-example me-2 mb-2" style="cursor:pointer; font-size: 0.9em;">tauhid</span>
-        <span class="badge bg-primary clickable-example me-2 mb-2" style="cursor:pointer; font-size: 0.9em;">adil</span>
-        <span class="badge bg-primary clickable-example me-2 mb-2" style="cursor:pointer; font-size: 0.9em;">rahmat</span>
+        <span
+          class="badge bg-primary clickable-example me-2 mb-2"
+          style="cursor: pointer; font-size: 0.9em"
+          >iman</span
+        >
+        <span
+          class="badge bg-primary clickable-example me-2 mb-2"
+          style="cursor: pointer; font-size: 0.9em"
+          >ilmu</span
+        >
+        <span
+          class="badge bg-primary clickable-example me-2 mb-2"
+          style="cursor: pointer; font-size: 0.9em"
+          >amal</span
+        >
+        <span
+          class="badge bg-primary clickable-example me-2 mb-2"
+          style="cursor: pointer; font-size: 0.9em"
+          >doa</span
+        >
+        <span
+          class="badge bg-primary clickable-example me-2 mb-2"
+          style="cursor: pointer; font-size: 0.9em"
+          >sabar</span
+        >
+        <span
+          class="badge bg-primary clickable-example me-2 mb-2"
+          style="cursor: pointer; font-size: 0.9em"
+          >syukur</span
+        >
+        <span
+          class="badge bg-primary clickable-example me-2 mb-2"
+          style="cursor: pointer; font-size: 0.9em"
+          >taqwa</span
+        >
+        <span
+          class="badge bg-primary clickable-example me-2 mb-2"
+          style="cursor: pointer; font-size: 0.9em"
+          >hikmah</span
+        >
+        <span
+          class="badge bg-primary clickable-example me-2 mb-2"
+          style="cursor: pointer; font-size: 0.9em"
+          >shalat</span
+        >
+        <span
+          class="badge bg-primary clickable-example me-2 mb-2"
+          style="cursor: pointer; font-size: 0.9em"
+          >zakat</span
+        >
+        <span
+          class="badge bg-primary clickable-example me-2 mb-2"
+          style="cursor: pointer; font-size: 0.9em"
+          >puasa</span
+        >
+        <span
+          class="badge bg-primary clickable-example me-2 mb-2"
+          style="cursor: pointer; font-size: 0.9em"
+          >haji</span
+        >
+        <span
+          class="badge bg-primary clickable-example me-2 mb-2"
+          style="cursor: pointer; font-size: 0.9em"
+          >tauhid</span
+        >
+        <span
+          class="badge bg-primary clickable-example me-2 mb-2"
+          style="cursor: pointer; font-size: 0.9em"
+          >adil</span
+        >
+        <span
+          class="badge bg-primary clickable-example me-2 mb-2"
+          style="cursor: pointer; font-size: 0.9em"
+          >rahmat</span
+        >
       </div>
     </div>
   </div>
-  
+
   <!-- Search Form -->
   <form id="ontology-search-form" class="mb-4">
     <div class="row g-2 align-items-end">
       <div class="col-md-6">
         <label for="query" class="form-label">Kata Kunci / Konsep</label>
-        <input type="text" class="form-control" id="query" name="query" placeholder="Masukkan kata kunci atau konsep..." required />
+        <input
+          type="text"
+          class="form-control"
+          id="query"
+          name="query"
+          placeholder="Masukkan kata kunci atau konsep..."
+          required
+        />
       </div>
       <div class="col-md-3">
         <label for="model" class="form-label">Model</label>
@@ -49,14 +115,22 @@
       </div>
       <div class="col-md-2">
         <label for="limit" class="form-label">Limit</label>
-        <input type="number" class="form-control" id="limit" name="limit" value="10" min="1" max="50" />
+        <input
+          type="number"
+          class="form-control"
+          id="limit"
+          name="limit"
+          value="10"
+          min="1"
+          max="50"
+        />
       </div>
       <div class="col-md-1">
         <button type="submit" class="btn btn-primary w-100">Cari</button>
       </div>
     </div>
   </form>
-  
+
   <!-- Search Results and Visualization -->
   <div class="row">
     <!-- Left Column: Search Results -->
@@ -64,15 +138,21 @@
       <div id="search-info" class="mb-3"></div>
       <div id="search-results"></div>
     </div>
-    
+
     <!-- Right Column: Visualization -->
     <div class="col-md-4">
       <div class="card">
         <div class="card-header">
-          <h6 class="mb-0"><i class="fas fa-project-diagram me-2"></i>Visualisasi Relasi Ontologi</h6>
+          <h6 class="mb-0">
+            <i class="fas fa-project-diagram me-2"></i>Visualisasi Relasi
+            Ontologi
+          </h6>
         </div>
         <div class="card-body p-0">
-          <div id="ontology-search-network" style="height: 500px; border: none;"></div>
+          <div
+            id="ontology-search-network"
+            style="height: 500px; border: none"
+          ></div>
         </div>
         <div class="card-footer">
           <small class="text-muted">
@@ -84,208 +164,232 @@
     </div>
   </div>
 </div>
-{% endblock %}
-{% block scripts %}
-<link href="https://unpkg.com/vis-network/styles/vis-network.min.css" rel="stylesheet" type="text/css" />
+{% endblock %} {% block scripts %}
+<link
+  href="https://unpkg.com/vis-network/styles/vis-network.min.css"
+  rel="stylesheet"
+  type="text/css"
+/>
 <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
 <script>
-// Quick search functionality
-document.addEventListener('DOMContentLoaded', function() {
-  const quickSearchTags = document.querySelectorAll('.clickable-example');
-  quickSearchTags.forEach(tag => {
-    tag.addEventListener('click', function() {
-      const query = this.textContent.trim();
-      document.getElementById('query').value = query;
-      document.getElementById('ontology-search-form').dispatchEvent(new Event('submit'));
+  // Quick search functionality
+  document.addEventListener("DOMContentLoaded", function () {
+    const quickSearchTags = document.querySelectorAll(".clickable-example");
+    quickSearchTags.forEach((tag) => {
+      tag.addEventListener("click", function () {
+        const query = this.textContent.trim();
+        document.getElementById("query").value = query;
+        document
+          .getElementById("ontology-search-form")
+          .dispatchEvent(new Event("submit"));
+      });
     });
   });
-});
 
-document.getElementById('ontology-search-form').addEventListener('submit', function(e) {
-  e.preventDefault();
-  const query = document.getElementById('query').value.trim();
-  const model = document.getElementById('model').value;
-  const limit = document.getElementById('limit').value;
-  const infoDiv = document.getElementById('search-info');
-  const resultsDiv = document.getElementById('search-results');
-  infoDiv.innerHTML = '';
-  resultsDiv.innerHTML = '<div class="text-center py-4"><div class="spinner-border" role="status"></div></div>';
+  document
+    .getElementById("ontology-search-form")
+    .addEventListener("submit", function (e) {
+      e.preventDefault();
+      const query = document.getElementById("query").value.trim();
+      const model = document.getElementById("model").value;
+      const limit = document.getElementById("limit").value;
+      const infoDiv = document.getElementById("search-info");
+      const resultsDiv = document.getElementById("search-results");
+      infoDiv.innerHTML = "";
+      resultsDiv.innerHTML =
+        '<div class="text-center py-4"><div class="spinner-border" role="status"></div></div>';
 
-  fetch('/api/ontology/search', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ query, model, limit })
-  })
-    .then(res => res.json())
-    .then(data => {
-      if (!data.success) {
-        resultsDiv.innerHTML = `<div class='alert alert-danger'>${data.message || 'Gagal melakukan pencarian'}</div>`;
-        return;
-      }
-      // Info ekspansi
-      let infoHtml = `<div class='mb-2'><strong>Query Ekspansi:</strong> ${data.expanded_queries.map(q => `<span class='badge bg-info me-1'>${q}</span>`).join(' ')}</div>`;
-      infoDiv.innerHTML = infoHtml;
-      // Hasil
-      if (!data.results.length) {
-        resultsDiv.innerHTML = `<div class='alert alert-warning'>Tidak ada hasil ditemukan.</div>`;
-        return;
-      }
-      let html = `<div class='list-group'>`;
-      data.results.forEach((r, i) => {
-        html += `<div class='list-group-item'>
+      fetch("/api/ontology/search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query, model, limit }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (!data.success) {
+            resultsDiv.innerHTML = `<div class='alert alert-danger'>${
+              data.message || "Gagal melakukan pencarian"
+            }</div>`;
+            return;
+          }
+          // Info ekspansi
+          let infoHtml = `<div class='mb-2'><strong>Query Ekspansi:</strong> ${data.expanded_queries
+            .map((q) => `<span class='badge bg-info me-1'>${q}</span>`)
+            .join(" ")}</div>`;
+          infoDiv.innerHTML = infoHtml;
+          // Hasil
+          if (!data.results.length) {
+            resultsDiv.innerHTML = `<div class='alert alert-warning'>Tidak ada hasil ditemukan.</div>`;
+            return;
+          }
+          let html = `<div class='list-group'>`;
+          data.results.forEach((r, i) => {
+            html += `<div class='list-group-item'>
           <div class='d-flex justify-content-between'>
-            <div><strong>Q.S. ${r.surah_number}:${r.ayat_number}</strong> <span class='text-muted'>(${r.surah_name})</span></div>
-            <div>Skor: <span class='badge bg-${r.boosted ? 'success' : 'secondary'}'>${(r.similarity*100).toFixed(1)}%</span></div>
+            <div><strong>Q.S. ${r.surah_number}:${
+              r.ayat_number
+            }</strong> <span class='text-muted'>(${r.surah_name})</span></div>
+            <div>Skor: <span class='badge bg-${
+              r.boosted ? "success" : "secondary"
+            }'>${(r.similarity * 100).toFixed(1)}%</span></div>
           </div>
-          <div class='mt-2'><span class='text-end d-block' dir='rtl' style='font-size:1.2em'>${r.arabic}</span></div>
-          <div class='mb-1'>${r.translation || ''}</div>
-          <div class='small text-muted'>Sumber query: <span class='badge bg-light text-dark'>${r.source_query}</span></div>
+          <div class='mt-2'><span class='text-end d-block' dir='rtl' style='font-size:1.2em'>${
+            r.arabic
+          }</span></div>
+          <div class='mb-1'>${r.translation || ""}</div>
+          <div class='small text-muted'>Sumber query: <span class='badge bg-light text-dark'>${
+            r.source_query
+          }</span></div>
         </div>`;
-      });
-      html += `</div>`;
-      resultsDiv.innerHTML = html;
-      
-      // Render bubble net visualization
-      renderBubbleNet(data.results, data.expanded_queries);
-    })
-    .catch(err => {
-      resultsDiv.innerHTML = `<div class='alert alert-danger'>Terjadi error: ${err}</div>`;
-    });
-});
+          });
+          html += `</div>`;
+          resultsDiv.innerHTML = html;
 
-function renderBubbleNet(results, expandedQueries) {
-  if (!results || !results.length) return;
-  
-  // Create nodes from search results and expanded queries
-  const nodes = [];
-  const edges = [];
-  
-  // Add main query node (center)
-  const mainQuery = document.getElementById('query').value.trim();
-  nodes.push({
-    id: 'main_query',
-    label: mainQuery,
-    size: 30,
-    color: { background: '#007bff', border: '#0056b3' },
-    font: { size: 16, color: '#ffffff' },
-    shape: 'circle'
-  });
-  
-  // Add expanded query nodes
-  expandedQueries.forEach((query, index) => {
-    if (query !== mainQuery) {
-      nodes.push({
-        id: `expanded_${index}`,
-        label: query,
-        size: 20,
-        color: { background: '#28a745', border: '#1e7e34' },
-        font: { size: 12, color: '#ffffff' },
-        shape: 'circle'
-      });
-      
-      // Connect to main query
-      edges.push({
-        from: 'main_query',
-        to: `expanded_${index}`,
-        color: { color: '#28a745', width: 2 },
-        smooth: { type: 'curvedCW', roundness: 0.2 }
-      });
-    }
-  });
-  
-  // Add result nodes (verses)
-  results.forEach((result, index) => {
-    const nodeId = `result_${index}`;
-    const verseText = `Q.S. ${result.surah_number}:${result.ayat_number}`;
-    
-    // Calculate node size based on similarity score
-    const nodeSize = Math.max(15, Math.min(25, result.similarity * 30));
-    
-    // Color based on boosted status
-    const nodeColor = result.boosted ? 
-      { background: '#ffc107', border: '#e0a800' } : 
-      { background: '#6c757d', border: '#545b62' };
-    
-    nodes.push({
-      id: nodeId,
-      label: verseText,
-      size: nodeSize,
-      color: nodeColor,
-      font: { size: 10, color: '#ffffff' },
-      shape: 'circle',
-      title: `${result.surah_name}<br>Skor: ${(result.similarity*100).toFixed(1)}%<br>${result.translation || ''}`
+          // Render bubble net visualization
+          renderBubbleNet(data.results, data.expanded_queries);
+        })
+        .catch((err) => {
+          resultsDiv.innerHTML = `<div class='alert alert-danger'>Terjadi error: ${err}</div>`;
+        });
     });
-    
-    // Connect to expanded query that found this result
-    const sourceQuery = result.source_query;
-    const sourceNodeId = sourceQuery === mainQuery ? 'main_query' : 
-      `expanded_${expandedQueries.findIndex(q => q === sourceQuery)}`;
-    
-    if (sourceNodeId && sourceNodeId !== 'main_query') {
-      edges.push({
-        from: sourceNodeId,
-        to: nodeId,
-        color: { color: '#6c757d', width: 1 },
-        smooth: { type: 'curvedCW', roundness: 0.1 }
-      });
-    } else {
-      edges.push({
-        from: 'main_query',
-        to: nodeId,
-        color: { color: '#007bff', width: 2 },
-        smooth: { type: 'curvedCW', roundness: 0.1 }
-      });
-    }
-  });
-  
-  const container = document.getElementById('ontology-search-network');
-  const data = { 
-    nodes: new vis.DataSet(nodes), 
-    edges: new vis.DataSet(edges) 
-  };
-  
-  const options = {
-    nodes: {
-      borderWidth: 2,
-      shadow: true
-    },
-    edges: {
-      shadow: true,
-      smooth: {
-        type: 'curvedCW',
-        roundness: 0.2
+
+  function renderBubbleNet(results, expandedQueries) {
+    if (!results || !results.length) return;
+
+    // Create nodes from search results and expanded queries
+    const nodes = [];
+    const edges = [];
+
+    // Add main query node (center)
+    const mainQuery = document.getElementById("query").value.trim();
+    nodes.push({
+      id: "main_query",
+      label: mainQuery,
+      size: 30,
+      color: { background: "#007bff", border: "#0056b3" },
+      font: { size: 16, color: "#ffffff" },
+      shape: "circle",
+    });
+
+    // Add expanded query nodes
+    expandedQueries.forEach((query, index) => {
+      if (query !== mainQuery) {
+        nodes.push({
+          id: `expanded_${index}`,
+          label: query,
+          size: 20,
+          color: { background: "#28a745", border: "#1e7e34" },
+          font: { size: 12, color: "#ffffff" },
+          shape: "circle",
+        });
+
+        // Connect to main query
+        edges.push({
+          from: "main_query",
+          to: `expanded_${index}`,
+          color: { color: "#28a745", width: 2 },
+          smooth: { type: "curvedCW", roundness: 0.2 },
+        });
       }
-    },
-    layout: {
-      improvedLayout: true,
-      hierarchical: {
-        enabled: false
+    });
+
+    // Add result nodes (verses)
+    results.forEach((result, index) => {
+      const nodeId = `result_${index}`;
+      const verseText = `Q.S. ${result.surah_number}:${result.ayat_number}`;
+
+      // Calculate node size based on similarity score
+      const nodeSize = Math.max(15, Math.min(25, result.similarity * 30));
+
+      // Color based on boosted status
+      const nodeColor = result.boosted
+        ? { background: "#ffc107", border: "#e0a800" }
+        : { background: "#6c757d", border: "#545b62" };
+
+      nodes.push({
+        id: nodeId,
+        label: verseText,
+        size: nodeSize,
+        color: nodeColor,
+        font: { size: 10, color: "#ffffff" },
+        shape: "circle",
+        title: `${result.surah_name}<br>Skor: ${(
+          result.similarity * 100
+        ).toFixed(1)}%<br>${result.translation || ""}`,
+      });
+
+      // Connect to expanded query that found this result
+      const sourceQuery = result.source_query;
+      const sourceNodeId =
+        sourceQuery === mainQuery
+          ? "main_query"
+          : `expanded_${expandedQueries.findIndex((q) => q === sourceQuery)}`;
+
+      if (sourceNodeId && sourceNodeId !== "main_query") {
+        edges.push({
+          from: sourceNodeId,
+          to: nodeId,
+          color: { color: "#6c757d", width: 1 },
+          smooth: { type: "curvedCW", roundness: 0.1 },
+        });
+      } else {
+        edges.push({
+          from: "main_query",
+          to: nodeId,
+          color: { color: "#007bff", width: 2 },
+          smooth: { type: "curvedCW", roundness: 0.1 },
+        });
       }
-    },
-    physics: {
-      enabled: true,
-      barnesHut: {
-        gravitationalConstant: -2000,
-        centralGravity: 0.3,
-        springLength: 95,
-        springConstant: 0.04,
-        damping: 0.09
+    });
+
+    const container = document.getElementById("ontology-search-network");
+    const data = {
+      nodes: new vis.DataSet(nodes),
+      edges: new vis.DataSet(edges),
+    };
+
+    const options = {
+      nodes: {
+        borderWidth: 2,
+        shadow: true,
       },
-      stabilization: {
+      edges: {
+        shadow: true,
+        smooth: {
+          type: "curvedCW",
+          roundness: 0.2,
+        },
+      },
+      layout: {
+        improvedLayout: true,
+        hierarchical: {
+          enabled: false,
+        },
+      },
+      physics: {
         enabled: true,
-        iterations: 1000,
-        updateInterval: 100
-      }
-    },
-    interaction: {
-      hover: true,
-      tooltipDelay: 200,
-      zoomView: true,
-      dragView: true
-    }
-  };
-  
-  new vis.Network(container, data, options);
-}
+        barnesHut: {
+          gravitationalConstant: -2000,
+          centralGravity: 0.3,
+          springLength: 95,
+          springConstant: 0.04,
+          damping: 0.09,
+        },
+        stabilization: {
+          enabled: true,
+          iterations: 1000,
+          updateInterval: 100,
+        },
+      },
+      interaction: {
+        hover: true,
+        tooltipDelay: 200,
+        zoomView: true,
+        dragView: true,
+      },
+    };
+
+    new vis.Network(container, data, options);
+  }
 </script>
-{% endblock %} 
+{% endblock %}

@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      {% block title %}Mesin Pencarian Semantik Al-Quran{% endblock %}
+    </title>
+    <!-- Bootstrap CSS CDN -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- Font Awesome untuk ikon -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <!-- CSS Kustom -->
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
+    {% block styles %}{% endblock %} {% block extra_css %}{% endblock %}
+  </head>
+  <body>
+    <div class="d-flex" id="wrapper">
+      <!-- Sidebar -->
+      <div class="sidebar-custom shadow-lg" id="sidebar-wrapper">
+        <div
+          class="sidebar-heading-custom text-center py-4 fw-bold border-bottom"
+        >
+          <i class="fas fa-quran me-2 fa-2x"></i
+          ><span style="font-size: 1.3rem">Menu</span>
+        </div>
+        <div class="list-group list-group-flush my-3">
+          <!-- Navigasi ke halaman public utama -->
+          <a
+            href="{{ url_for('index') }}"
+            class="list-group-item-custom {% if request.endpoint == 'index' %}active{% endif %}"
+          >
+            <i class="fas fa-home me-2 fa-lg"></i>Beranda
+          </a>
+          <hr />
+          <!-- Navigasi login-only -->
+          <a
+            href="{{ url_for('profile') }}"
+            class="list-group-item-custom {% if request.endpoint == 'profile' %}active{% endif %}"
+          >
+            <i class="fas fa-user me-2 fa-lg"></i>Profil
+          </a>
+          <a
+            href="{{ url_for('settings') }}"
+            class="list-group-item-custom {% if request.endpoint == 'settings' %}active{% endif %}"
+          >
+            <i class="fas fa-cog me-2 fa-lg"></i>Pengaturan
+          </a>
+          <a
+            href="{{ url_for('quran_index') }}"
+            class="list-group-item-custom {% if request.endpoint == 'quran_index' %}active{% endif %}"
+          >
+            <i class="fas fa-book me-2 fa-lg"></i>Index Al-Quran
+          </a>
+          <a
+            href="{{ url_for('ontology_search') }}"
+            class="list-group-item-custom {% if request.endpoint == 'ontology_search' %}active{% endif %}"
+          >
+            <i class="fas fa-brain me-2 fa-lg"></i>Ontologi
+          </a>
+          <a
+            href="{{ url_for('public.thesaurus_statistics') }}"
+            class="list-group-item-custom {% if request.endpoint == 'public.thesaurus_statistics' %}active{% endif %}"
+          >
+            <i class="fas fa-chart-bar me-2 fa-lg"></i>Statistik Tesaurus
+          </a>
+          {% if user and user.role == 'admin' %}
+          <hr />
+          <a
+            href="{{ url_for('admin.admin') }}"
+            class="list-group-item-custom {% if request.endpoint == 'admin.admin' %}active{% endif %}"
+          >
+            <i class="fas fa-user-shield me-2 fa-lg"></i>Admin Panel
+          </a>
+          <a
+            href="{{ url_for('ontology_admin') }}"
+            class="list-group-item-custom {% if request.endpoint == 'ontology_admin' %}active{% endif %}"
+          >
+            <i class="fas fa-database me-2 fa-lg"></i>Admin Ontologi
+          </a>
+          {% endif %}
+          <hr />
+          <a href="{{ url_for('auth.logout') }}" class="list-group-item-custom">
+            <i class="fas fa-sign-out-alt me-2 fa-lg"></i>Keluar
+          </a>
+        </div>
+      </div>
+      <!-- /#sidebar-wrapper -->
+
+      <!-- Page Content -->
+      <div id="page-content-wrapper" class="flex-grow-1">
+        <div class="container-fluid">
+          {% block page_content %}{% endblock %}
+        </div>
+      </div>
+    </div>
+    <!-- Flash Messages -->
+    <div class="container mt-3">
+      {% with messages = get_flashed_messages(with_categories=true) %} {% if
+      messages %} {% for category, message in messages %}
+      <div
+        class="alert alert-{{ category }} alert-dismissible fade show"
+        role="alert"
+      >
+        {{ message }}
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="alert"
+          aria-label="Close"
+        ></button>
+      </div>
+      {% endfor %} {% endif %} {% endwith %}
+    </div>
+    <!-- Footer -->
+    <footer class="bg-dark text-white text-center py-3 mt-5">
+      <div class="container">
+        <p class="mb-0">&copy; 2023 Mesin Pencarian Semantik Al-Quran</p>
+      </div>
+    </footer>
+    <!-- jQuery CDN -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Bootstrap JS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- JavaScript Kustom -->
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    {% block extra_js %}{% endblock %} {% block scripts %}{% endblock %}
+    <style>
+      body {
+        background: #f4f6fb;
+      }
+      #wrapper {
+        min-height: 80vh;
+      }
+      .sidebar-custom {
+        min-height: 100vh;
+        width: 240px;
+        position: fixed;
+        left: 0;
+        top: 0;
+        z-index: 1000;
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        border-right: 1px solid #e0e0e0;
+        border-radius: 0 20px 20px 0;
+        box-shadow: 2px 0 16px 0 rgba(30, 60, 114, 0.08);
+        color: #fff;
+        transition: all 0.2s;
+      }
+      .sidebar-heading-custom {
+        background: rgba(255, 255, 255, 0.05);
+        color: #fff;
+        letter-spacing: 1px;
+        font-size: 1.3rem;
+        border-radius: 0 20px 0 0;
+      }
+      .list-group-item-custom {
+        background: transparent;
+        color: #e3e6f0;
+        border: none;
+        border-radius: 8px;
+        margin: 2px 12px;
+        font-size: 1.08rem;
+        font-weight: 500;
+        padding: 12px 18px;
+        display: flex;
+        align-items: center;
+        transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+      }
+      .list-group-item-custom i {
+        min-width: 28px;
+        text-align: center;
+      }
+      .list-group-item-custom.active,
+      .list-group-item-custom:active {
+        background: #fff;
+        color: #1e3c72;
+        box-shadow: 0 2px 8px 0 rgba(30, 60, 114, 0.08);
+      }
+      .list-group-item-custom:hover {
+        background: rgba(255, 255, 255, 0.15);
+        color: #fff;
+        text-decoration: none;
+      }
+      #page-content-wrapper {
+        margin-left: 240px;
+        padding: 2rem 1rem 1rem 1rem;
+        transition: margin-left 0.2s;
+      }
+      @media (max-width: 900px) {
+        .sidebar-custom {
+          width: 100%;
+          min-height: auto;
+          position: relative;
+          border-radius: 0 0 20px 20px;
+        }
+        #page-content-wrapper {
+          margin-left: 0;
+        }
+      }
+    </style>
+  </body>
+</html>

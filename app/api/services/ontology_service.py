@@ -1,6 +1,7 @@
 import json
 import os
 from typing import Dict, List, Optional, Any
+from datetime import datetime
 from backend.db import get_db_connection
 
 ONTOLOGY_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../ontology/ontology.json'))
@@ -20,6 +21,187 @@ class OntologyService:
             self._load_from_database()
         else:
             self._load_from_json()
+    
+    def _create_audit_table(self, cursor):
+        """Create audit log table if not exists"""
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS ontology_audit_log (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                concept_id TEXT NOT NULL,
+                action TEXT NOT NULL,
+                user_id TEXT,
+                username TEXT,
+                old_data TEXT,
+                new_data TEXT,
+                changes TEXT,
+                ip_address TEXT,
+                user_agent TEXT,
+                timestamp TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        
+        # Create indexes for better performance
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_audit_concept_id ON ontology_audit_log(concept_id)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_audit_action ON ontology_audit_log(action)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_audit_timestamp ON ontology_audit_log(timestamp)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_audit_user_id ON ontology_audit_log(user_id)')
+    
+    def _log_audit(self, concept_id: str, action: str, old_data: dict = None, 
+                   new_data: dict = None, user_info: dict = None):
+        """Log audit trail for concept changes"""
+        if self.storage_type != 'database':
+            return  # Only log for database storage
+        
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            
+            # Create audit table if not exists
+            self._create_audit_table(cursor)
+            
+            # Prepare changes summary
+            changes = []
+            if old_data and new_data:
+                for field in ['label', 'synonyms', 'broader', 'narrower', 'related', 'verses']:
+                    old_val = old_data.get(field, [])
+                    new_val = new_data.get(field, [])
+                    if old_val != new_val:
+                        changes.append(f"{field}: {old_val} → {new_val}")
+            
+            # Insert audit log
+            cursor.execute('''
+                INSERT INTO ontology_audit_log 
+                (concept_id, action, user_id, username, old_data, new_data, changes, ip_address, user_agent)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                concept_id,
+                action,
+                user_info.get('user_id') if user_info else None,
+                user_info.get('username') if user_info else None,
+                json.dumps(old_data, ensure_ascii=False) if old_data else None,
+                json.dumps(new_data, ensure_ascii=False) if new_data else None,
+                '; '.join(changes) if changes else None,
+                user_info.get('ip_address') if user_info else None,
+                user_info.get('user_agent') if user_info else None
+            ))
+            
+            conn.commit()
+            conn.close()
+            
+        except Exception as e:
+            print(f"❌ Error logging audit: {e}")
+    
+    def get_audit_log(self, concept_id: str = None, action: str = None, 
+                     limit: int = 100, offset: int = 0) -> List[dict]:
+        """Get audit log entries"""
+        if self.storage_type != 'database':
+            return []
+        
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            
+            # Create audit table if not exists
+            self._create_audit_table(cursor)
+            
+            # Build query
+            query = "SELECT * FROM ontology_audit_log WHERE 1=1"
+            params = []
+            
+            if concept_id:
+                query += " AND concept_id = ?"
+                params.append(concept_id)
+            
+            if action:
+                query += " AND action = ?"
+                params.append(action)
+            
+            query += " ORDER BY timestamp DESC LIMIT ? OFFSET ?"
+            params.extend([limit, offset])
+            
+            cursor.execute(query, params)
+            rows = cursor.fetchall()
+            
+            audit_logs = []
+            for row in rows:
+                audit_log = {
+                    'id': row['id'],
+                    'concept_id': row['concept_id'],
+                    'action': row['action'],
+                    'user_id': row['user_id'],
+                    'username': row['username'],
+                    'old_data': json.loads(row['old_data']) if row['old_data'] else None,
+                    'new_data': json.loads(row['new_data']) if row['new_data'] else None,
+                    'changes': row['changes'],
+                    'ip_address': row['ip_address'],
+                    'user_agent': row['user_agent'],
+                    'timestamp': row['timestamp']
+                }
+                audit_logs.append(audit_log)
+            
+            conn.close()
+            return audit_logs
+            
+        except Exception as e:
+            print(f"❌ Error getting audit log: {e}")
+            return []
+    
+    def get_audit_stats(self) -> dict:
+        """Get audit statistics"""
+        if self.storage_type != 'database':
+            return {}
+        
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            
+            # Create audit table if not exists
+            self._create_audit_table(cursor)
+            
+            # Get total count
+            cursor.execute("SELECT COUNT(*) as total FROM ontology_audit_log")
+            total = cursor.fetchone()['total']
+            
+            # Get action counts
+            cursor.execute("""
+                SELECT action, COUNT(*) as count 
+                FROM ontology_audit_log 
+                GROUP BY action
+            """)
+            action_counts = {row['action']: row['count'] for row in cursor.fetchall()}
+            
+            # Get recent activity (last 7 days)
+            cursor.execute("""
+                SELECT COUNT(*) as recent 
+                FROM ontology_audit_log 
+                WHERE timestamp >= datetime('now', '-7 days')
+            """)
+            recent = cursor.fetchone()['recent']
+            
+            # Get top users
+            cursor.execute("""
+                SELECT username, COUNT(*) as count 
+                FROM ontology_audit_log 
+                WHERE username IS NOT NULL
+                GROUP BY username 
+                ORDER BY count DESC 
+                LIMIT 10
+            """)
+            top_users = [{'username': row['username'], 'count': row['count']} 
+                        for row in cursor.fetchall()]
+            
+            conn.close()
+            
+            return {
+                'total_entries': total,
+                'action_counts': action_counts,
+                'recent_activity': recent,
+                'top_users': top_users
+            }
+            
+        except Exception as e:
+            print(f"❌ Error getting audit stats: {e}")
+            return {}
     
     def _load_from_json(self):
         """Load ontology from JSON file"""
@@ -205,14 +387,32 @@ class OntologyService:
     def get_all(self):
         return self.concepts
 
-    def add_concept(self, concept):
+    def add_concept(self, concept, user_info=None):
         # id harus unik
         if self.find_concept(concept['id']):
             raise ValueError('ID konsep sudah ada')
+        
+        # Log audit trail
+        self._log_audit(concept['id'], 'CREATE', new_data=concept, user_info=user_info)
+        
         self.concepts.append(concept)
         self._save_ontology()
 
-    def update_concept(self, concept_id, new_data):
+    def update_concept(self, concept_id, new_data, user_info=None):
+        # Find old data for audit
+        old_data = None
+        for c in self.concepts:
+            if c['id'] == concept_id:
+                old_data = c.copy()
+                break
+        
+        if not old_data:
+            raise ValueError('Konsep tidak ditemukan')
+        
+        # Log audit trail
+        self._log_audit(concept_id, 'UPDATE', old_data=old_data, new_data=new_data, user_info=user_info)
+        
+        # Update concept
         for i, c in enumerate(self.concepts):
             if c['id'] == concept_id:
                 self.concepts[i] = new_data
@@ -220,7 +420,20 @@ class OntologyService:
                 return
         raise ValueError('Konsep tidak ditemukan')
 
-    def delete_concept(self, concept_id):
+    def delete_concept(self, concept_id, user_info=None):
+        # Find old data for audit
+        old_data = None
+        for c in self.concepts:
+            if c['id'] == concept_id:
+                old_data = c.copy()
+                break
+        
+        if not old_data:
+            raise ValueError('Konsep tidak ditemukan')
+        
+        # Log audit trail
+        self._log_audit(concept_id, 'DELETE', old_data=old_data, user_info=user_info)
+        
         before = len(self.concepts)
         self.concepts = [c for c in self.concepts if c['id'] != concept_id]
         if len(self.concepts) == before:

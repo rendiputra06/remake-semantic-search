@@ -1,4 +1,4 @@
-{% extends "layout.html" %} {% block title %}Statistik Tesaurus - Mesin
+{% extends "layout_loggedin.html" %} {% block title %}Statistik Tesaurus - Mesin
 Pencarian Semantik Al-Quran{% endblock %} {% block head %}
 <style>
   .stats-card {
@@ -26,7 +26,7 @@ Pencarian Semantik Al-Quran{% endblock %} {% block head %}
     border-radius: 15px;
   }
 </style>
-{% endblock %} {% block content %}
+{% endblock %} {% block page_content %}
 <div class="container mt-4">
   <!-- Header Section -->
   <div class="row mb-4">

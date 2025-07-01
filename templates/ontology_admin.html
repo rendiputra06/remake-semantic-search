@@ -1,77 +1,472 @@
-{% extends "layout.html" %}
-{% block title %}Admin Ontologi{% endblock %}
-{% block content %}
+{% extends "layout_loggedin.html" %} {% block title %}Admin Ontologi{% endblock
+%} {% block page_content %}
 <div class="container mt-4">
   <h1 class="mb-4">Admin Ontologi</h1>
-  
-  <!-- Storage Info Panel -->
-  <div class="card mb-4">
-    <div class="card-header">
-      <h5 class="mb-0"><i class="fas fa-database me-2"></i>Informasi Storage</h5>
-    </div>
-    <div class="card-body">
-      <div class="row">
+
+  <!-- Tabs untuk navigasi -->
+  <ul class="nav nav-tabs mb-4" id="ontologyTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button
+        class="nav-link active"
+        id="concepts-tab"
+        data-bs-toggle="tab"
+        data-bs-target="#concepts-pane"
+        type="button"
+        role="tab"
+        aria-controls="concepts-pane"
+        aria-selected="true"
+      >
+        <i class="fas fa-sitemap me-2"></i>Konsep Ontologi
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button
+        class="nav-link"
+        id="visualization-tab"
+        data-bs-toggle="tab"
+        data-bs-target="#visualization-pane"
+        type="button"
+        role="tab"
+        aria-controls="visualization-pane"
+        aria-selected="false"
+      >
+        <i class="fas fa-project-diagram me-2"></i>Visualisasi
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button
+        class="nav-link"
+        id="audit-tab"
+        data-bs-toggle="tab"
+        data-bs-target="#audit-pane"
+        type="button"
+        role="tab"
+        aria-controls="audit-pane"
+        aria-selected="false"
+      >
+        <i class="fas fa-history me-2"></i>Audit Trail
+      </button>
+    </li>
+  </ul>
+
+  <!-- Tab Content -->
+  <div class="tab-content" id="ontologyTabContent">
+    <!-- Concepts Tab -->
+    <div class="tab-pane fade show active" id="concepts-pane" role="tabpanel">
+      <!-- Existing concepts content -->
+      <div class="row mb-3">
         <div class="col-md-6">
-          <div id="storage-info">
-            <p><strong>Storage Type:</strong> <span id="storage-type">Loading...</span></p>
-            <p><strong>Total Konsep:</strong> <span id="concept-count">Loading...</span></p>
-            <p><strong>JSON Path:</strong> <span id="json-path">Loading...</span></p>
+          <div class="input-group">
+            <span class="input-group-text">
+              <i class="fas fa-search"></i>
+            </span>
+            <input
+              type="text"
+              class="form-control"
+              id="searchInput"
+              placeholder="Cari konsep..."
+            />
           </div>
         </div>
-        <div class="col-md-6">
-          <div class="btn-group" role="group">
-            <button class="btn btn-outline-primary btn-sm" onclick="switchStorage('database')">
-              <i class="fas fa-database me-1"></i>Database
+        <div class="col-md-6 text-end">
+          <div class="btn-group">
+            <button class="btn btn-primary" onclick="showAddModal()">
+              <i class="fas fa-plus me-1"></i>Tambah Konsep
             </button>
-            <button class="btn btn-outline-secondary btn-sm" onclick="switchStorage('json')">
-              <i class="fas fa-file-code me-1"></i>JSON
+            <button
+              class="btn btn-outline-secondary dropdown-toggle"
+              type="button"
+              data-bs-toggle="dropdown"
+              aria-expanded="false"
+            >
+              <i class="fas fa-download me-1"></i>Import/Export
             </button>
+            <ul class="dropdown-menu">
+              <li>
+                <a class="dropdown-item" href="#" onclick="showImportModal()">
+                  <i class="fas fa-upload me-2"></i>Import Data
+                </a>
+              </li>
+              <li>
+                <a class="dropdown-item" href="#" onclick="exportConcepts()">
+                  <i class="fas fa-download me-2"></i>Export Data
+                </a>
+              </li>
+            </ul>
           </div>
-          <div class="mt-2">
-            <button class="btn btn-outline-success btn-sm me-1" onclick="syncStorage('json_to_db')">
-              <i class="fas fa-sync me-1"></i>Sync JSON→DB
-            </button>
-            <button class="btn btn-outline-info btn-sm" onclick="syncStorage('db_to_json')">
-              <i class="fas fa-download me-1"></i>Export DB→JSON
-            </button>
+        </div>
+      </div>
+
+      <!-- Storage Info Panel -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <h5 class="mb-0">
+            <i class="fas fa-database me-2"></i>Informasi Storage
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <div id="storage-info">
+                <p>
+                  <strong>Storage Type:</strong>
+                  <span id="storage-type">Loading...</span>
+                </p>
+                <p>
+                  <strong>Total Konsep:</strong>
+                  <span id="concept-count">Loading...</span>
+                </p>
+                <p>
+                  <strong>JSON Path:</strong>
+                  <span id="json-path">Loading...</span>
+                </p>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="btn-group" role="group">
+                <button
+                  class="btn btn-outline-primary btn-sm"
+                  onclick="switchStorage('database')"
+                >
+                  <i class="fas fa-database me-1"></i>Database
+                </button>
+                <button
+                  class="btn btn-outline-secondary btn-sm"
+                  onclick="switchStorage('json')"
+                >
+                  <i class="fas fa-file-code me-1"></i>JSON
+                </button>
+              </div>
+              <div class="mt-2">
+                <button
+                  class="btn btn-outline-success btn-sm me-1"
+                  onclick="syncStorage('json_to_db')"
+                >
+                  <i class="fas fa-sync me-1"></i>Sync JSON→DB
+                </button>
+                <button
+                  class="btn btn-outline-info btn-sm"
+                  onclick="syncStorage('db_to_json')"
+                >
+                  <i class="fas fa-download me-1"></i>Export DB→JSON
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Concepts Table -->
+      <div class="table-responsive position-relative">
+        <div
+          id="loading-spinner"
+          class="position-absolute top-50 start-50 translate-middle"
+          style="display: none; z-index: 10"
+        >
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+        </div>
+        <table class="table table-bordered align-middle" id="ontology-table">
+          <thead class="table-light">
+            <tr>
+              <th>ID</th>
+              <th>Label</th>
+              <th>Sinonim</th>
+              <th>Broader</th>
+              <th>Narrower</th>
+              <th>Related</th>
+              <th>Ayat</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <nav aria-label="Pagination">
+        <ul class="pagination justify-content-center" id="pagination"></ul>
+      </nav>
+    </div>
+
+    <!-- Visualization Tab -->
+    <div class="tab-pane fade" id="visualization-pane" role="tabpanel">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">
+          <i class="fas fa-project-diagram me-2"></i>Visualisasi Relasi Ontologi
+        </h5>
+        <div class="btn-group" role="group">
+          <button
+            type="button"
+            class="btn btn-outline-primary btn-sm"
+            onclick="switchVisualization('bubble')"
+            title="Bubble Net"
+          >
+            <i class="fas fa-circle"></i> Bubble Net
+          </button>
+          <button
+            type="button"
+            class="btn btn-outline-secondary btn-sm"
+            onclick="switchVisualization('hierarchical')"
+            title="Hierarchical Tree"
+          >
+            <i class="fas fa-sitemap"></i> Tree
+          </button>
+          <button
+            type="button"
+            class="btn btn-outline-info btn-sm"
+            onclick="switchVisualization('force')"
+            title="Force-Directed"
+          >
+            <i class="fas fa-atom"></i> Force
+          </button>
+        </div>
+      </div>
+      <div class="mb-3">
+        <div class="btn-group" role="group">
+          <input
+            type="checkbox"
+            class="btn-check"
+            id="filter-broader"
+            checked
+          />
+          <label class="btn btn-outline-success btn-sm" for="filter-broader">
+            <i class="fas fa-arrow-up"></i> Broader
+          </label>
+
+          <input
+            type="checkbox"
+            class="btn-check"
+            id="filter-narrower"
+            checked
+          />
+          <label class="btn btn-outline-warning btn-sm" for="filter-narrower">
+            <i class="fas fa-arrow-down"></i> Narrower
+          </label>
+
+          <input
+            type="checkbox"
+            class="btn-check"
+            id="filter-related"
+            checked
+          />
+          <label class="btn btn-outline-danger btn-sm" for="filter-related">
+            <i class="fas fa-link"></i> Related
+          </label>
+        </div>
+        <button
+          type="button"
+          class="btn btn-outline-secondary btn-sm ms-2"
+          onclick="applyVisualizationFilters()"
+        >
+          <i class="fas fa-filter"></i> Terapkan Filter
+        </button>
+        <button
+          type="button"
+          class="btn btn-outline-success btn-sm ms-2"
+          onclick="exportVisualization()"
+          title="Export sebagai gambar"
+        >
+          <i class="fas fa-download"></i> Export Gambar
+        </button>
+      </div>
+      <div class="card">
+        <div class="card-body p-0">
+          <div id="ontology-network" style="height: 500px; border: none"></div>
+        </div>
+        <div class="card-footer">
+          <div class="row">
+            <div class="col-md-8">
+              <small class="text-muted">
+                <i class="fas fa-info-circle me-1"></i>
+                <strong>Legend:</strong>
+                <span class="badge bg-success me-1">Hijau</span> = Broader,
+                <span class="badge bg-warning text-dark me-1">Kuning</span> =
+                Narrower, <span class="badge bg-danger me-1">Merah</span> =
+                Related
+              </small>
+            </div>
+            <div class="col-md-4 text-end">
+              <small class="text-muted" id="visualization-stats">
+                <i class="fas fa-chart-bar me-1"></i>
+                <span id="node-count">0</span> nodes,
+                <span id="edge-count">0</span> edges
+              </small>
+            </div>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- Audit Trail Tab -->
+    <div class="tab-pane fade" id="audit-pane" role="tabpanel">
+      <!-- Audit Stats -->
+      <div class="row mb-4">
+        <div class="col-md-3">
+          <div class="card text-center">
+            <div class="card-body">
+              <h5 class="card-title text-primary" id="audit-total">0</h5>
+              <p class="card-text">Total Log</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card text-center">
+            <div class="card-body">
+              <h5 class="card-title text-success" id="audit-recent">0</h5>
+              <p class="card-text">Aktivitas 7 Hari</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card text-center">
+            <div class="card-body">
+              <h5 class="card-title text-info" id="audit-users">0</h5>
+              <p class="card-text">User Aktif</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card text-center">
+            <div class="card-body">
+              <h5 class="card-title text-warning" id="audit-actions">0</h5>
+              <p class="card-text">Jenis Aksi</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Audit Filters -->
+      <div class="row mb-3">
+        <div class="col-md-4">
+          <div class="input-group">
+            <span class="input-group-text">
+              <i class="fas fa-search"></i>
+            </span>
+            <input
+              type="text"
+              class="form-control"
+              id="audit-search"
+              placeholder="Cari konsep ID..."
+            />
+          </div>
+        </div>
+        <div class="col-md-3">
+          <select class="form-select" id="audit-action-filter">
+            <option value="">Semua Aksi</option>
+            <option value="CREATE">Create</option>
+            <option value="UPDATE">Update</option>
+            <option value="DELETE">Delete</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <select class="form-select" id="audit-user-filter">
+            <option value="">Semua User</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <button class="btn btn-primary w-100" onclick="loadAuditLog()">
+            <i class="fas fa-filter me-1"></i>Filter
+          </button>
+        </div>
+      </div>
+
+      <!-- Audit Log Table -->
+      <div class="table-responsive">
+        <table class="table table-bordered table-hover" id="audit-table">
+          <thead class="table-light">
+            <tr>
+              <th>Timestamp</th>
+              <th>User</th>
+              <th>Aksi</th>
+              <th>Konsep ID</th>
+              <th>Perubahan</th>
+              <th>IP Address</th>
+              <th>Detail</th>
+            </tr>
+          </thead>
+          <tbody id="audit-tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- Audit Pagination -->
+      <nav aria-label="Audit Pagination">
+        <ul
+          class="pagination justify-content-center"
+          id="audit-pagination"
+        ></ul>
+      </nav>
+    </div>
   </div>
-  
-  <button class="btn btn-success mb-3" onclick="showAddModal()"><i class="fas fa-plus me-1"></i>Tambah Konsep</button>
-  <div id="admin-alert"></div>
-  <div class="table-responsive">
-    <table class="table table-bordered align-middle" id="ontology-table">
-      <thead class="table-light">
-        <tr>
-          <th>ID</th>
-          <th>Label</th>
-          <th>Sinonim</th>
-          <th>Broader</th>
-          <th>Narrower</th>
-          <th>Related</th>
-          <th>Ayat</th>
-          <th>Aksi</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
-  <div class="mt-4">
-    <h5>Visualisasi Relasi Ontologi</h5>
-    <div id="ontology-network" style="height: 400px; border: 1px solid #ccc;"></div>
+</div>
+
+<!-- Modal Import -->
+<div
+  class="modal fade"
+  id="importModal"
+  tabindex="-1"
+  aria-labelledby="importModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="importModalLabel">
+          Import Konsep (CSV/Excel/JSON)
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <form id="importForm">
+          <input
+            type="file"
+            class="form-control"
+            id="importFile"
+            accept=".csv,.xlsx,.xls,.json"
+            required
+          />
+          <div class="form-text mt-2">
+            Format: CSV/Excel (header: id, label, synonyms, broader, narrower,
+            related, verses) atau JSON array.
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Batal
+        </button>
+        <button type="button" class="btn btn-primary" onclick="submitImport()">
+          Import
+        </button>
+      </div>
+    </div>
   </div>
 </div>
 
 <!-- Modal Tambah/Edit -->
-<div class="modal fade" id="conceptModal" tabindex="-1" aria-labelledby="conceptModalLabel" aria-hidden="true">
+<div
+  class="modal fade"
+  id="conceptModal"
+  tabindex="-1"
+  aria-labelledby="conceptModalLabel"
+  aria-hidden="true"
+>
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="conceptModalLabel">Tambah Konsep</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
       </div>
       <div class="modal-body">
         <form id="conceptForm">
@@ -82,259 +477,108 @@
           </div>
           <div class="mb-3">
             <label for="concept-label" class="form-label">Label</label>
-            <input type="text" class="form-control" id="concept-label" required />
+            <input
+              type="text"
+              class="form-control"
+              id="concept-label"
+              required
+            />
           </div>
           <div class="mb-3">
-            <label for="concept-synonyms" class="form-label">Sinonim (pisahkan dengan koma)</label>
+            <label for="concept-synonyms" class="form-label"
+              >Sinonim (pisahkan dengan koma)</label
+            >
             <input type="text" class="form-control" id="concept-synonyms" />
           </div>
           <div class="mb-3">
-            <label for="concept-broader" class="form-label">Broader (ID, koma)</label>
+            <label for="concept-broader" class="form-label"
+              >Broader (ID, koma)</label
+            >
             <input type="text" class="form-control" id="concept-broader" />
           </div>
           <div class="mb-3">
-            <label for="concept-narrower" class="form-label">Narrower (ID, koma)</label>
+            <label for="concept-narrower" class="form-label"
+              >Narrower (ID, koma)</label
+            >
             <input type="text" class="form-control" id="concept-narrower" />
           </div>
           <div class="mb-3">
-            <label for="concept-related" class="form-label">Related (ID, koma)</label>
+            <label for="concept-related" class="form-label"
+              >Related (ID, koma)</label
+            >
             <input type="text" class="form-control" id="concept-related" />
           </div>
           <div class="mb-3">
-            <label for="concept-verses" class="form-label">Ayat (surah:ayat, koma)</label>
+            <label for="concept-verses" class="form-label"
+              >Ayat (surah:ayat, koma)</label
+            >
             <input type="text" class="form-control" id="concept-verses" />
           </div>
         </form>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-        <button type="button" class="btn btn-primary" id="save-concept-btn">Simpan</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Batal
+        </button>
+        <button type="button" class="btn btn-primary" id="save-concept-btn">
+          Simpan
+        </button>
       </div>
     </div>
   </div>
 </div>
-{% endblock %}
-{% block scripts %}
+
+<!-- Modal Konfirmasi Hapus -->
+<div
+  class="modal fade"
+  id="deleteConfirmModal"
+  tabindex="-1"
+  aria-labelledby="deleteConfirmModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deleteConfirmModalLabel">
+          Konfirmasi Hapus Konsep
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <p id="delete-confirm-text">
+          Apakah Anda yakin ingin menghapus konsep
+          <span class="fw-bold" id="delete-label"></span>?
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Batal
+        </button>
+        <button type="button" class="btn btn-danger" id="confirm-delete-btn">
+          Hapus
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div
+  id="admin-toast-container"
+  style="position: fixed; top: 20px; right: 20px; z-index: 9999"
+></div>
+{% endblock %} {% block scripts %}
 <!-- vis-network CDN -->
-<link href="https://unpkg.com/vis-network/styles/vis-network.min.css" rel="stylesheet" type="text/css" />
+<link
+  href="https://unpkg.com/vis-network/styles/vis-network.min.css"
+  rel="stylesheet"
+  type="text/css"
+/>
 <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
-<script>
-let concepts = [];
-let editMode = false;
-
-function showAlert(msg, type = 'success') {
-  document.getElementById('admin-alert').innerHTML = `<div class='alert alert-${type} alert-dismissible fade show'>${msg}<button type='button' class='btn-close' data-bs-dismiss='alert'></button></div>`;
-}
-
-function loadConcepts() {
-  fetch('/api/ontology/admin/all')
-    .then(res => res.json())
-    .then(data => {
-      if (!data.success) {
-        showAlert(data.message, 'danger');
-        return;
-      }
-      concepts = data.concepts;
-      renderTable();
-      renderNetwork();
-    });
-}
-
-function renderTable() {
-  const tbody = document.querySelector('#ontology-table tbody');
-  tbody.innerHTML = '';
-  concepts.forEach(c => {
-    tbody.innerHTML += `<tr>
-      <td>${c.id}</td>
-      <td>${c.label}</td>
-      <td>${(c.synonyms||[]).map(s=>`<span class='badge bg-info me-1'>${s}</span>`).join('')}</td>
-      <td>${(c.broader||[]).map(s=>`<span class='badge bg-secondary me-1'>${s}</span>`).join('')}</td>
-      <td>${(c.narrower||[]).map(s=>`<span class='badge bg-secondary me-1'>${s}</span>`).join('')}</td>
-      <td>${(c.related||[]).map(s=>`<span class='badge bg-warning text-dark me-1'>${s}</span>`).join('')}</td>
-      <td>${(c.verses||[]).map(s=>`<span class='badge bg-success me-1'>${s}</span>`).join('')}</td>
-      <td>
-        <button class='btn btn-sm btn-info me-1' onclick='showEditModal("${c.id}")'><i class='fas fa-edit'></i></button>
-        <button class='btn btn-sm btn-danger' onclick='deleteConcept("${c.id}")'><i class='fas fa-trash'></i></button>
-      </td>
-    </tr>`;
-  });
-}
-
-function showAddModal() {
-  editMode = false;
-  document.getElementById('conceptModalLabel').textContent = 'Tambah Konsep';
-  document.getElementById('conceptForm').reset();
-  document.getElementById('concept-id').disabled = false;
-  document.getElementById('concept-id-old').value = '';
-  new bootstrap.Modal(document.getElementById('conceptModal')).show();
-}
-
-function showEditModal(id) {
-  editMode = true;
-  const c = concepts.find(x => x.id === id);
-  if (!c) return;
-  document.getElementById('conceptModalLabel').textContent = 'Edit Konsep';
-  document.getElementById('concept-id').value = c.id;
-  document.getElementById('concept-id').disabled = true;
-  document.getElementById('concept-id-old').value = c.id;
-  document.getElementById('concept-label').value = c.label;
-  document.getElementById('concept-synonyms').value = (c.synonyms||[]).join(', ');
-  document.getElementById('concept-broader').value = (c.broader||[]).join(', ');
-  document.getElementById('concept-narrower').value = (c.narrower||[]).join(', ');
-  document.getElementById('concept-related').value = (c.related||[]).join(', ');
-  document.getElementById('concept-verses').value = (c.verses||[]).join(', ');
-  new bootstrap.Modal(document.getElementById('conceptModal')).show();
-}
-
-document.getElementById('save-concept-btn').onclick = function() {
-  const id = document.getElementById('concept-id').value.trim();
-  const label = document.getElementById('concept-label').value.trim();
-  const synonyms = document.getElementById('concept-synonyms').value.split(',').map(s=>s.trim()).filter(Boolean);
-  const broader = document.getElementById('concept-broader').value.split(',').map(s=>s.trim()).filter(Boolean);
-  const narrower = document.getElementById('concept-narrower').value.split(',').map(s=>s.trim()).filter(Boolean);
-  const related = document.getElementById('concept-related').value.split(',').map(s=>s.trim()).filter(Boolean);
-  const verses = document.getElementById('concept-verses').value.split(',').map(s=>s.trim()).filter(Boolean);
-  const data = {id, label, synonyms, broader, narrower, related, verses};
-  const url = editMode ? `/api/ontology/admin/update/${id}` : '/api/ontology/admin/add';
-  const method = editMode ? 'PUT' : 'POST';
-  fetch(url, {
-    method,
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify(data)
-  })
-    .then(res => res.json())
-    .then(res => {
-      if (res.success) {
-        showAlert('Konsep berhasil disimpan.');
-        bootstrap.Modal.getInstance(document.getElementById('conceptModal')).hide();
-        loadConcepts();
-      } else {
-        showAlert(res.message, 'danger');
-      }
-    });
-};
-
-function deleteConcept(id) {
-  if (!confirm('Yakin ingin menghapus konsep ini?')) return;
-  fetch(`/api/ontology/admin/delete/${id}`, {method: 'DELETE'})
-    .then(res => res.json())
-    .then(res => {
-      if (res.success) {
-        showAlert('Konsep berhasil dihapus.');
-        loadConcepts();
-      } else {
-        showAlert(res.message, 'danger');
-      }
-    });
-}
-
-function renderNetwork() {
-  // Siapkan nodes dan edges dari konsep
-  const nodes = concepts.map(c => ({ id: c.id, label: c.label }));
-  let edges = [];
-  concepts.forEach(c => {
-    (c.broader||[]).forEach(b => edges.push({ from: c.id, to: b, label: 'broader', color: {color: '#888'} }));
-    (c.narrower||[]).forEach(n => edges.push({ from: c.id, to: n, label: 'narrower', color: {color: '#28a745'} }));
-    (c.related||[]).forEach(r => edges.push({ from: c.id, to: r, label: 'related', color: {color: '#ffc107'} }));
-  });
-  const container = document.getElementById('ontology-network');
-  const data = { nodes: new vis.DataSet(nodes), edges: new vis.DataSet(edges) };
-  const options = {
-    nodes: { shape: 'box', font: { size: 14 } },
-    edges: { arrows: 'to', font: { align: 'middle' } },
-    layout: { improvedLayout: true },
-    physics: { stabilization: true }
-  };
-  new vis.Network(container, data, options);
-}
-
-// Storage management functions
-function loadStorageInfo() {
-  fetch('/api/ontology/admin/storage/info')
-    .then(res => res.json())
-    .then(data => {
-      if (data.success) {
-        const info = data.info;
-        document.getElementById('storage-type').textContent = info.storage_type;
-        document.getElementById('concept-count').textContent = info.concept_count;
-        document.getElementById('json-path').textContent = info.json_path || 'N/A';
-        
-        // Update button states
-        const dbBtn = document.querySelector('button[onclick="switchStorage(\'database\')"]');
-        const jsonBtn = document.querySelector('button[onclick="switchStorage(\'json\')"]');
-        
-        if (info.storage_type === 'database') {
-          dbBtn.classList.remove('btn-outline-primary');
-          dbBtn.classList.add('btn-primary');
-          jsonBtn.classList.remove('btn-secondary');
-          jsonBtn.classList.add('btn-outline-secondary');
-        } else {
-          jsonBtn.classList.remove('btn-outline-secondary');
-          jsonBtn.classList.add('btn-secondary');
-          dbBtn.classList.remove('btn-primary');
-          dbBtn.classList.add('btn-outline-primary');
-        }
-      }
-    })
-    .catch(err => {
-      console.error('Error loading storage info:', err);
-      document.getElementById('storage-type').textContent = 'Error';
-      document.getElementById('concept-count').textContent = 'Error';
-      document.getElementById('json-path').textContent = 'Error';
-    });
-}
-
-function switchStorage(storageType) {
-  if (!confirm(`Yakin ingin switch ke ${storageType} storage?`)) return;
-  
-  fetch('/api/ontology/admin/storage/switch', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({storage_type: storageType})
-  })
-    .then(res => res.json())
-    .then(data => {
-      if (data.success) {
-        showAlert(data.message);
-        loadStorageInfo();
-        loadConcepts(); // Reload concepts after switch
-      } else {
-        showAlert(data.message, 'danger');
-      }
-    })
-    .catch(err => {
-      showAlert('Error switching storage: ' + err.message, 'danger');
-    });
-}
-
-function syncStorage(direction) {
-  const directionText = direction === 'json_to_db' ? 'JSON ke Database' : 'Database ke JSON';
-  if (!confirm(`Yakin ingin sync ${directionText}?`)) return;
-  
-  fetch('/api/ontology/admin/storage/sync', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({direction: direction})
-  })
-    .then(res => res.json())
-    .then(data => {
-      if (data.success) {
-        showAlert(data.message);
-        loadStorageInfo();
-        if (direction === 'json_to_db') {
-          loadConcepts(); // Reload concepts after sync
-        }
-      } else {
-        showAlert(data.message, 'danger');
-      }
-    })
-    .catch(err => {
-      showAlert('Error syncing storage: ' + err.message, 'danger');
-    });
-}
-
-// Load data saat halaman dibuka
-loadStorageInfo();
-loadConcepts();
-</script>
-{% endblock %} 
+<script src="{{ url_for('static', filename='js/admin-ontology.js') }}"></script>
+{% endblock %}

@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify, session
 from app.api.services.ontology_service import OntologyService
 from app.api.services.search_service import SearchService
 from app.auth.decorators import admin_required_api
+from app.auth.utils import get_user_by_id
 
 ontology_bp = Blueprint('ontology', __name__)
 # Gunakan database sebagai default storage
@@ -11,17 +12,37 @@ search_service = SearchService()
 def is_admin():
     return session.get('user') and session['user'].get('role') == 'admin'
 
+def get_user_info():
+    """Get current user info for audit trail"""
+    user_info = {}
+    if 'user_id' in session:
+        user = get_user_by_id(session['user_id'])
+        if user:
+            user_info = {
+                'user_id': str(user['id']),
+                'username': user['username'],
+                'ip_address': request.remote_addr,
+                'user_agent': request.headers.get('User-Agent', '')
+            }
+    return user_info
+
 @ontology_bp.route('/admin/all', methods=['GET'])
 @admin_required_api
-def admin_get_all():
-    return jsonify({'success': True, 'concepts': ontology_service.get_all()})
+def admin_get_all_concepts():
+    """Get all concepts"""
+    try:
+        concepts = ontology_service.get_all()
+        return jsonify({'success': True, 'concepts': concepts})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 @ontology_bp.route('/admin/add', methods=['POST'])
 @admin_required_api
 def admin_add_concept():
     data = request.get_json()
+    user_info = get_user_info()
     try:
-        ontology_service.add_concept(data)
+        ontology_service.add_concept(data, user_info)
         return jsonify({'success': True})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 400
@@ -30,8 +51,9 @@ def admin_add_concept():
 @admin_required_api
 def admin_update_concept(concept_id):
     data = request.get_json()
+    user_info = get_user_info()
     try:
-        ontology_service.update_concept(concept_id, data)
+        ontology_service.update_concept(concept_id, data, user_info)
         return jsonify({'success': True})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 400
@@ -39,8 +61,9 @@ def admin_update_concept(concept_id):
 @ontology_bp.route('/admin/delete/<concept_id>', methods=['DELETE'])
 @admin_required_api
 def admin_delete_concept(concept_id):
+    user_info = get_user_info()
     try:
-        ontology_service.delete_concept(concept_id)
+        ontology_service.delete_concept(concept_id, user_info)
         return jsonify({'success': True})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 400
@@ -184,5 +207,107 @@ def admin_sync_storage():
             return jsonify({'success': True, 'message': message})
         else:
             return jsonify({'success': False, 'message': 'Gagal sync data'}), 500
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+# Endpoint untuk audit trail
+@ontology_bp.route('/admin/audit/log', methods=['GET'])
+@admin_required_api
+def admin_get_audit_log():
+    """Get audit log entries"""
+    try:
+        concept_id = request.args.get('concept_id')
+        action = request.args.get('action')
+        limit = int(request.args.get('limit', 100))
+        offset = int(request.args.get('offset', 0))
+        
+        audit_logs = ontology_service.get_audit_log(
+            concept_id=concept_id,
+            action=action,
+            limit=limit,
+            offset=offset
+        )
+        
+        return jsonify({
+            'success': True, 
+            'audit_logs': audit_logs,
+            'total': len(audit_logs)
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@ontology_bp.route('/admin/audit/stats', methods=['GET'])
+@admin_required_api
+def admin_get_audit_stats():
+    """Get audit statistics"""
+    try:
+        stats = ontology_service.get_audit_stats()
+        return jsonify({'success': True, 'stats': stats})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@ontology_bp.route('/admin/audit/concept/<concept_id>', methods=['GET'])
+@admin_required_api
+def admin_get_concept_audit(concept_id):
+    """Get audit log for specific concept"""
+    try:
+        limit = int(request.args.get('limit', 50))
+        offset = int(request.args.get('offset', 0))
+        
+        audit_logs = ontology_service.get_audit_log(
+            concept_id=concept_id,
+            limit=limit,
+            offset=offset
+        )
+        
+        return jsonify({
+            'success': True, 
+            'audit_logs': audit_logs,
+            'concept_id': concept_id,
+            'total': len(audit_logs)
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+# Public endpoints
+@ontology_bp.route('/search', methods=['POST'])
+def search_concepts():
+    """Search concepts by keyword"""
+    data = request.get_json()
+    query = data.get('query', '').strip()
+    
+    if not query:
+        return jsonify({'success': False, 'message': 'Query tidak boleh kosong'}), 400
+    
+    try:
+        # Find exact match first
+        concept = ontology_service.find_concept(query)
+        if concept:
+            return jsonify({'success': True, 'concept': concept})
+        
+        # If no exact match, return empty
+        return jsonify({'success': True, 'concept': None})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@ontology_bp.route('/related/<concept_id>', methods=['GET'])
+def get_related_concepts(concept_id):
+    """Get related concepts"""
+    try:
+        related = ontology_service.get_related(concept_id)
+        if related:
+            return jsonify({'success': True, 'related': related})
+        else:
+            return jsonify({'success': False, 'message': 'Konsep tidak ditemukan'}), 404
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@ontology_bp.route('/verses/<concept_id>', methods=['GET'])
+def get_concept_verses(concept_id):
+    """Get verses for a concept"""
+    try:
+        verses = ontology_service.get_verses(concept_id)
+        return jsonify({'success': True, 'verses': verses})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500 

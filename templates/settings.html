@@ -1,28 +1,10 @@
-{% extends "layout.html" %}
+{% extends "layout_loggedin.html" %}
 
 {% block title %}Pengaturan - Mesin Pencarian Semantik Al-Quran{% endblock %}
 
-{% block content %}
+{% block page_content %}
 <div class="row">
-    <div class="col-md-3">
-        <div class="card shadow mb-4">
-            <div class="card-header bg-primary text-white">
-                <h5 class="card-title mb-0">Menu</h5>
-            </div>
-            <div class="card-body p-0">
-                <div class="list-group list-group-flush">
-                    <a href="{{ url_for('profile') }}" class="list-group-item list-group-item-action">
-                        <i class="fas fa-user me-2"></i> Profil
-                    </a>
-                    <a href="{{ url_for('settings') }}" class="list-group-item list-group-item-action active">
-                        <i class="fas fa-cog me-2"></i> Pengaturan
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-9">
+    <div class="col-md-9 mx-auto">
         <div class="card shadow">
             <div class="card-header bg-primary text-white">
                 <h5 class="card-title mb-0">Pengaturan Pencarian</h5>

@@ -4,6 +4,84 @@
 
 Graph bubble net adalah visualisasi interaktif yang menampilkan relasi antar konsep hasil pencarian ontologi dalam format bubble/circle network. Visualisasi ini menggantikan graph tradisional dengan pendekatan yang lebih modern dan informatif.
 
+## **Fitur Visualisasi Admin Ontologi**
+
+### **1. Jenis Visualisasi**
+
+#### **Bubble Net (Default)**
+
+- **Layout**: Circular nodes dengan physics engine Barnes-Hut
+- **Node Shape**: Circle dengan ukuran dinamis berdasarkan jumlah relasi
+- **Edge Style**: Curved dengan arrow untuk menunjukkan arah relasi
+- **Color Coding**:
+  - Hijau (#28a745) = Broader relationships
+  - Kuning (#ffc107) = Narrower relationships
+  - Merah (#dc3545) = Related relationships
+- **Physics**: Barnes-Hut algorithm dengan gravitational constant -2000
+
+#### **Hierarchical Tree**
+
+- **Layout**: Top-down hierarchical dengan parent-child relationships
+- **Node Shape**: Box dengan margin dan padding
+- **Edge Style**: Cubic Bezier curves untuk smooth connections
+- **Direction**: Up-Down (UD) dengan sort method directed
+- **Physics**: Disabled untuk static layout
+
+#### **Force-Directed Graph**
+
+- **Layout**: Force-Atlas2 algorithm untuk distribusi optimal
+- **Node Shape**: Dot dengan ukuran fixed 20px
+- **Edge Style**: Continuous smooth lines
+- **Physics**: Force-Atlas2 dengan gravitational constant -50
+- **Spring**: Length 100, constant 0.08
+
+### **2. Filter Relasi**
+
+#### **Filter Options**
+
+- **Broader**: Menampilkan relasi "lebih luas" (parent -> child)
+- **Narrower**: Menampilkan relasi "lebih spesifik" (child -> parent)
+- **Related**: Menampilkan relasi "terkait" (bidirectional)
+
+#### **Filter Controls**
+
+- Checkbox buttons dengan color coding
+- Real-time filter application
+- Filter summary dalam toast notification
+- Persistence filter state selama session
+
+### **3. Interaktivitas**
+
+#### **Node Interaction**
+
+- **Click**: Buka modal edit konsep
+- **Hover**: Highlight node dan connected nodes
+- **Tooltip**: Detail konsep (label, sinonim, relasi, ayat)
+- **Selection**: Multi-node selection dengan connected edges
+
+#### **Edge Interaction**
+
+- **Hover**: Highlight edge dan connected nodes
+- **Label**: Menampilkan jenis relasi (broader/narrower/related)
+- **Color**: Inherit dari node dengan opacity
+- **Arrow**: Directional arrows untuk hierarchical relationships
+
+#### **View Controls**
+
+- **Zoom**: Mouse wheel untuk zoom in/out
+- **Pan**: Drag untuk memindahkan view
+- **Reset**: Double click untuk reset view
+- **Export**: Download sebagai PNG image
+
+### **4. Statistik Visualisasi**
+
+#### **Real-time Stats**
+
+- **Node Count**: Jumlah konsep yang ditampilkan
+- **Edge Count**: Jumlah relasi yang ditampilkan
+- **Filter Summary**: Jenis relasi yang aktif
+- **Performance**: Update otomatis saat filter berubah
+
 ## **Arsitektur Visualisasi**
 
 ### **1. Struktur Node (Bubble)**
@@ -136,107 +214,127 @@ Query → Direct Results: Thick blue edges
 
 - **Compact Display**: Banyak informasi dalam ruang kecil
 - **Contextual Tooltips**: Detail tanpa mengganggu layout
-- **Dynamic Sizing**: Ukuran node mencerminkan importance
+- **Interactive Elements**: Zoom, pan, dan selection
 
-### **3. User Experience**
+### **3. Performance**
 
-- **Intuitive Navigation**: Zoom, pan, hover yang natural
-- **Quick Understanding**: Struktur relasi mudah dipahami
-- **Interactive Feedback**: Responsif terhadap user action
+- **Efficient Rendering**: Canvas-based rendering
+- **Smooth Animation**: 60fps physics simulation
+- **Memory Optimized**: DataSet untuk efficient updates
 
-## **Perbandingan dengan Graph Tradisional**
+### **4. User Experience**
 
-| Aspek             | Graph Tradisional | Bubble Net             |
-| ----------------- | ----------------- | ---------------------- |
-| **Layout**        | Hierarchical tree | Force-directed network |
-| **Node Shape**    | Rectangle/Box     | Circle/Bubble          |
-| **Edge Style**    | Straight lines    | Curved lines           |
-| **Information**   | Text-heavy        | Visual-focused         |
-| **Interactivity** | Limited           | Rich                   |
-| **Scalability**   | Good              | Excellent              |
+- **Intuitive Navigation**: Natural mouse interactions
+- **Responsive Design**: Works on desktop and tablet
+- **Accessibility**: Keyboard navigation support
 
-## **Optimasi Performa**
+## **Implementasi Teknis**
 
-### **1. Node Limit**
+### **1. Library Dependencies**
 
-- **Maksimal**: 50 node untuk performa optimal
-- **Threshold**: Warning jika >100 node
-- **Clustering**: Grouping untuk data besar
+```html
+<!-- vis-network CDN -->
+<link
+  href="https://unpkg.com/vis-network/styles/vis-network.min.css"
+  rel="stylesheet"
+  type="text/css"
+/>
+<script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+```
 
-### **2. Rendering Optimization**
+### **2. Data Structure**
 
-- **Canvas Rendering**: Hardware acceleration
-- **Lazy Loading**: Load data on demand
-- **Caching**: Cache layout calculations
+```javascript
+const data = {
+  nodes: new vis.DataSet(nodes),
+  edges: new vis.DataSet(edges),
+};
+```
 
-### **3. Memory Management**
+### **3. Configuration Options**
 
-- **Garbage Collection**: Cleanup unused objects
-- **Event Cleanup**: Remove listeners saat destroy
-- **Data Structure**: Efficient data representation
+```javascript
+const options = {
+  nodes: {
+    shape: "circle",
+    borderWidth: 2,
+    shadow: true,
+    font: { size: 12, color: "#ffffff" },
+    scaling: { min: 15, max: 35 },
+  },
+  edges: {
+    width: 2,
+    shadow: true,
+    smooth: { type: "curvedCW", roundness: 0.2 },
+  },
+  physics: {
+    barnesHut: {
+      gravitationalConstant: -2000,
+      centralGravity: 0.3,
+      springLength: 100,
+      springConstant: 0.04,
+    },
+  },
+};
+```
 
-## **Use Cases**
+## **Penggunaan**
 
-### **1. Semantic Search Analysis**
+### **1. Admin Ontologi**
 
-- **Input**: Kata kunci pencarian
-- **Output**: Visualisasi ekspansi dan hasil
-- **Benefit**: Memahami proses ekspansi ontologi
+- **Visualisasi**: Tampilkan relasi antar konsep ontologi
+- **Filter**: Pilih jenis relasi yang ingin ditampilkan
+- **Edit**: Click node untuk edit konsep
+- **Export**: Download visualisasi sebagai gambar
 
-### **2. Query Optimization**
+### **2. Pencarian Ontologi**
 
-- **Input**: Multiple search queries
-- **Output**: Comparison of expansion strategies
-- **Benefit**: Optimasi algoritma ekspansi
+- **Query Expansion**: Lihat bagaimana query diperluas
+- **Result Mapping**: Pahami hubungan query dengan hasil
+- **Relevance Scoring**: Visualisasi skor relevansi
 
-### **3. Result Analysis**
+## **Best Practices**
 
-- **Input**: Search results dengan metadata
-- **Output**: Pattern recognition dalam hasil
-- **Benefit**: Identifikasi bias atau gap dalam data
+### **1. Performance**
+
+- **Limit Node Count**: Optimal <1000 nodes untuk smooth performance
+- **Efficient Updates**: Gunakan DataSet untuk batch updates
+- **Memory Management**: Destroy network saat tidak digunakan
+
+### **2. User Experience**
+
+- **Loading States**: Tampilkan spinner saat loading
+- **Error Handling**: Graceful fallback jika data error
+- **Responsive Design**: Adapt layout untuk berbagai screen size
+
+### **3. Accessibility**
+
+- **Keyboard Navigation**: Support tab dan arrow keys
+- **Screen Reader**: Proper ARIA labels
+- **Color Contrast**: Ensure sufficient contrast ratios
 
 ## **Future Enhancements**
 
-### **1. Advanced Filtering**
+### **1. Advanced Features**
 
-- **Score-based**: Filter berdasarkan skor relevansi
-- **Source-based**: Filter berdasarkan sumber query
-- **Category-based**: Filter berdasarkan kategori konsep
+- **3D Visualization**: Three.js integration untuk 3D graphs
+- **Animation**: Smooth transitions antar layout
+- **Clustering**: Auto-clustering untuk large datasets
 
-### **2. Animation Features**
+### **2. Analytics**
 
-- **Loading Animation**: Smooth transition saat load
-- **Update Animation**: Animate perubahan data
-- **Focus Animation**: Highlight path ke node tertentu
+- **Usage Tracking**: Monitor user interaction patterns
+- **Performance Metrics**: Track rendering performance
+- **A/B Testing**: Test different visualization types
 
-### **3. Export Capabilities**
+### **3. Integration**
 
-- **Image Export**: Export sebagai PNG/SVG
-- **Data Export**: Export data graph
-- **Report Generation**: Generate analisis report
-
-## **Metrics & Analytics**
-
-### **1. User Interaction**
-
-- **Hover Frequency**: Seberapa sering user hover
-- **Zoom Level**: Preferred zoom range
-- **Node Clicks**: Most clicked nodes
-
-### **2. Performance Metrics**
-
-- **Render Time**: Waktu rendering graph
-- **Memory Usage**: Penggunaan memory
-- **Frame Rate**: Smoothness of interaction
-
-### **3. Data Insights**
-
-- **Popular Queries**: Query yang sering digunakan
-- **Expansion Patterns**: Pola ekspansi yang efektif
-- **Result Distribution**: Distribusi skor hasil
+- **Real-time Updates**: WebSocket untuk live data
+- **Collaborative Editing**: Multi-user editing support
+- **API Integration**: External data sources
 
 ## **Kesimpulan**
 
-Bubble net graph memberikan visualisasi yang lebih modern, interaktif, dan informatif dibanding graph tradisional. Dengan layout force-directed, color coding yang jelas, dan interaktivitas yang kaya, user dapat dengan mudah memahami relasi kompleks dalam hasil pencarian ontologi.
+Bubble net visualization memberikan cara yang intuitif dan informatif untuk memahami relasi kompleks dalam ontologi. Dengan fitur filter, multiple layout types, dan interaktivitas yang kaya, visualisasi ini memungkinkan user untuk mengeksplorasi data ontologi dengan cara yang efisien dan engaging.
 
-Visualisasi ini tidak hanya menampilkan data, tetapi juga membantu user memahami proses dan hasil pencarian semantik dengan ontologi secara visual yang intuitif.
+Implementasi di admin ontologi menunjukkan bagaimana visualisasi dapat digunakan untuk manajemen data yang efektif, sementara integrasi dengan pencarian ontologi memperkaya pengalaman pencarian dengan pemahaman relasi konseptual.
