@@ -33,7 +33,6 @@ docker-compose.yml
 htmlcov/
 
 # Dataset and model files (will be mounted as volumes)
-dataset/
 static/models/
 database/wordlists/
 
