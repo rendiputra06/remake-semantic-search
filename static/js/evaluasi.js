@@ -46,9 +46,6 @@ document.addEventListener("DOMContentLoaded", function () {
       }" style="cursor:pointer" data-id="${q.id}">
         <span>${q.text}</span>
         <div>
-          <button class="btn btn-sm btn-info btn-detail-query me-2" data-id="${
-            q.id
-          }"><i class="fas fa-list"></i> Detail</button>
           <button class="btn btn-sm btn-danger btn-delete-query" data-id="${
             q.id
           }"><i class="fas fa-trash"></i></button>
@@ -99,14 +96,6 @@ document.addEventListener("DOMContentLoaded", function () {
               loadQueries();
             });
         }
-      });
-    });
-    // Event detail query
-    document.querySelectorAll(".btn-detail-query").forEach((btn) => {
-      btn.addEventListener("click", function (e) {
-        e.stopPropagation();
-        const id = this.getAttribute("data-id");
-        showAllAyatDetailModal(id);
       });
     });
   }
@@ -274,15 +263,35 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
-  // Select All functionality
-  const selectAllBtn = document.getElementById("select-all-methods");
-  if (selectAllBtn) {
-    selectAllBtn.addEventListener("click", function () {
-      document
-        .querySelectorAll(".eval-method")
-        .forEach((cb) => (cb.checked = true));
+  // Select All functionality per kolom (toggle)
+  document.querySelectorAll('.select-all-methods').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      const group = btn.getAttribute('data-group');
+      const checkboxes = document.querySelectorAll('.eval-method[data-group="' + group + '"]');
+      const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+      checkboxes.forEach(function(cb) {
+        cb.checked = !allChecked;
+      });
+      btn.textContent = allChecked ? 'Select All' : 'Unselect All';
     });
-  }
+    // Inisialisasi teks tombol sesuai kondisi awal
+    const group = btn.getAttribute('data-group');
+    const checkboxes = document.querySelectorAll('.eval-method[data-group="' + group + '"]');
+    const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+    btn.textContent = allChecked ? 'Unselect All' : 'Select All';
+  });
+  // Update teks tombol jika ada perubahan manual pada checkbox
+  document.querySelectorAll('.eval-method').forEach(function(cb) {
+    cb.addEventListener('change', function() {
+      const group = cb.getAttribute('data-group');
+      const btn = document.querySelector('.select-all-methods[data-group="' + group + '"]');
+      if (btn) {
+        const checkboxes = document.querySelectorAll('.eval-method[data-group="' + group + '"]');
+        const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+        btn.textContent = allChecked ? 'Unselect All' : 'Select All';
+      }
+    });
+  });
 
   formEvaluasi.addEventListener("submit", function (e) {
     e.preventDefault();
@@ -495,6 +504,13 @@ document.addEventListener("DOMContentLoaded", function () {
         }
       });
     logModal.show();
+  });
+
+  // Event tombol Detail Ayat Relevan (dulu Evaluasi)
+  evaluasiBtn.addEventListener("click", function () {
+    if (selectedQueryId) {
+      showAllAyatDetailModal(selectedQueryId);
+    }
   });
 
   loadQueries();

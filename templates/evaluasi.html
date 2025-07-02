@@ -43,8 +43,8 @@ block content %}
             </p>
             <div id="relevant-verse-list"></div>
             <div class="d-flex flex-wrap gap-2 mt-3">
-              <button class="btn btn-warning d-none" id="evaluasi-btn">
-                Evaluasi
+              <button class="btn btn-info d-none" id="evaluasi-btn">
+                Detail Ayat Relevan
               </button>
               <button class="btn btn-outline-secondary d-none" id="log-btn">
                 Lihat Log Perubahan
@@ -60,7 +60,7 @@ block content %}
                   class="form-control"
                   id="input-query-text"
                   placeholder="Query evaluasi (wajib)"
-                  required
+                  required readonly
                 />
               </div>
               <div class="col-md-2">
@@ -91,79 +91,64 @@ block content %}
                   Jalankan Evaluasi
                 </button>
               </div>
-              <div class="col-md-2" id="eval-methods-group">
+              <div class="mt-3" id="eval-methods-group">
                 <label class="fw-bold mb-1">Pilih Metode Evaluasi:</label><br />
-                <button
-                  type="button"
-                  class="btn btn-sm btn-secondary mb-1"
-                  id="select-all-methods"
-                >
-                  Select All
-                </button>
-                <div id="eval-methods-checkboxes" class="d-inline-block">
-                  <label class="me-2"
-                    ><input
-                      type="checkbox"
-                      class="eval-method"
-                      value="lexical"
-                      checked
-                    />
-                    Lexical</label
-                  >
-                  <label class="me-2"
-                    ><input
-                      type="checkbox"
-                      class="eval-method"
-                      value="synonym"
-                      checked
-                    />
-                    Sinonim</label
-                  >
-                  <label class="me-2"
-                    ><input
-                      type="checkbox"
-                      class="eval-method"
-                      value="word2vec"
-                      checked
-                    />
-                    Word2Vec</label
-                  >
-                  <label class="me-2"
-                    ><input
-                      type="checkbox"
-                      class="eval-method"
-                      value="fasttext"
-                      checked
-                    />
-                    FastText</label
-                  >
-                  <label class="me-2"
-                    ><input
-                      type="checkbox"
-                      class="eval-method"
-                      value="glove"
-                      checked
-                    />
-                    GloVe</label
-                  >
-                  <label class="me-2"
-                    ><input
-                      type="checkbox"
-                      class="eval-method"
-                      value="ensemble"
-                      checked
-                    />
-                    Ensemble</label
-                  >
-                  <label class="me-2"
-                    ><input
-                      type="checkbox"
-                      class="eval-method"
-                      value="ontology"
-                      checked
-                    />
-                    Ontologi</label
-                  >
+                <div class="row" id="eval-methods-checkboxes" style="gap: 0;">
+                  <!-- Kolom 1: Lexical & Sinonim -->
+                  <div class="col-md-4">
+                    <label class="fw-bold mb-1">Lexical & Sinonim</label><br />
+                    <button type="button" class="btn btn-sm btn-secondary mb-2 select-all-methods" data-group="lexsyn">Select All</button>
+                    <div class="form-check">
+                      <input class="form-check-input eval-method" type="checkbox" value="lexical" id="method-lexical" checked data-group="lexsyn">
+                      <label class="form-check-label" for="method-lexical">Lexical</label>
+                    </div>
+                    <div class="form-check">
+                      <input class="form-check-input eval-method" type="checkbox" value="synonym" id="method-synonym" checked data-group="lexsyn">
+                      <label class="form-check-label" for="method-synonym">Sinonim</label>
+                    </div>
+                  </div>
+                  <!-- Kolom 2: Semantik -->
+                  <div class="col-md-4">
+                    <label class="fw-bold mb-1">Semantik</label><br />
+                    <button type="button" class="btn btn-sm btn-secondary mb-2 select-all-methods" data-group="semantic">Select All</button>
+                    <div class="form-check">
+                      <input class="form-check-input eval-method" type="checkbox" value="word2vec" id="method-word2vec" checked data-group="semantic">
+                      <label class="form-check-label" for="method-word2vec">Word2Vec</label>
+                    </div>
+                    <div class="form-check">
+                      <input class="form-check-input eval-method" type="checkbox" value="fasttext" id="method-fasttext" checked data-group="semantic">
+                      <label class="form-check-label" for="method-fasttext">FastText</label>
+                    </div>
+                    <div class="form-check">
+                      <input class="form-check-input eval-method" type="checkbox" value="glove" id="method-glove" checked data-group="semantic">
+                      <label class="form-check-label" for="method-glove">GloVe</label>
+                    </div>
+                    <div class="form-check">
+                      <input class="form-check-input eval-method" type="checkbox" value="ensemble" id="method-ensemble" checked data-group="semantic">
+                      <label class="form-check-label" for="method-ensemble">Ensemble</label>
+                    </div>
+                  </div>
+                  <!-- Kolom 3: Ontologi (semua model) -->
+                  <div class="col-md-4">
+                    <label class="fw-bold mb-1">Ontologi (Semua Model)</label><br />
+                    <button type="button" class="btn btn-sm btn-secondary mb-2 select-all-methods" data-group="ontology">Select All</button>
+                    <div class="form-check">
+                      <input class="form-check-input eval-method" type="checkbox" value="ontology_word2vec" id="method-ontology-word2vec" checked data-group="ontology">
+                      <label class="form-check-label" for="method-ontology-word2vec">Word2Vec</label>
+                    </div>
+                    <div class="form-check">
+                      <input class="form-check-input eval-method" type="checkbox" value="ontology_fasttext" id="method-ontology-fasttext" checked data-group="ontology">
+                      <label class="form-check-label" for="method-ontology-fasttext">FastText</label>
+                    </div>
+                    <div class="form-check">
+                      <input class="form-check-input eval-method" type="checkbox" value="ontology_glove" id="method-ontology-glove" checked data-group="ontology">
+                      <label class="form-check-label" for="method-ontology-glove">GloVe</label>
+                    </div>
+                    <div class="form-check">
+                      <input class="form-check-input eval-method" type="checkbox" value="ontology_ensemble" id="method-ontology-ensemble" checked data-group="ontology">
+                      <label class="form-check-label" for="method-ontology-ensemble">Ensemble</label>
+                    </div>
+                  </div>
                 </div>
               </div>
             </form>

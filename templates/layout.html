@@ -60,6 +60,12 @@
             </li>
             <li class="nav-item">
               <a
+                class="nav-link {% if request.endpoint == 'public.evaluasi' %}active{% endif %}"
+                href="{{ url_for('public.evaluasi') }}"
+                >Evaluasi</a>
+            </li>
+            <li class="nav-item">
+              <a
                 class="nav-link {% if request.endpoint == 'public.thesaurus' or request.endpoint == 'public.thesaurus_browse' or request.endpoint == 'public.thesaurus_statistics' %}active{% endif %}"
                 href="{{ url_for('public.thesaurus') }}"
                 >Tesaurus</a
@@ -72,13 +78,7 @@
                 >Index Al-Quran</a
               >
             </li>
-            <li class="nav-item">
-              <a
-                class="nav-link {% if request.endpoint == 'public.evaluasi' %}active{% endif %}"
-                href="{{ url_for('public.evaluasi') }}"
-                >Evaluasi</a
-              >
-            </li>
+            
             <li class="nav-item dropdown">
               <a
                 class="nav-link dropdown-toggle"

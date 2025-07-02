@@ -185,9 +185,15 @@ def run_evaluation(query_id):
                 label = f'Semantic ({model})' if model != 'ensemble' else 'Semantic (Ensemble)'
                 results.append({'method': model, 'label': label, 'error': str(e)})
 
-    # --- 4. Evaluasi Semantic+Ontologi (mengikuti logika ontology.py, termasuk ensemble) ---
-    if not selected_methods or 'ontology' in selected_methods:
-        for model in ['word2vec', 'fasttext', 'glove', 'ensemble']:
+    # --- 4. Evaluasi Semantic+Ontologi (per model) ---
+    ontology_model_map = {
+        'ontology_word2vec': 'word2vec',
+        'ontology_fasttext': 'fasttext',
+        'ontology_glove': 'glove',
+        'ontology_ensemble': 'ensemble',
+    }
+    for ont_key, model in ontology_model_map.items():
+        if not selected_methods or ont_key in selected_methods:
             try:
                 start = time.time()
                 # Ekspansi query dengan ontologi
@@ -239,9 +245,9 @@ def run_evaluation(query_id):
                         found.add(ref)
                 exec_time = round(time.time() - start, 3)
                 label = f'Semantic+Ontologi ({model})' if model != 'ensemble' else 'Semantic+Ontologi (Ensemble)'
-                results.append(format_eval_result(f'{model}_ont', label, found, ground_truth, exec_time))
+                results.append(format_eval_result(f'ontology_{model}', label, found, ground_truth, exec_time))
             except Exception as e:
                 label = f'Semantic+Ontologi ({model})' if model != 'ensemble' else 'Semantic+Ontologi (Ensemble)'
-                results.append({'method': f'{model}_ont', 'label': label, 'error': str(e)})
+                results.append({'method': f'ontology_{model}', 'label': label, 'error': str(e)})
 
     return jsonify({'success': True, 'results': results}) 
