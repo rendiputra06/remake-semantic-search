@@ -310,4 +310,104 @@ def get_concept_verses(concept_id):
         verses = ontology_service.get_verses(concept_id)
         return jsonify({'success': True, 'verses': verses})
     except Exception as e:
-        return jsonify({'success': False, 'message': str(e)}), 500 
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@ontology_bp.route('/trace', methods=['POST'])
+def ontology_trace():
+    """
+    Endpoint tracing proses pencarian semantik & ontologi.
+    Body: {"query": ..., "model": ..., "limit": ..., "threshold": ...}
+    Response: data intermediate (trace/log) di setiap langkah.
+    """
+    data = request.get_json()
+    if not data:
+        return jsonify({'success': False, 'message': 'Data tidak diberikan'}), 400
+    query = data.get('query', '').strip()
+    model_type = data.get('model', 'word2vec')
+    limit = int(data.get('limit', 10))
+    threshold = float(data.get('threshold', 0.5))
+    if not query:
+        return jsonify({'success': False, 'message': 'Query tidak boleh kosong'}), 400
+
+    trace = {
+        'query': query,
+        'model': model_type,
+        'limit': limit,
+        'threshold': threshold,
+        'steps': [],
+        'logs': []
+    }
+
+    try:
+        # Step 1: Ekspansi Ontologi
+        main_concept = ontology_service.find_concept(query)
+        expanded_queries = [query]
+        expanded_info = []
+        ontology_data = []
+        if main_concept:
+            expanded_queries = set([main_concept['label']] + main_concept.get('synonyms', []) + main_concept.get('related', []))
+            expanded_queries = [q for q in expanded_queries if q]
+            expanded_info = expanded_queries.copy()
+            ontology_data.append(main_concept)
+            # Ambil data konsep hasil ekspansi
+            for q in expanded_queries:
+                c = ontology_service.find_concept(q)
+                if c and c not in ontology_data:
+                    ontology_data.append(c)
+        else:
+            for word in query.split():
+                c = ontology_service.find_concept(word)
+                if c:
+                    expanded_queries += [c['label']] + c.get('synonyms', []) + c.get('related', [])
+            expanded_queries = list(set(expanded_queries))
+            expanded_info = expanded_queries.copy()
+            for q in expanded_queries:
+                c = ontology_service.find_concept(q)
+                if c and c not in ontology_data:
+                    ontology_data.append(c)
+
+        trace['steps'].append({'step': 'ontology_expansion', 'data': {
+            'main_concept': main_concept,
+            'expanded_queries': expanded_queries,
+            'ontology_data': ontology_data
+        }})
+        trace['logs'].append(f'Ekspansi ontologi: {expanded_queries}')
+
+        # Step 2: Pencarian Semantik untuk setiap ekspansi
+        all_results = []
+        semantic_traces = []
+        for q in expanded_queries:
+            sub_trace = {'query': q, 'steps': [], 'logs': []}
+            results = search_service.semantic_search(q, model_type=model_type, limit=limit, threshold=threshold, trace=sub_trace)
+            for r in results['results']:
+                r['source_query'] = q
+                all_results.append(r)
+            semantic_traces.append(sub_trace)
+        trace['steps'].append({'step': 'semantic_search', 'data': semantic_traces})
+        trace['logs'].append(f'Selesai pencarian semantik untuk semua ekspansi, total hasil: {len(all_results)}')
+
+        # Step 3: Boosting & Ranking
+        result_map = {}
+        boosting_log = []
+        for r in all_results:
+            vid = r['verse_id']
+            if vid not in result_map or r['similarity'] > result_map[vid]['similarity']:
+                result_map[vid] = r
+            if r['source_query'] != query:
+                before = result_map[vid]['similarity']
+                result_map[vid]['similarity'] = min(result_map[vid]['similarity'] + 0.1, 1.0)
+                result_map[vid]['boosted'] = True
+                boosting_log.append({'verse_id': vid, 'before': before, 'after': result_map[vid]['similarity'], 'source_query': r['source_query']})
+            else:
+                result_map[vid]['boosted'] = False
+        final_results = list(result_map.values())
+        final_results.sort(key=lambda x: x['similarity'], reverse=True)
+        final_results = final_results[:limit]
+        trace['steps'].append({'step': 'boosting_ranking', 'data': boosting_log})
+        trace['logs'].append(f'Boosting dan ranking selesai, hasil akhir: {len(final_results)} ayat')
+        trace['final_results'] = final_results
+        trace['result_count'] = len(final_results)
+        return jsonify({'success': True, 'trace': trace})
+    except Exception as e:
+        trace['logs'].append(f'Error: {str(e)}')
+        return jsonify({'success': False, 'trace': trace, 'message': str(e)}), 500 

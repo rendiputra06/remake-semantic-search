@@ -1,0 +1,214 @@
+{% extends "layout.html" %}
+{% block title %}Tracing Proses Pencarian Ontologi{% endblock %}
+{% block content %}
+<div class="container mt-4">
+  <h1 class="mb-4">Tracing Proses Pencarian Semantik & Ontologi</h1>
+
+  <!-- Form Tracing -->
+  <form id="trace-form" class="mb-4">
+    <div class="row g-2 align-items-end">
+      <div class="col-md-6">
+        <label for="query" class="form-label">Kata Kunci / Konsep</label>
+        <input type="text" class="form-control" id="query" name="query" placeholder="Masukkan kata kunci atau konsep..." required />
+      </div>
+      <div class="col-md-3">
+        <label for="model" class="form-label">Model</label>
+        <select class="form-select" id="model" name="model">
+          <option value="word2vec">Word2Vec</option>
+          <option value="fasttext">FastText</option>
+          <option value="glove">GloVe</option>
+          <option value="ensemble">Ensemble</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label for="limit" class="form-label">Limit</label>
+        <input type="number" class="form-control" id="limit" name="limit" value="10" min="1" max="50" />
+      </div>
+      <div class="col-md-1">
+        <button type="submit" class="btn btn-primary w-100">Trace</button>
+      </div>
+    </div>
+  </form>
+
+  <!-- Hasil Tracing -->
+  <div id="trace-result"></div>
+
+  <!-- Hasil Akhir (Tabel) -->
+  <div class="mt-4">
+    <h5>Hasil Akhir</h5>
+    <div id="trace-final-table"></div>
+  </div>
+
+  <!-- Visualisasi Bubble Net -->
+  <div class="mt-4">
+    <h5>Visualisasi Relasi (Bubble Net)</h5>
+    <div id="trace-bubble-net" style="height: 400px; border: 1px solid #ddd;"></div>
+  </div>
+
+  <!-- Log/Debug Console -->
+  <div class="mt-4">
+    <h5>Log / Debug</h5>
+    <pre id="trace-log" style="background:#f8f9fa; border:1px solid #ddd; padding:1em; max-height:300px; overflow:auto;"></pre>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/ontology_trace.js') }}"></script>
+<link
+  href="https://unpkg.com/vis-network/styles/vis-network.min.css"
+  rel="stylesheet"
+  type="text/css"
+/>
+<script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+<script>
+  document.getElementById("trace-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    const query = document.getElementById("query").value.trim();
+    const model = document.getElementById("model").value;
+    const limit = document.getElementById("limit").value;
+    const resultDiv = document.getElementById("trace-result");
+    const logDiv = document.getElementById("trace-log");
+    const finalTableDiv = document.getElementById("trace-final-table");
+    resultDiv.innerHTML = '<div class="text-center py-4"><div class="spinner-border" role="status"></div></div>';
+    finalTableDiv.innerHTML = '';
+    logDiv.textContent = '';
+
+    fetch("/api/ontology/trace", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query, model, limit })
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (!data.success) {
+          resultDiv.innerHTML = `<div class='alert alert-danger'>${data.message || "Gagal tracing"}</div>`;
+          finalTableDiv.innerHTML = '';
+          logDiv.textContent = JSON.stringify(data.trace?.logs || [], null, 2);
+          return;
+        }
+        renderTrace(data.trace);
+      })
+      .catch(err => {
+        resultDiv.innerHTML = `<div class='alert alert-danger'>Terjadi error: ${err}</div>`;
+      });
+  });
+
+  function renderTrace(trace) {
+    const resultDiv = document.getElementById("trace-result");
+    const logDiv = document.getElementById("trace-log");
+    const finalTableDiv = document.getElementById("trace-final-table");
+    if (!trace) {
+      resultDiv.innerHTML = '<div class="alert alert-warning">Tidak ada data trace.</div>';
+      finalTableDiv.innerHTML = '';
+      return;
+    }
+    // Panel step-by-step (card)
+    let html = '';
+    trace.steps.forEach((step, idx) => {
+      html += window.renderStepCard(step, idx);
+    });
+    resultDiv.innerHTML = html;
+    // Hasil akhir (tabel)
+    window.renderTraceFinalResults(trace.final_results, finalTableDiv);
+    // Log
+    logDiv.textContent = (trace.logs || []).join("\n");
+    // Bubble net
+    renderBubbleNet(trace);
+  }
+
+  function renderJsonOrTable(data) {
+    // Jika data adalah array of object dengan field angka (misal embedding/similarity), render tabel
+    if (Array.isArray(data) && data.length > 0 && typeof data[0] === 'object') {
+      // Cek jika semua elemen adalah array angka
+      if (Array.isArray(data[0]) && typeof data[0][0] === 'number') {
+        return renderArrayTable(data);
+      }
+      // Jika array of object, render tabel jika field konsisten
+      const keys = Object.keys(data[0]);
+      if (keys.length > 0 && keys.every(k => typeof data[0][k] !== 'object')) {
+        let table = `<div class='table-responsive'><table class='table table-sm table-bordered'><thead><tr>`;
+        keys.forEach(k => table += `<th>${k}</th>`);
+        table += `</tr></thead><tbody>`;
+        data.forEach(row => {
+          table += `<tr>`;
+          keys.forEach(k => table += `<td>${row[k]}</td>`);
+          table += `</tr>`;
+        });
+        table += `</tbody></table></div>`;
+        return table;
+      }
+    }
+    // Jika array angka
+    if (Array.isArray(data) && typeof data[0] === 'number') {
+      return `<pre>[${data.map(x => x.toFixed ? x.toFixed(4) : x).join(', ')}]</pre>`;
+    }
+    // Default: JSON
+    return `<pre style='white-space:pre-wrap; word-break:break-all;'>${JSON.stringify(data, null, 2)}</pre>`;
+  }
+
+  function renderArrayTable(arr) {
+    let table = `<div class='table-responsive'><table class='table table-sm table-bordered'><tbody>`;
+    arr.forEach((row, i) => {
+      table += `<tr><th>${i + 1}</th>`;
+      row.forEach(val => table += `<td>${val.toFixed ? val.toFixed(4) : val}</td>`);
+      table += `</tr>`;
+    });
+    table += `</tbody></table></div>`;
+    return table;
+  }
+
+  function renderBubbleNet(trace) {
+    const container = document.getElementById('trace-bubble-net');
+    if (!container || !trace) return;
+    // Clear previous
+    container.innerHTML = '';
+    // Data
+    const mainQuery = trace.query;
+    const steps = trace.steps || [];
+    // Cari step ekspansi dan hasil akhir
+    const expansionStep = steps.find(s => s.step === 'ontology_expansion');
+    const expandedQueries = (expansionStep && expansionStep.data && expansionStep.data.expanded_queries) || [mainQuery];
+    const finalResults = trace.final_results || [];
+    // Node
+    const nodes = [];
+    const edges = [];
+    // Main query node
+    nodes.push({ id: 'main_query', label: mainQuery, size: 30, color: { background: '#007bff', border: '#0056b3' }, font: { size: 16, color: '#fff' }, shape: 'circle' });
+    // Expanded query nodes
+    expandedQueries.forEach((q, i) => {
+      if (q !== mainQuery) {
+        nodes.push({ id: `exp_${i}`, label: q, size: 20, color: { background: '#28a745', border: '#1e7e34' }, font: { size: 12, color: '#fff' }, shape: 'circle' });
+        edges.push({ from: 'main_query', to: `exp_${i}`, color: { color: '#28a745', width: 2 }, smooth: { type: 'curvedCW', roundness: 0.2 } });
+      }
+    });
+    // Map expanded query ke node id
+    const expNodeMap = {};
+    expandedQueries.forEach((q, i) => {
+      if (q !== mainQuery) expNodeMap[q] = `exp_${i}`;
+    });
+    // Result nodes
+    finalResults.forEach((r, i) => {
+      const nodeId = `res_${i}`;
+      const verseText = `Q.S. ${r.surah_number || ''}:${r.ayat_number || ''}`;
+      const nodeSize = Math.max(15, Math.min(25, (r.similarity || 0.5) * 30));
+      const nodeColor = r.boosted ? { background: '#ffc107', border: '#e0a800' } : { background: '#6c757d', border: '#545b62' };
+      nodes.push({ id: nodeId, label: verseText, size: nodeSize, color: nodeColor, font: { size: 10, color: '#fff' }, shape: 'circle', title: (r.surah_name || '') + '<br>Skor: ' + ((r.similarity || 0) * 100).toFixed(1) + '%' });
+      // Edge dari query/ekspansi ke hasil
+      const sourceQuery = r.source_query || mainQuery;
+      const fromId = sourceQuery === mainQuery ? 'main_query' : (expNodeMap[sourceQuery] || 'main_query');
+      edges.push({ from: fromId, to: nodeId, color: { color: r.boosted ? '#ffc107' : '#007bff', width: 2 }, smooth: { type: 'curvedCW', roundness: 0.1 } });
+    });
+    // Render
+    const data = { nodes: new vis.DataSet(nodes), edges: new vis.DataSet(edges) };
+    const options = {
+      nodes: { borderWidth: 2, shadow: true },
+      edges: { shadow: true, smooth: { type: 'curvedCW', roundness: 0.2 } },
+      layout: { improvedLayout: true, hierarchical: { enabled: false } },
+      physics: { enabled: true, barnesHut: { gravitationalConstant: -2000, centralGravity: 0.3, springLength: 95, springConstant: 0.04, damping: 0.09 }, stabilization: { enabled: true, iterations: 500, updateInterval: 100 } },
+      interaction: { hover: true, tooltipDelay: 200, zoomView: true, dragView: true }
+    };
+    new vis.Network(container, data, options);
+  }
+</script>
+{% endblock %} 

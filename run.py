@@ -794,6 +794,13 @@ def ontology_admin():
     user = get_user_by_id(session['user_id']) if 'user_id' in session else None
     return render_template('ontology_admin.html', user=user)
 
+@app.route('/ontology-trace')
+def ontology_trace():
+    user = None
+    if 'user_id' in session:
+        user = get_user_by_id(session['user_id'])
+    return render_template('ontology_trace.html', user=user)
+
 @app.context_processor
 def inject_user():
     """Menyediakan data user untuk semua template."""

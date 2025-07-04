@@ -157,15 +157,32 @@ class SearchService:
     
     def semantic_search(self, query: str, model_type: str = 'word2vec', 
                        language: str = 'id', limit: int = 10, 
-                       threshold: float = 0.5, user_id: Optional[int] = None) -> Dict:
-        """Perform semantic search."""
+                       threshold: float = 0.5, user_id: Optional[int] = None,
+                       trace: Optional[dict] = None) -> Dict:
+        """Perform semantic search. Mendukung tracing jika trace dict diberikan."""
         try:
+            if trace is not None:
+                trace.setdefault('steps', []).append({'step': 'init_model', 'data': {'model_type': model_type}})
+                trace.setdefault('logs', []).append(f'Inisialisasi model: {model_type}')
             self._init_semantic_model(model_type)
             model = self._semantic_models[model_type]
-            
+
+            if trace is not None:
+                trace['steps'].append({'step': 'embedding', 'data': {'query': query}})
+                trace['logs'].append(f'Proses embedding untuk query: {query}')
+
             results = model.search(query, language, limit, threshold)
+
+            if trace is not None:
+                trace['steps'].append({'step': 'similarity', 'data': {'result_count': len(results)}})
+                trace['logs'].append(f'Perhitungan similarity selesai, hasil: {len(results)} ayat')
+
             results = self._enhance_results_with_classification(results)
-            
+
+            if trace is not None:
+                trace['steps'].append({'step': 'ranking', 'data': {'result_count': len(results)}})
+                trace['logs'].append('Ranking dan klasifikasi hasil selesai')
+
             if user_id:
                 add_search_history(user_id, query, model_type, len(results))
                 update_app_statistics(
@@ -174,7 +191,7 @@ class SearchService:
                     model=model_type,
                     avg_results=len(results)
                 )
-            
+
             return {
                 'query': query,
                 'model': model_type,
@@ -182,6 +199,8 @@ class SearchService:
                 'count': len(results)
             }
         except Exception as e:
+            if trace is not None:
+                trace['logs'].append(f'Error: {str(e)}')
             raise Exception(f'Error saat melakukan pencarian: {str(e)}')
     
     def lexical_search(self, query: str, exact_match: bool = False,
