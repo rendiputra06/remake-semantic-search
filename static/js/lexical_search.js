@@ -63,7 +63,7 @@ function performLexicalSearch() {
     query: query,
     exact_match: exactMatch,
     use_regex: useRegex,
-    limit: parseInt(limit),
+    limit: parseInt(limit) || null, // Jika 0, kirim null untuk tak terbatas
   };
 
   // Make API call

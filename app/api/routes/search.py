@@ -47,7 +47,8 @@ def search():
         
         query = data.get('query', '').strip()
         model_type = data.get('model', 'word2vec')
-        result_limit = int(data.get('limit', 10))
+        limit_raw = data.get('limit', 10)
+        result_limit = int(limit_raw) if limit_raw is not None and limit_raw != 0 else None
         threshold = float(data.get('threshold', 0.5))
         
         if not query:
@@ -138,7 +139,8 @@ def lexical_search():
         query = data.get('query', '').strip()
         exact_match = data.get('exact_match', False)
         use_regex = data.get('use_regex', False)
-        limit = int(data.get('limit', 10))
+        limit_raw = data.get('limit', 10)
+        limit = int(limit_raw) if limit_raw is not None and limit_raw != 0 else None
         
         if not query:
             return error_response(400, 'Query tidak boleh kosong')

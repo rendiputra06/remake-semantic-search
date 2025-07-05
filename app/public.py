@@ -87,4 +87,11 @@ def semantic_search():
     """
     Halaman pencarian semantic
     """
-    return render_template('semantic_search.html') 
+    return render_template('semantic_search.html')
+
+@public_bp.route('/ontology/search')
+def ontology_search():
+    """
+    Halaman pencarian ontology
+    """
+    return render_template('ontology_search.html') 

@@ -44,7 +44,7 @@ function performSemanticSearch() {
   const requestData = {
     query: query,
     model: model,
-    limit: parseInt(limit),
+    limit: parseInt(limit) || null, // Jika 0, kirim null untuk tak terbatas
     threshold: parseFloat(threshold),
   };
 
