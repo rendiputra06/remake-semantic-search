@@ -209,7 +209,8 @@ endblock %} {% block content %}
               lokal dan global
             </li>
             <li>
-              <strong>Ensemble (Averaging):</strong> Gabungan Word2Vec, FastText, dan GloVe untuk hasil yang lebih robust dan akurat
+              <strong>Ensemble (Averaging):</strong> Gabungan Word2Vec,
+              FastText, dan GloVe untuk hasil yang lebih robust dan akurat
             </li>
           </ul>
         </div>
@@ -574,38 +575,6 @@ endblock %} {% block content %}
       // Tampilkan hasil
       data.results.forEach(function (result, index) {
         var resultClass = index % 2 === 0 ? "bg-light" : "";
-        var similarityBadge = "";
-
-        // Tampilkan badge kesamaan untuk pencarian semantik
-        if (searchType === "semantic" && result.similarity !== undefined) {
-          var similarityPercentage = Math.round(result.similarity * 100);
-          var badgeClass =
-            similarityPercentage >= 80
-              ? "bg-success"
-              : similarityPercentage >= 60
-              ? "bg-primary"
-              : similarityPercentage >= 40
-              ? "bg-info"
-              : "bg-secondary";
-
-          similarityBadge = `<span class="badge ${badgeClass} float-end">${similarityPercentage}% relevan</span>`;
-        }
-
-        // Tampilkan badge query sumber untuk pencarian expanded
-        if (searchType === "expanded" && result.source_query) {
-          similarityBadge += `<span class="badge bg-info float-end me-2" title="Query sumber">Dari: ${result.source_query}</span>`;
-        }
-
-        // Tampilkan badge tipe pencocokan untuk pencarian leksikal
-        if (searchType === "lexical" && result.match_type) {
-          var matchTypeLabel =
-            result.match_type === "exact_phrase"
-              ? "Frasa Persis"
-              : result.match_type === "regex"
-              ? "Regex"
-              : "Kata Kunci";
-          similarityBadge += `<span class="badge bg-success float-end me-2">${matchTypeLabel}</span>`;
-        }
 
         // Tampilkan klasifikasi jika ada
         var classification = "";
@@ -617,7 +586,6 @@ endblock %} {% block content %}
           <div class="list-group-item ${resultClass}">
             <div class="d-flex w-100 justify-content-between">
               <h5 class="mb-1">Surah ${result.surah_number} (${result.surah_name}), Ayat ${result.ayat_number}</h5>
-              ${similarityBadge}
             </div>
             <p class="mb-1 arabic-text text-end">${result.arabic}</p>
             <p class="mb-1">${result.translation}</p>

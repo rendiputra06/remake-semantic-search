@@ -51,6 +51,35 @@
                 >Beranda</a
               >
             </li>
+            <li class="nav-item dropdown">
+              <a
+                class="nav-link dropdown-toggle"
+                href="#"
+                id="searchDropdown"
+                role="button"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
+                <i class="fas fa-search me-1"></i>Pencarian
+              </a>
+              <ul class="dropdown-menu" aria-labelledby="searchDropdown">
+                <li>
+                  <a class="dropdown-item" href="/search">
+                    <i class="fas fa-home me-2"></i>Beranda Pencarian
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item" href="/search/lexical">
+                    <i class="fas fa-font me-2"></i>Pencarian Leksikal
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item" href="/search/semantic">
+                    <i class="fas fa-brain me-2"></i>Pencarian Semantik
+                  </a>
+                </li>
+              </ul>
+            </li>
             <li class="nav-item">
               <a
                 class="nav-link {% if request.endpoint == 'ontology_search' %}active{% endif %}"
@@ -69,7 +98,8 @@
               <a
                 class="nav-link {% if request.endpoint == 'public.evaluasi' %}active{% endif %}"
                 href="{{ url_for('public.evaluasi') }}"
-                >Evaluasi</a>
+                >Evaluasi</a
+              >
             </li>
             <li class="nav-item">
               <a
@@ -85,7 +115,7 @@
                 >Index Al-Quran</a
               >
             </li>
-            
+
             <li class="nav-item dropdown">
               <a
                 class="nav-link dropdown-toggle"

@@ -66,4 +66,25 @@ def thesaurus_word_detail(word):
 
 @public_bp.route('/evaluasi')
 def evaluasi():
-    return render_template('evaluasi.html') 
+    return render_template('evaluasi.html')
+
+@public_bp.route('/search')
+def search_main():
+    """
+    Halaman utama pencarian
+    """
+    return render_template('search_main.html')
+
+@public_bp.route('/search/lexical')
+def lexical_search():
+    """
+    Halaman pencarian lexical
+    """
+    return render_template('lexical_search.html')
+
+@public_bp.route('/search/semantic')
+def semantic_search():
+    """
+    Halaman pencarian semantic
+    """
+    return render_template('semantic_search.html') 

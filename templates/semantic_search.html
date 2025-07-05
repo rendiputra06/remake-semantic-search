@@ -1,0 +1,172 @@
+{% extends "search_layout.html" %} {% block title %}Pencarian Semantik - Mesin
+Pencarian Semantik Al-Quran{% endblock %} {% block breadcrumb %}
+<li class="breadcrumb-item active" aria-current="page">Semantik</li>
+{% endblock %} {% block search_content %}
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-12">
+      <h1 class="mb-4"><i class="fas fa-brain me-2"></i>Pencarian Semantik</h1>
+      <p class="text-muted mb-4">
+        Mencari ayat Al-Quran berdasarkan makna dan konsep menggunakan teknologi
+        pembelajaran mesin. Pencarian ini memahami hubungan semantik antar kata
+        dan dapat menemukan ayat yang relevan meskipun tidak menggunakan kata
+        yang persis sama.
+      </p>
+    </div>
+  </div>
+
+  <!-- Search Form -->
+  <div class="card search-card mb-4">
+    <div class="card-header bg-primary text-white">
+      <h5 class="mb-0"><i class="fas fa-search me-2"></i>Form Pencarian</h5>
+    </div>
+    <div class="card-body">
+      <form id="semanticSearchForm">
+        <div class="row">
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label for="query" class="form-label"
+                >Kata Kunci atau Konsep</label
+              >
+              <input
+                type="text"
+                class="form-control form-control-lg"
+                id="query"
+                name="query"
+                placeholder="Masukkan kata kunci atau konsep yang ingin dicari..."
+                required
+              />
+              <div class="form-text">
+                Contoh: "kesabaran dalam menghadapi cobaan", "berbuat baik
+                kepada orang tua"
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="mb-3">
+              <label for="model" class="form-label">Model Semantik</label>
+              <select class="form-select" id="model" name="model">
+                <option value="word2vec" selected>Word2Vec</option>
+                <option value="fasttext">FastText</option>
+                <option value="glove">GloVe</option>
+                <option value="ensemble">Ensemble (Averaging)</option>
+              </select>
+              <div class="form-text">
+                Pilih model yang akan digunakan untuk pencarian
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="mb-3">
+              <label for="limit" class="form-label">Jumlah Hasil</label>
+              <select class="form-select" id="limit" name="limit">
+                <option value="5">5 hasil</option>
+                <option value="10" selected>10 hasil</option>
+                <option value="20">20 hasil</option>
+                <option value="50">50 hasil</option>
+                <option value="100">100 hasil</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label for="threshold" class="form-label">
+                Threshold Kesamaan: <span id="thresholdValue">0.5</span>
+              </label>
+              <input
+                type="range"
+                class="form-range"
+                id="threshold"
+                name="threshold"
+                min="0.1"
+                max="0.9"
+                step="0.1"
+                value="0.5"
+              />
+              <div class="form-text">
+                Semakin tinggi nilai, semakin ketat kriteria kesamaan
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="mb-3">
+              <div class="form-check">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  id="showDetails"
+                  name="show_details"
+                />
+                <label class="form-check-label" for="showDetails">
+                  <strong>Tampilkan Detail Model</strong>
+                </label>
+                <div class="form-text">
+                  Tampilkan skor individual untuk model ensemble
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <button
+              type="button"
+              class="btn btn-outline-secondary"
+              id="resetBtn"
+            >
+              <i class="fas fa-undo me-1"></i>Reset
+            </button>
+          </div>
+          <div>
+            <button type="submit" class="btn btn-primary btn-lg" id="searchBtn">
+              <i class="fas fa-search me-1"></i>
+              <span id="searchBtnText">Cari</span>
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Search Results -->
+  <div class="card search-card d-none" id="resultsCard">
+    <div class="card-header bg-success text-white">
+      <h5 class="mb-0"><i class="fas fa-list me-2"></i>Hasil Pencarian</h5>
+    </div>
+    <div class="card-body p-0">
+      <div class="list-group list-group-flush" id="searchResults">
+        <!-- Hasil pencarian akan ditampilkan di sini -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading Spinner -->
+  <div class="text-center my-5 d-none" id="loadingSpinner">
+    <div
+      class="spinner-border text-primary"
+      style="width: 3rem; height: 3rem"
+      role="status"
+    >
+      <span class="visually-hidden">Loading...</span>
+    </div>
+    <p class="mt-3">Sedang mencari ayat-ayat yang relevan...</p>
+  </div>
+
+  <!-- No Results Message -->
+  <div class="card search-card d-none" id="noResultsCard">
+    <div class="card-body text-center py-5">
+      <i class="fas fa-search fa-3x text-muted mb-3"></i>
+      <h5 class="text-muted">Tidak ditemukan hasil</h5>
+      <p class="text-muted">
+        Coba ubah kata kunci atau turunkan threshold Anda.
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block extra_js %}
+<script src="{{ url_for('static', filename='js/semantic_search.js') }}"></script>
+{% endblock %}

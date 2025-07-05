@@ -1,0 +1,296 @@
+{% extends "search_layout.html" %} {% block title %}Beranda Pencarian - Mesin
+Pencarian Semantik Al-Quran{% endblock %} {% block breadcrumb %}
+<li class="breadcrumb-item active" aria-current="page">Beranda</li>
+{% endblock %} {% block search_content %}
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-12">
+      <h1 class="mb-4"><i class="fas fa-search me-2"></i>Beranda Pencarian</h1>
+      <p class="text-muted mb-4">
+        Pilih jenis pencarian yang sesuai dengan kebutuhan Anda. Setiap jenis
+        pencarian memiliki karakteristik dan keunggulan yang berbeda.
+      </p>
+    </div>
+  </div>
+
+  <!-- Search Type Cards -->
+  <div class="row">
+    <!-- Lexical Search Card -->
+    <div class="col-md-4 mb-4">
+      <div class="card search-card h-100">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0">
+            <i class="fas fa-font me-2"></i>Pencarian Leksikal
+          </h5>
+        </div>
+        <div class="card-body">
+          <p class="card-text">
+            Mencari kata atau frasa yang persis sama dalam teks Al-Quran. Ideal
+            untuk pencarian kata kunci spesifik.
+          </p>
+          <ul class="list-unstyled">
+            <li>
+              <i class="fas fa-check text-success me-2"></i>Exact phrase
+              matching
+            </li>
+            <li>
+              <i class="fas fa-check text-success me-2"></i>Regex search support
+            </li>
+            <li>
+              <i class="fas fa-check text-success me-2"></i>Keyword search
+            </li>
+            <li>
+              <i class="fas fa-check text-success me-2"></i>Fast response time
+            </li>
+          </ul>
+        </div>
+        <div class="card-footer">
+          <a href="/search/lexical" class="btn btn-primary w-100">
+            <i class="fas fa-search me-2"></i>Coba Pencarian Leksikal
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Semantic Search Card -->
+    <div class="col-md-4 mb-4">
+      <div class="card search-card h-100">
+        <div class="card-header bg-success text-white">
+          <h5 class="mb-0">
+            <i class="fas fa-brain me-2"></i>Pencarian Semantik
+          </h5>
+        </div>
+        <div class="card-body">
+          <p class="card-text">
+            Mencari berdasarkan makna dan konsep menggunakan AI. Dapat menemukan
+            ayat yang relevan meskipun tidak menggunakan kata yang persis sama.
+          </p>
+          <ul class="list-unstyled">
+            <li>
+              <i class="fas fa-check text-success me-2"></i>Word2Vec model
+            </li>
+            <li>
+              <i class="fas fa-check text-success me-2"></i>FastText model
+            </li>
+            <li><i class="fas fa-check text-success me-2"></i>GloVe model</li>
+            <li>
+              <i class="fas fa-check text-success me-2"></i>Ensemble model
+            </li>
+          </ul>
+        </div>
+        <div class="card-footer">
+          <a href="/search/semantic" class="btn btn-success w-100">
+            <i class="fas fa-brain me-2"></i>Coba Pencarian Semantik
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ontology Search Card -->
+    <div class="col-md-4 mb-4">
+      <div class="card search-card h-100">
+        <div class="card-header bg-info text-white">
+          <h5 class="mb-0">
+            <i class="fas fa-project-diagram me-2"></i>Pencarian Ontologi
+          </h5>
+        </div>
+        <div class="card-body">
+          <p class="card-text">
+            Mencari berdasarkan struktur pengetahuan dan relasi konsep.
+            Menggunakan ontologi untuk memahami hubungan antar konsep.
+          </p>
+          <ul class="list-unstyled">
+            <li>
+              <i class="fas fa-check text-success me-2"></i>Concept-based search
+            </li>
+            <li>
+              <i class="fas fa-check text-success me-2"></i>Hierarchical
+              relationships
+            </li>
+            <li>
+              <i class="fas fa-check text-success me-2"></i>Knowledge graph
+            </li>
+            <li>
+              <i class="fas fa-check text-success me-2"></i>Semantic
+              relationships
+            </li>
+          </ul>
+        </div>
+        <div class="card-footer">
+          <a href="/ontology/search" class="btn btn-info w-100">
+            <i class="fas fa-project-diagram me-2"></i>Coba Pencarian Ontologi
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Comparison Table -->
+  <div class="row mt-5">
+    <div class="col-12">
+      <div class="card search-card">
+        <div class="card-header bg-secondary text-white">
+          <h5 class="mb-0">
+            <i class="fas fa-table me-2"></i>Perbandingan Jenis Pencarian
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead class="table-light">
+                <tr>
+                  <th>Karakteristik</th>
+                  <th class="text-center">Leksikal</th>
+                  <th class="text-center">Semantik</th>
+                  <th class="text-center">Ontologi</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Jenis Pencarian</strong></td>
+                  <td class="text-center">Exact matching</td>
+                  <td class="text-center">Concept-based</td>
+                  <td class="text-center">Knowledge-based</td>
+                </tr>
+                <tr>
+                  <td><strong>Kecepatan</strong></td>
+                  <td class="text-center">
+                    <i class="fas fa-star text-warning"></i>
+                    <i class="fas fa-star text-warning"></i>
+                    <i class="fas fa-star text-warning"></i>
+                    <i class="fas fa-star text-warning"></i>
+                    <i class="fas fa-star text-warning"></i>
+                  </td>
+                  <td class="text-center">
+                    <i class="fas fa-star text-warning"></i>
+                    <i class="fas fa-star text-warning"></i>
+                    <i class="fas fa-star text-warning"></i>
+                    <i class="fas fa-star text-warning"></i>
+                    <i class="far fa-star text-warning"></i>
+                  </td>
+                  <td class="text-center">
+                    <i class="fas fa-star text-warning"></i>
+                    <i class="fas fa-star text-warning"></i>
+                    <i class="fas fa-star text-warning"></i>
+                    <i class="far fa-star text-warning"></i>
+                    <i class="far fa-star text-warning"></i>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Akurasi</strong></td>
+                  <td class="text-center">
+                    <i class="fas fa-star text-warning"></i>
+                    <i class="fas fa-star text-warning"></i>
+                    <i class="fas fa-star text-warning"></i>
+                    <i class="far fa-star text-warning"></i>
+                    <i class="far fa-star text-warning"></i>
+                  </td>
+                  <td class="text-center">
+                    <i class="fas fa-star text-warning"></i>
+                    <i class="fas fa-star text-warning"></i>
+                    <i class="fas fa-star text-warning"></i>
+                    <i class="fas fa-star text-warning"></i>
+                    <i class="far fa-star text-warning"></i>
+                  </td>
+                  <td class="text-center">
+                    <i class="fas fa-star text-warning"></i>
+                    <i class="fas fa-star text-warning"></i>
+                    <i class="fas fa-star text-warning"></i>
+                    <i class="fas fa-star text-warning"></i>
+                    <i class="fas fa-star text-warning"></i>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Fleksibilitas</strong></td>
+                  <td class="text-center">
+                    <i class="fas fa-star text-warning"></i>
+                    <i class="fas fa-star text-warning"></i>
+                    <i class="far fa-star text-warning"></i>
+                    <i class="far fa-star text-warning"></i>
+                    <i class="far fa-star text-warning"></i>
+                  </td>
+                  <td class="text-center">
+                    <i class="fas fa-star text-warning"></i>
+                    <i class="fas fa-star text-warning"></i>
+                    <i class="fas fa-star text-warning"></i>
+                    <i class="fas fa-star text-warning"></i>
+                    <i class="far fa-star text-warning"></i>
+                  </td>
+                  <td class="text-center">
+                    <i class="fas fa-star text-warning"></i>
+                    <i class="fas fa-star text-warning"></i>
+                    <i class="fas fa-star text-warning"></i>
+                    <i class="fas fa-star text-warning"></i>
+                    <i class="fas fa-star text-warning"></i>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Kebutuhan Komputasi</strong></td>
+                  <td class="text-center text-success">Rendah</td>
+                  <td class="text-center text-warning">Sedang</td>
+                  <td class="text-center text-danger">Tinggi</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Usage Tips -->
+  <div class="row mt-5">
+    <div class="col-12">
+      <div class="card search-card">
+        <div class="card-header bg-warning text-dark">
+          <h5 class="mb-0">
+            <i class="fas fa-lightbulb me-2"></i>Tips Penggunaan
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-4">
+              <h6>
+                <i class="fas fa-font text-primary me-2"></i>Kapan Menggunakan
+                Leksikal?
+              </h6>
+              <ul class="small">
+                <li>Mencari kata atau frasa spesifik</li>
+                <li>Pencarian cepat untuk kata kunci</li>
+                <li>Validasi keberadaan kata dalam Al-Quran</li>
+                <li>Pencarian dengan pola regex</li>
+              </ul>
+            </div>
+            <div class="col-md-4">
+              <h6>
+                <i class="fas fa-brain text-success me-2"></i>Kapan Menggunakan
+                Semantik?
+              </h6>
+              <ul class="small">
+                <li>Mencari konsep atau makna</li>
+                <li>Pencarian yang fleksibel</li>
+                <li>Menemukan ayat dengan tema serupa</li>
+                <li>Eksplorasi konten berdasarkan konteks</li>
+              </ul>
+            </div>
+            <div class="col-md-4">
+              <h6>
+                <i class="fas fa-project-diagram text-info me-2"></i>Kapan
+                Menggunakan Ontologi?
+              </h6>
+              <ul class="small">
+                <li>Pencarian berdasarkan struktur pengetahuan</li>
+                <li>Menjelajahi relasi antar konsep</li>
+                <li>Pencarian hierarkis</li>
+                <li>Analisis mendalam tentang tema</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block extra_js %}
+<script src="{{ url_for('static', filename='js/search_main.js') }}"></script>
+{% endblock %}
