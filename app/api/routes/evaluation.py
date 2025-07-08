@@ -242,9 +242,10 @@ def run_evaluation(query_id):
                     else:
                         # Boost skor jika hasil dari ekspansi ontologi
                         if r['source_query'] != query_text:
-                            result_map[ref]['score'] = max(result_map[ref]['score'], r['score'] * 1.1)
+                            # Ganti 'score' menjadi 'similarity'
+                            result_map[ref]['similarity'] = max(result_map[ref]['similarity'], r['similarity'] * 1.1)
                 # Ambil hasil terbaik
-                sorted_results = sorted(result_map.values(), key=lambda x: x['score'], reverse=True)
+                sorted_results = sorted(result_map.values(), key=lambda x: x['similarity'], reverse=True)
                 found = set([extract_verse_ref(r) for r in sorted_results[:result_limit]])
                 exec_time = round(time.time() - start, 3)
                 label = f'Ontologi ({model})'

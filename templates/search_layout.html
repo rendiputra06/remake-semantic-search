@@ -75,19 +75,19 @@
             <i class="fas fa-home me-2"></i>Beranda
           </a> -->
           <a
-            class="nav-link {% if request.endpoint == 'lexical_search' %}active{% endif %}"
+            class="nav-link {% if request.endpoint == 'public.lexical_search' %}active{% endif %}"
             href="/search/lexical"
           >
             <i class="fas fa-font me-2"></i>Pencarian Leksikal
           </a>
           <a
-            class="nav-link {% if request.endpoint == 'semantic_search' %}active{% endif %}"
+            class="nav-link {% if request.endpoint == 'public.semantic_search' %}active{% endif %}"
             href="/search/semantic"
           >
             <i class="fas fa-brain me-2"></i>Pencarian Semantik
           </a>
           <a
-            class="nav-link {% if request.endpoint == 'ontology_search' %}active{% endif %}"
+            class="nav-link {% if request.endpoint == 'public.ontology_search' %}active{% endif %}"
             href="/ontology/search"
           >
             <i class="fas fa-project-diagram me-2"></i>Pencarian Ontologi

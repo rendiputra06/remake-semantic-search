@@ -95,37 +95,84 @@
                 </div>
 
                 <div class="mb-5">
-                    <h3>Bagaimana Cara Kerjanya?</h3>
-                    <p>Aplikasi ini telah dilatih menggunakan terjemahan Al-Quran dalam berbagai bahasa untuk memahami makna dan konteks dari setiap ayat. Proses pencarian bekerja sebagai berikut:</p>
-                    
-                    <div class="row mt-4">
-                        <div class="col-md-6 mb-4 mb-md-0">
-                            <div class="card h-100 bg-light">
-                                <div class="card-body">
-                                    <h5 class="card-title"><i class="fas fa-cogs me-2 text-primary"></i>Proses Pelatihan</h5>
-                                    <ol>
-                                        <li>Mengumpulkan terjemahan Al-Quran dalam berbagai bahasa</li>
-                                        <li>Melakukan preprocessing teks (tokenisasi, penghapusan stopwords)</li>
-                                        <li>Melatih model Word2Vec, FastText, dan GloVe untuk memahami makna kata</li>
-                                        <li>Menghasilkan vektor untuk setiap ayat Al-Quran</li>
-                                    </ol>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="card h-100 bg-light">
-                                <div class="card-body">
-                                    <h5 class="card-title"><i class="fas fa-search me-2 text-primary"></i>Proses Pencarian</h5>
-                                    <ol>
-                                        <li>Mengubah kueri pencarian pengguna menjadi vektor</li>
-                                        <li>Menghitung kesamaan kosinus antara vektor kueri dan vektor ayat Al-Quran</li>
-                                        <li>Mengurutkan hasil berdasarkan skor kesamaan</li>
-                                        <li>Menampilkan ayat-ayat yang paling relevan</li>
-                                    </ol>
-                                </div>
-                            </div>
-                        </div>
+                    <h3>Pencarian Berbasis Ontologi</h3>
+                    <p>
+                        Selain pencarian semantik, aplikasi ini juga mendukung <strong>pencarian berbasis ontologi</strong>. Ontologi adalah struktur pengetahuan yang memetakan konsep-konsep penting dalam Al-Quran beserta relasi antar konsep (misal: sinonim, antonim, terkait, bagian dari, dsb).
+                    </p>
+                    <p>
+                        Dengan pencarian ontologi, Anda dapat menemukan ayat-ayat yang relevan meskipun menggunakan istilah atau konsep yang berbeda, karena sistem akan menelusuri relasi pengetahuan yang telah dipetakan secara manual maupun otomatis.
+                    </p>
+                    <div class="alert alert-success">
+                        <strong>Contoh:</strong> Mencari "zakat" juga akan menemukan ayat yang membahas "infak", "sedekah", atau "harta" jika konsep tersebut saling terkait dalam ontologi.
                     </div>
+                </div>
+                <div class="mb-5">
+                    <h3>Bagaimana Proses Pencarian Bekerja?</h3>
+                    <ol>
+                        <li>Pengguna memilih jenis pencarian (leksikal, semantik, ontologi).</li>
+                        <li>Query diproses dan, jika perlu, diekspansi dengan sinonim atau konsep ontologi.</li>
+                        <li>Model AI menghitung kemiripan makna antara query dan setiap ayat.</li>
+                        <li>Hasil diurutkan berdasarkan skor relevansi dan ditampilkan ke pengguna.</li>
+                        <li>Pengguna dapat melihat detail ayat, skor similarity, dan (jika ada) penjelasan relasi konsep.</li>
+                    </ol>
+                </div>
+                <div class="mb-5">
+                    <h3>Mengapa Menggunakan Mesin Pencarian Semantik?</h3>
+                    <ul>
+                        <li><strong>Lebih Cerdas:</strong> Memahami makna, bukan sekadar kata kunci.</li>
+                        <li><strong>Fleksibel:</strong> Menemukan ayat relevan meski menggunakan istilah berbeda.</li>
+                        <li><strong>Terintegrasi Ontologi:</strong> Memanfaatkan pengetahuan terstruktur untuk hasil lebih kaya.</li>
+                        <li><strong>Transparan:</strong> Menampilkan skor similarity dan relasi konsep untuk setiap hasil.</li>
+                    </ul>
+                </div>
+                <div class="mb-5">
+                    <h3>Contoh Kasus Penggunaan</h3>
+                    <ul>
+                        <li><strong>Pencarian Topik:</strong> Menemukan semua ayat terkait "keadilan" meski menggunakan kata "adil", "hak", atau "timbang".</li>
+                        <li><strong>Studi Tematik:</strong> Mengumpulkan ayat-ayat tentang "ibadah" beserta variasi istilah dan konsep terkait.</li>
+                        <li><strong>Penelitian Akademik:</strong> Analisis relasi konsep dalam Al-Quran menggunakan fitur ontologi.</li>
+                    </ul>
+                </div>
+                <div class="mb-5">
+                    <h3>Roadmap Pengembangan</h3>
+                    <ul>
+                        <li>Penambahan dukungan multibahasa</li>
+                        <li>Visualisasi relasi konsep ontologi</li>
+                        <li>Integrasi model AI generatif untuk penjelasan ayat</li>
+                        <li>Personalisasi hasil pencarian</li>
+                    </ul>
+                </div>
+                <div class="mb-5">
+                    <h3>Pertanyaan yang Sering Diajukan (FAQ)</h3>
+                    <ul>
+                        <li><strong>Apakah hasil pencarian dijamin akurat?</strong><br>
+                            Sistem berusaha memberikan hasil paling relevan, namun pengguna tetap disarankan memverifikasi konteks ayat secara mandiri.
+                        </li>
+                        <li><strong>Bisakah mencari dengan bahasa selain Indonesia?</strong><br>
+                            Saat ini fokus pada bahasa Indonesia, namun roadmap ke depan akan mendukung multibahasa.
+                        </li>
+                        <li><strong>Bagaimana jika menemukan bug atau ingin berkontribusi?</strong><br>
+                            Silakan hubungi tim pengembang melalui kontak yang tersedia.
+                        </li>
+                    </ul>
+                </div>
+                <div class="mb-5">
+                    <h3>Metode Evaluasi Model Pencarian</h3>
+                    <p>
+                        Untuk memastikan kualitas hasil pencarian, setiap model dievaluasi menggunakan <strong>metode pengujian berbasis data ground truth</strong> (ayat-ayat relevan yang sudah ditandai secara manual). Evaluasi dilakukan dengan membandingkan hasil pencarian model dengan ayat-ayat relevan tersebut.
+                    </p>
+                    <p>
+                        Tiga metrik utama yang digunakan adalah:
+                    </p>
+                    <ul>
+                        <li><strong>Presisi (Precision):</strong> Proporsi hasil pencarian yang benar-benar relevan dari seluruh hasil yang dikembalikan.</li>
+                        <li><strong>Recall:</strong> Proporsi ayat relevan yang berhasil ditemukan oleh model dari seluruh ayat relevan yang ada.</li>
+                        <li><strong>F1 Score:</strong> Rata-rata harmonis antara presisi dan recall, memberikan gambaran seimbang antara keduanya.</li>
+                    </ul>
+                    <p>
+                        <strong>Mengapa F1 Score?</strong><br>
+                        Dalam konteks pencarian Al-Quran, kita ingin model tidak hanya mengembalikan hasil yang relevan (presisi tinggi), tetapi juga tidak melewatkan ayat-ayat penting (recall tinggi). <strong>F1 Score</strong> dipilih karena mampu menyeimbangkan kedua aspek tersebut. Jika hanya menggunakan presisi, model bisa saja hanya mengembalikan sedikit hasil yang sangat pasti, namun banyak ayat relevan terlewat. Jika hanya recall, model bisa mengembalikan terlalu banyak hasil (termasuk yang tidak relevan). F1 Score memastikan model terbaik adalah yang mampu menemukan sebanyak mungkin ayat relevan tanpa mengorbankan ketepatan hasil.
+                    </p>
                 </div>
 
                 <div>
