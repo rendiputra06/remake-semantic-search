@@ -8,6 +8,8 @@ from backend.ensemble_embedding import EnsembleEmbeddingModel
 from backend.word2vec_model import Word2VecModel
 from backend.fasttext_model import FastTextModel
 from backend.glove_model import GloVeModel
+from backend.ensemble_embedding import EnsembleEmbeddingModel
+from backend.meta_ensemble import MetaEnsembleModel, create_training_data_from_evaluation_results
 import numpy as np
 
 models_bp = Blueprint('models', __name__)
@@ -128,7 +130,7 @@ def get_models():
         },
         {
             'id': 'ensemble',
-            'name': 'Ensemble (Voting)',
+            'name': 'Ensemble',
             'description': 'Gabungan Word2Vec, FastText, dan GloVe untuk hasil yang lebih akurat dan stabil.'
         }
     ]
@@ -195,6 +197,20 @@ def user_settings():
         message='Pengaturan pengguna berhasil diambil'
     )
 
+@models_bp.route('/default_settings', methods=['GET'])
+def default_settings():
+    """
+    Endpoint untuk mendapatkan pengaturan default (public, tidak memerlukan login)
+    """
+    return create_response(
+        data={
+            'default_model': 'word2vec',
+            'result_limit': 10,
+            'threshold': 0.65
+        },
+        message='Pengaturan default berhasil diambil'
+    )
+
 @models_bp.route('/search/ensemble', methods=['POST'])
 def ensemble_search():
     """
@@ -204,6 +220,7 @@ def ensemble_search():
     query = data.get('query')
     limit = data.get('limit', 10)
     threshold = data.get('threshold', 0.5)
+    use_meta_ensemble = data.get('use_meta_ensemble', False)
     
     if not query:
         return error_response('Query tidak boleh kosong', 400)
@@ -212,8 +229,15 @@ def ensemble_search():
         # Inisialisasi model jika belum
         init_models()
         
+        # Buat ensemble model dengan opsi meta-ensemble
+        ensemble = EnsembleEmbeddingModel(
+            word2vec_model, fasttext_model, glove_model,
+            use_meta_ensemble=use_meta_ensemble
+        )
+        ensemble.load_models()
+        
         # Lakukan pencarian
-        results = ensemble_model.search(query, limit=limit, threshold=threshold)
+        results = ensemble.search(query, limit=limit, threshold=threshold)
         
         return create_response(
             data=results,
@@ -222,3 +246,101 @@ def ensemble_search():
         
     except Exception as e:
         return error_response(f'Error saat melakukan pencarian: {str(e)}', 500)
+
+@models_bp.route('/meta_ensemble/train', methods=['POST'])
+def train_meta_ensemble():
+    """
+    Endpoint untuk melatih meta-ensemble model
+    """
+    data = request.get_json()
+    training_data = data.get('training_data', [])
+    
+    if not training_data:
+        return error_response('Training data tidak boleh kosong', 400)
+    
+    try:
+        meta_ensemble = MetaEnsembleModel()
+        result = meta_ensemble.train(training_data)
+        meta_ensemble.save_model()
+        
+        return create_response(
+            data=result,
+            message='Meta-ensemble model berhasil dilatih'
+        )
+        
+    except Exception as e:
+        return error_response(f'Error saat melatih meta-ensemble: {str(e)}', 500)
+
+@models_bp.route('/meta_ensemble/predict', methods=['POST'])
+def predict_meta_ensemble():
+    """
+    Endpoint untuk prediksi menggunakan meta-ensemble model
+    """
+    data = request.get_json()
+    word2vec_score = data.get('word2vec_score', 0.0)
+    fasttext_score = data.get('fasttext_score', 0.0)
+    glove_score = data.get('glove_score', 0.0)
+    query_length = data.get('query_length', 0)
+    verse_length = data.get('verse_length', 0)
+    
+    try:
+        meta_ensemble = MetaEnsembleModel()
+        meta_ensemble.load_model()
+        
+        result = meta_ensemble.predict_relevance(
+            word2vec_score, fasttext_score, glove_score,
+            query_length, verse_length
+        )
+        
+        return create_response(
+            data=result,
+            message='Prediksi meta-ensemble berhasil'
+        )
+        
+    except Exception as e:
+        return error_response(f'Error saat prediksi meta-ensemble: {str(e)}', 500)
+
+@models_bp.route('/meta_ensemble/feature_importance', methods=['GET'])
+def get_meta_ensemble_feature_importance():
+    """
+    Endpoint untuk mendapatkan feature importance dari meta-ensemble model
+    """
+    try:
+        meta_ensemble = MetaEnsembleModel()
+        meta_ensemble.load_model()
+        
+        importance = meta_ensemble.get_feature_importance()
+        
+        return create_response(
+            data=importance,
+            message='Feature importance berhasil diambil'
+        )
+        
+    except Exception as e:
+        return error_response(f'Error saat mengambil feature importance: {str(e)}', 500)
+
+@models_bp.route('/meta_ensemble/status', methods=['GET'])
+def get_meta_ensemble_status():
+    """
+    Endpoint untuk mengecek status meta-ensemble model
+    """
+    try:
+        meta_ensemble = MetaEnsembleModel()
+        meta_ensemble.load_model()
+        
+        return create_response(
+            data={
+                'is_trained': meta_ensemble.is_trained,
+                'model_path': meta_ensemble.model_path
+            },
+            message='Status meta-ensemble berhasil diambil'
+        )
+        
+    except Exception as e:
+        return create_response(
+            data={
+                'is_trained': False,
+                'error': str(e)
+            },
+            message='Meta-ensemble model tidak tersedia'
+        )

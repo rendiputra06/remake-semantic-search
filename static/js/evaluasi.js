@@ -28,6 +28,7 @@ document.addEventListener("DOMContentLoaded", function () {
   let currentFoundVersesPage = 1; // Halaman saat ini untuk ayat hasil
   let foundVersesPerPage = 20; // Jumlah ayat per halaman
   let currentFoundVerses = []; // Data ayat hasil saat ini
+  let groundTruthVerses = []; // Variabel global untuk ayat relevan
 
   function showSpinner(el, msg = "Memuat...") {
     el.innerHTML = `<div class='text-center py-3'><div class='spinner-border text-primary' role='status'></div><div>${msg}</div></div>`;
@@ -75,7 +76,6 @@ document.addEventListener("DOMContentLoaded", function () {
         evaluasiBtn.classList.remove("d-none");
         logBtn.classList.remove("d-none");
         evaluasiResult.innerHTML = "";
-        loadEvaluationResults(selectedQueryId);
         // Tampilkan form evaluasi
         formEvaluasi.classList.remove("d-none");
         // Autoisi query_text jika ada di list
@@ -251,6 +251,8 @@ document.addEventListener("DOMContentLoaded", function () {
       .then((res) => res.json())
       .then((data) => {
         if (data.success) {
+          // Simpan ayat relevan ke variable global
+          groundTruthVerses = data.data.map(v => v.verse_ref);
           renderRelevantVerses(data.data);
           document.getElementById("ayat-count").textContent = data.data.length;
         }
@@ -258,13 +260,24 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function renderRelevantVerses(verses) {
-    // Tampilkan setiap ayat sebagai badge
+    // Sederhanakan tampilan jika data banyak
     let html = "";
-    verses.forEach((v) => {
-      html += `<span class="badge bg-primary me-1 mb-1 badge-ayat-ref" data-ref="${v.verse_ref}" style="cursor:pointer">${v.verse_ref}</span>`;
-    });
+    if (verses.length === 0) {
+      html = '<span class="text-muted">Belum ada ayat relevan.</span>';
+    } else if (verses.length <= 100) {
+      verses.forEach((v) => {
+        html += `<span class="badge bg-primary me-1 mb-1 badge-ayat-ref" data-ref="${v.verse_ref}" style="cursor:pointer">${v.verse_ref}</span>`;
+      });
+    } else {
+      // Tampilkan hanya 10 badge pertama, lalu badge ringkasan
+      for (let i = 0; i < 10; i++) {
+        html += `<span class="badge bg-primary me-1 mb-1 badge-ayat-ref" data-ref="${verses[i].verse_ref}" style="cursor:pointer">${verses[i].verse_ref}</span>`;
+      }
+      const sisa = verses.length - 10;
+      html += `<span class="badge bg-secondary me-1 mb-1 badge-ayat-more" style="cursor:pointer">... dan ${sisa} ayat lain</span>`;
+    }
     relevantVerseList.innerHTML = html;
-    // Tambahkan event listener untuk badge ayat
+    // Event listener badge ayat
     relevantVerseList.querySelectorAll(".badge-ayat-ref").forEach((badge) => {
       badge.addEventListener("click", function (e) {
         e.stopPropagation();
@@ -284,9 +297,7 @@ document.addEventListener("DOMContentLoaded", function () {
             if (data.success && data.ayat) {
               const a = data.ayat;
               modalBody.innerHTML = `
-                <div><strong>${a.surah_name} (${a.surah}) : ${
-                a.ayat
-              }</strong></div>
+                <div><strong>${a.surah_name} (${a.surah}) : ${a.ayat}</strong></div>
                 <div class='text-arab' style='font-size:1.2em'>${a.text}</div>
                 <div><em>${a.translation || ""}</em></div>
               `;
@@ -299,6 +310,16 @@ document.addEventListener("DOMContentLoaded", function () {
           });
       });
     });
+    // Event listener badge more
+    const badgeMore = relevantVerseList.querySelector(".badge-ayat-more");
+    if (badgeMore) {
+      badgeMore.addEventListener("click", function (e) {
+        e.stopPropagation();
+        if (selectedQueryId) {
+          showAllAyatDetailModal(selectedQueryId);
+        }
+      });
+    }
   }
 
   // Form tambah ayat di modal
@@ -364,34 +385,59 @@ document.addEventListener("DOMContentLoaded", function () {
   function showFoundVersesWithPagination(foundVerses, groundTruth = []) {
     currentFoundVerses = foundVerses;
     currentFoundVersesPage = 1;
-    
-    const totalPages = Math.ceil(foundVerses.length / foundVersesPerPage);
+    // Pisahkan TP dan FP
+    let tpVerses = [];
+    let fpVerses = [];
+    foundVerses.forEach(ref => {
+      if (groundTruth.includes && groundTruth.includes(ref)) {
+        console.log('this is TP = '+ref)
+        tpVerses.push(ref);
+      } else {
+        fpVerses.push(ref);
+      }
+    });
+    // Gabungkan: TP dulu, lalu FP
+    let orderedVerses = tpVerses.concat(fpVerses);
+    const totalPages = Math.ceil(orderedVerses.length / foundVersesPerPage);
     const startIndex = (currentFoundVersesPage - 1) * foundVersesPerPage;
     const endIndex = startIndex + foundVersesPerPage;
-    const pageVerses = foundVerses.slice(startIndex, endIndex);
-    
+    const pageVerses = orderedVerses.slice(startIndex, endIndex);
     let content = "";
-    if (foundVerses.length === 0) {
+    if (orderedVerses.length === 0) {
       content = '<div class="text-muted">Tidak ada ayat ditemukan.</div>';
     } else {
-      content = '<div class="d-flex flex-wrap gap-1">';
+      content = '<div class="list-group">';
       pageVerses.forEach((ref) => {
-        // Cek apakah TP atau FP
         let isTP = groundTruth.includes ? groundTruth.includes(ref) : false;
-        let badgeClass = isTP ? "bg-primary" : "bg-secondary";
         let badgeLabel = isTP ? "TP" : "FP";
-        content += `<span class='badge ${badgeClass} badge-ayat-ref' data-ref='${ref}' style='cursor:pointer'>${ref} <span style='font-size:0.8em;'>(${badgeLabel})</span></span>`;
+        // Ambil detail ayat (arab dan terjemahan) secara async
+        content += `<div class='list-group-item' style='margin-bottom:4px;'>`;
+        content += `<div><strong>${ref} <span class='badge ${isTP ? 'bg-success' : 'bg-secondary'} ms-2'>${badgeLabel}</span></strong></div>`;
+        content += `<div class='ayat-detail-loading' data-ref='${ref}'>Memuat detail ayat...</div>`;
+        content += `</div>`;
       });
       content += "</div>";
     }
-    
     const modalBody = document.getElementById("found-verses-content");
     modalBody.innerHTML = content;
-    
+    // Setelah render, fetch detail ayat untuk setiap baris
+    pageVerses.forEach((ref) => {
+      const [surah, ayat] = ref.split(":");
+      fetch(`/api/quran/ayat_detail?surah=${surah}&ayat=${ayat}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && data.ayat) {
+            const a = data.ayat;
+            const el = modalBody.querySelector(`.ayat-detail-loading[data-ref='${ref}']`);
+            if (el) {
+              el.innerHTML = `<div class='text-arab' style='font-size:1.2em'>${a.text}</div><div><em>${a.translation || ""}</em></div>`;
+            }
+          }
+        });
+    });
     // Update pagination
     document.getElementById("current-page").textContent = currentFoundVersesPage;
     document.getElementById("total-pages").textContent = totalPages;
-    
     // Tampilkan/sembunyikan pagination
     const pagination = document.getElementById("found-verses-pagination");
     if (totalPages > 1) {
@@ -401,43 +447,6 @@ document.addEventListener("DOMContentLoaded", function () {
     } else {
       pagination.classList.add("d-none");
     }
-    
-    // Event listener untuk badge ayat
-    modalBody.querySelectorAll(".badge-ayat-ref").forEach((badge) => {
-      badge.addEventListener("click", function (e) {
-        e.stopPropagation();
-        const ref = this.getAttribute("data-ref");
-        // Tampilkan loading di modal
-        modalBody.innerHTML = `<div class='text-center py-3'><div class='spinner-border text-primary' role='status'></div><div>Memuat detail ayat...</div></div>`;
-        const modal = new bootstrap.Modal(
-          document.getElementById("modalFoundVerses")
-        );
-        modal.show();
-        // Ambil detail ayat via AJAX
-        const [surah, ayat] = ref.split(":");
-        fetch(`/api/quran/ayat_detail?surah=${surah}&ayat=${ayat}`)
-          .then((res) => res.json())
-          .then((data) => {
-            if (data.success && data.ayat) {
-              const a = data.ayat;
-              modalBody.innerHTML = `
-                <div><strong>${a.surah_name} (${a.surah}) : ${
-                a.ayat
-              }</strong></div>
-                <div class='text-arab' style='font-size:1.2em'>${
-                  a.text
-                }</div>
-                <div><em>${a.translation || ""}</em></div>
-              `;
-            } else {
-              modalBody.innerHTML = `<div class='text-danger'>Detail ayat tidak ditemukan.</div>`;
-            }
-          })
-          .catch(() => {
-            modalBody.innerHTML = `<div class='text-danger'>Gagal memuat detail ayat.</div>`;
-          });
-      });
-    });
   }
 
   // Event listener untuk pagination
@@ -479,7 +488,7 @@ document.addEventListener("DOMContentLoaded", function () {
     showSpinner(evaluasiResult, "Menjalankan evaluasi...");
     
     // Ambil pengaturan dari database
-    fetch("/api/models/user_settings")
+    fetch("/api/models/default_settings")
       .then((res) => res.json())
       .then((settingsData) => {
         if (settingsData.success) {
@@ -565,22 +574,14 @@ document.addEventListener("DOMContentLoaded", function () {
             btn.addEventListener("click", function () {
               const idx = this.getAttribute("data-idx");
               const found = data.results[idx].found_verses || [];
-              // Ambil ground_truth jika tersedia
-              const groundTruth = data.results[idx].ground_truth || [];
-              
-              // Tampilkan modal dengan pagination
+              // Tampilkan modal dengan pagination dan highlight
               const modal = new bootstrap.Modal(
                 document.getElementById("modalFoundVerses")
               );
               modal.show();
-              
-              // Tampilkan ayat dengan pagination
-              showFoundVersesWithPagination(found, groundTruth);
+              showFoundVersesWithPagination(found, groundTruthVerses);
             });
           });
-          
-          // Update hasil evaluasi terakhir
-          loadEvaluationResults(selectedQueryId);
         } else {
           evaluasiResult.innerHTML = `<div class='alert alert-danger'>${data.message}</div>`;
         }
@@ -589,30 +590,6 @@ document.addEventListener("DOMContentLoaded", function () {
         evaluasiResult.innerHTML = `<div class='alert alert-danger'>Terjadi kesalahan saat evaluasi.</div>`;
       });
   });
-
-  function loadEvaluationResults(queryId) {
-    showSpinner(evaluasiResult, "Memuat hasil evaluasi...");
-    fetch(`/api/query/${queryId}/evaluation_results`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success && data.results.length > 0) {
-          let html = "<h5>Hasil Evaluasi Terakhir</h5>";
-          html +=
-            '<table class="table table-bordered"><thead><tr><th>Model</th><th>Precision</th><th>Recall</th><th>F1</th><th>Waktu (s)</th><th>Tanggal Evaluasi</th></tr></thead><tbody>';
-          data.results.forEach((r) => {
-            const evalDate = new Date(r.evaluated_at).toLocaleString('id-ID');
-            html += `<tr><td>${r.model}</td><td>${r.precision}</td><td>${r.recall}</td><td>${r.f1}</td><td>${r.exec_time}</td><td>${evalDate}</td></tr>`;
-          });
-          html += "</tbody></table>";
-          evaluasiResult.innerHTML = html;
-        } else {
-          evaluasiResult.innerHTML = "<div class='text-muted'>Belum ada hasil evaluasi. Jalankan evaluasi untuk melihat hasil.</div>";
-        }
-      })
-      .catch(() => {
-        evaluasiResult.innerHTML = "<div class='text-danger'>Gagal memuat hasil evaluasi.</div>";
-      });
-  }
 
   logBtn.addEventListener("click", function () {
     if (!selectedQueryId) return;

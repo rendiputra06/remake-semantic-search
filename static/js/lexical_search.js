@@ -4,7 +4,7 @@
 
 $(document).ready(function () {
   // Ambil pengaturan user dan set limit
-  fetch('/api/models/user_settings')
+  fetch('/api/models/default_settings')
     .then(res => res.json())
     .then(data => {
       if (data.success && data.data) {

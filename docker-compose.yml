@@ -8,6 +8,8 @@ services:
     volumes:
       - ./database:/app/database
       - ./static:/app/static
+      - ./dataset:/app/dataset
+      - ./templates:/app/templates
     environment:
       - FLASK_DEBUG=0
     networks:

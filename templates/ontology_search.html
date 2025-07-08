@@ -175,7 +175,7 @@ Pencarian Semantik Al-Quran{% endblock %} {% block breadcrumb %}
 <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
 <script>
   // Ambil pengaturan user dan set limit
-  fetch('/api/models/user_settings')
+  fetch('/api/models/default_settings')
     .then(res => res.json())
     .then(data => {
       if (data.success && data.data) {

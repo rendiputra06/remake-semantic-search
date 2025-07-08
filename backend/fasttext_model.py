@@ -8,6 +8,23 @@ from gensim.models import FastText
 from typing import List, Dict, Any, Tuple
 from sklearn.metrics.pairwise import cosine_similarity
 
+def l2_normalize(vec):
+    norm = np.linalg.norm(vec)
+    if norm == 0:
+        return vec
+    return vec / norm
+
+def calculate_adaptive_threshold(scores, fallback=0.5):
+    if not scores:
+        return fallback
+    try:
+        perc = np.percentile(scores, 75)
+        if np.isnan(perc) or perc == 0:
+            return fallback
+        return perc
+    except Exception:
+        return fallback
+
 class FastTextModel:
     """
     Kelas untuk menangani model FastText
@@ -89,7 +106,7 @@ class FastTextModel:
         
         # Hitung rata-rata vektor
         verse_vector = np.mean(token_vectors, axis=0)
-        return verse_vector
+        return l2_normalize(verse_vector)
     
     def search(self, query: str, language: str = 'id', limit: int = 10, threshold: float = 0.5) -> List[Dict[str, Any]]:
         """
@@ -114,8 +131,7 @@ class FastTextModel:
         similarities = []
         for verse_id, verse_vector in self.verse_vectors.items():
             similarity = float(cosine_similarity([query_vector], [verse_vector])[0][0])
-            if similarity >= threshold:
-                similarities.append((verse_id, similarity))
+            similarities.append((verse_id, similarity))
         
         # Urutkan hasil berdasarkan kesamaan
         similarities.sort(key=lambda x: x[1], reverse=True)
@@ -137,7 +153,13 @@ class FastTextModel:
                 'similarity': similarity
             })
         
-        return results
+        # Threshold adaptif jika threshold=None
+        sim_scores = [r['similarity'] for r in results]
+        use_threshold = threshold
+        if threshold is None:
+            use_threshold = calculate_adaptive_threshold(sim_scores, fallback=0.5)
+        filtered_results = [r for r in results if r['similarity'] >= use_threshold]
+        return filtered_results
     
     def save_verse_vectors(self, output_path: str = '../database/vectors/fasttext_verses.pkl') -> None:
         """
