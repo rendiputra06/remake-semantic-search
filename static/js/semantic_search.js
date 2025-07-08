@@ -1,4 +1,20 @@
 $(document).ready(function () {
+  // Ambil pengaturan user dan set limit & threshold
+  fetch('/api/models/user_settings')
+    .then(res => res.json())
+    .then(data => {
+      if (data.success && data.data) {
+        const limit = data.data.result_limit;
+        const threshold = data.data.threshold;
+        if (limit !== undefined && limit !== null) {
+          $('#limit').val(limit);
+        }
+        if (threshold !== undefined && threshold !== null) {
+          $('#threshold').val(threshold);
+          $('#thresholdValue').text(threshold);
+        }
+      }
+    });
   // Handle form submission
   $("#semanticSearchForm").submit(function (e) {
     e.preventDefault();

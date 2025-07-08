@@ -3,6 +3,17 @@
  */
 
 $(document).ready(function () {
+  // Ambil pengaturan user dan set limit
+  fetch('/api/models/user_settings')
+    .then(res => res.json())
+    .then(data => {
+      if (data.success && data.data) {
+        const limit = data.data.result_limit;
+        if (limit !== undefined && limit !== null) {
+          $('#limit').val(limit);
+        }
+      }
+    });
   // Handle form submission
   $("#lexicalSearchForm").submit(function (e) {
     e.preventDefault();
