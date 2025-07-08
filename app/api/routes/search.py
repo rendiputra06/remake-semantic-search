@@ -47,9 +47,8 @@ def search():
         
         query = data.get('query', '').strip()
         model_type = data.get('model', 'word2vec')
-        limit_raw = data.get('limit', 10)
-        result_limit = int(limit_raw) if limit_raw is not None and limit_raw != 0 else None
-        threshold = float(data.get('threshold', 0.5))
+        limit_raw = data.get('limit')
+        threshold_raw = data.get('threshold')
         
         if not query:
             return error_response(400, 'Query tidak boleh kosong')
@@ -57,6 +56,15 @@ def search():
         # Validasi model_type
         if model_type not in ['word2vec', 'fasttext', 'glove', 'ensemble']:
             return error_response(400, f"Model '{model_type}' tidak didukung")
+        
+        # Jika limit atau threshold tidak diberikan, gunakan pengaturan dari database
+        result_limit = None
+        threshold = None
+        
+        if limit_raw is not None:
+            result_limit = int(limit_raw) if limit_raw != 0 else None
+        if threshold_raw is not None:
+            threshold = float(threshold_raw)
         
         try:
             # Menggunakan semantic_search dari SearchService
@@ -75,7 +83,7 @@ def search():
             response_data = {
                 'query': query,
                 'model': model_type,
-                'threshold': threshold,
+                'threshold': threshold or get_user_settings(session.get('user_id')).get('threshold', 0.5) if session.get('user_id') else 0.5,
                 'execution_time': round(execution_time, 4),
                 'results': search_results.get('results', []),
                 'count': search_results.get('count', 0)
@@ -107,7 +115,7 @@ def search():
                     response_data = {
                         'query': query,
                         'model': model_type,
-                        'threshold': threshold,
+                        'threshold': threshold or get_user_settings(session.get('user_id')).get('threshold', 0.5) if session.get('user_id') else 0.5,
                         'execution_time': round(execution_time, 4),
                         'results': search_results.get('results', []),
                         'count': search_results.get('count', 0)
@@ -196,11 +204,20 @@ def expanded_search():
         
         query = data.get('query', '').strip()
         model_type = data.get('model', 'word2vec')
-        result_limit = int(data.get('limit', 10))
-        threshold = float(data.get('threshold', 0.5))
+        limit_raw = data.get('limit')
+        threshold_raw = data.get('threshold')
         
         if not query:
             return error_response(400, 'Query tidak boleh kosong')
+        
+        # Jika limit atau threshold tidak diberikan, gunakan pengaturan dari database
+        result_limit = None
+        threshold = None
+        
+        if limit_raw is not None:
+            result_limit = int(limit_raw) if limit_raw != 0 else None
+        if threshold_raw is not None:
+            threshold = float(threshold_raw)
         
         # Initialize thesaurus if needed
         global thesaurus
@@ -260,7 +277,10 @@ def expanded_search():
         
         results = list(unique_results.values())
         results.sort(key=lambda x: x['similarity'], reverse=True)
-        results = results[:result_limit]
+        
+        # Apply limit if specified
+        if result_limit:
+            results = results[:result_limit]
         
         # Add classification information
         results = search_service._enhance_results_with_classification(results)

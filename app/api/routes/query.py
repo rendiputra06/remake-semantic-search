@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from backend.db import (
-    add_query, get_all_queries,
-    add_relevant_verse, get_relevant_verses_by_query,
+    add_query, get_all_queries, delete_query as db_delete_query,
+    add_relevant_verse, get_relevant_verses_by_query, delete_relevant_verse as db_delete_relevant_verse,
     add_evaluation_result, get_evaluation_results_by_query, get_evaluation_logs_by_query, add_evaluation_log
 )
 import time
@@ -26,80 +26,39 @@ def create_query():
         return jsonify({"success": True, "query_id": result})
     return jsonify({"success": False, "message": result}), 500
 
-@query_bp.route('/<int:query_id>', methods=['GET'])
-def get_query(query_id):
-    """Ambil detail query dan ayat relevan"""
-    from backend.db import get_all_queries
-    queries = [q for q in get_all_queries() if q['id'] == query_id]
-    if not queries:
-        return jsonify({"success": False, "message": "Query tidak ditemukan"}), 404
-    ayat = get_relevant_verses_by_query(query_id)
-    return jsonify({"success": True, "data": {"query": queries[0], "relevant_verses": ayat}})
-
-@query_bp.route('/<int:query_id>', methods=['PUT'])
-def update_query(query_id):
-    """Update text query evaluasi"""
-    from backend.db import get_all_queries, add_query
-    req = request.json
-    if not req or 'text' not in req:
-        return jsonify({"success": False, "message": "Field 'text' wajib diisi"}), 400
-    # Sederhana: hapus lalu tambah baru (atau bisa buat update_query di db.py jika perlu)
-    # Untuk sekarang, tidak implement update_query di db.py
-    return jsonify({"success": False, "message": "Update query belum diimplementasi"}), 501
-
 @query_bp.route('/<int:query_id>', methods=['DELETE'])
 def delete_query(query_id):
-    """Hapus query evaluasi (dan ayat relevan terkait)"""
-    from backend.db import get_all_queries, get_relevant_verses_by_query, get_db_connection
-    queries = [q for q in get_all_queries() if q['id'] == query_id]
-    if not queries:
-        return jsonify({"success": False, "message": "Query tidak ditemukan"}), 404
-    # Hapus ayat relevan dan query
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    try:
-        cursor.execute('DELETE FROM relevant_verses WHERE query_id = ?', (query_id,))
-        cursor.execute('DELETE FROM queries WHERE id = ?', (query_id,))
-        conn.commit()
-        conn.close()
-        return jsonify({"success": True, "message": "Query dan ayat relevan dihapus"})
-    except Exception as e:
-        conn.rollback()
-        conn.close()
-        return jsonify({"success": False, "message": str(e)}), 500
+    """Hapus query evaluasi"""
+    ok, message = db_delete_query(query_id)
+    if ok:
+        return jsonify({"success": True, "message": message})
+    return jsonify({"success": False, "message": message}), 500
 
 @query_bp.route('/<int:query_id>/relevant_verses', methods=['GET'])
-def list_relevant_verses(query_id):
-    """Ambil semua ayat relevan untuk query tertentu"""
-    data = get_relevant_verses_by_query(query_id)
-    return jsonify({"success": True, "data": data})
+def get_relevant_verses(query_id):
+    """Ambil ayat relevan untuk query tertentu"""
+    verses = get_relevant_verses_by_query(query_id)
+    return jsonify({"success": True, "data": verses})
 
 @query_bp.route('/<int:query_id>/relevant_verses', methods=['POST'])
-def add_relevant_verse_endpoint(query_id):
-    """Tambah ayat relevan ke query tertentu"""
+def add_relevant_verse_to_query(query_id):
+    """Tambah ayat relevan untuk query tertentu"""
     req = request.json
     if not req or 'verse_ref' not in req:
         return jsonify({"success": False, "message": "Field 'verse_ref' wajib diisi"}), 400
+    
     ok, result = add_relevant_verse(query_id, req['verse_ref'])
     if ok:
-        return jsonify({"success": True, "relevant_verse_id": result})
+        return jsonify({"success": True, "verse_id": result})
     return jsonify({"success": False, "message": result}), 500
 
-@query_bp.route('/relevant_verse/<int:rel_id>', methods=['DELETE'])
-def delete_relevant_verse(rel_id):
-    """Hapus ayat relevan berdasarkan id"""
-    from backend.db import get_db_connection
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    try:
-        cursor.execute('DELETE FROM relevant_verses WHERE id = ?', (rel_id,))
-        conn.commit()
-        conn.close()
-        return jsonify({"success": True, "message": "Ayat relevan dihapus"})
-    except Exception as e:
-        conn.rollback()
-        conn.close()
-        return jsonify({"success": False, "message": str(e)}), 500
+@query_bp.route('/relevant_verse/<int:verse_id>', methods=['DELETE'])
+def delete_relevant_verse(verse_id):
+    """Hapus ayat relevan berdasarkan ID"""
+    ok, message = db_delete_relevant_verse(verse_id)
+    if ok:
+        return jsonify({"success": True, "message": message})
+    return jsonify({"success": False, "message": message}), 500
 
 @query_bp.route('/<int:query_id>/evaluate', methods=['POST'])
 def evaluate_query(query_id):

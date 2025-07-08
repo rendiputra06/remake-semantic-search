@@ -156,11 +156,30 @@ class SearchService:
         return path
     
     def semantic_search(self, query: str, model_type: str = 'word2vec', 
-                       language: str = 'id', limit: int = 10, 
-                       threshold: float = 0.5, user_id: Optional[int] = None,
+                       language: str = 'id', limit: int = None, 
+                       threshold: float = None, user_id: Optional[int] = None,
                        trace: Optional[dict] = None) -> Dict:
         """Perform semantic search. Mendukung tracing jika trace dict diberikan."""
         try:
+            # Jika limit atau threshold tidak diberikan, ambil dari pengaturan user
+            if limit is None or threshold is None:
+                from backend.db import get_user_settings
+                if user_id:
+                    user_settings = get_user_settings(user_id)
+                    if limit is None:
+                        limit = user_settings.get('result_limit', 10)
+                        # Handle result_limit 0 sebagai tak terbatas
+                        if limit == 0:
+                            limit = 1000  # Gunakan 1000 sebagai limit maksimal
+                    if threshold is None:
+                        threshold = user_settings.get('threshold', 0.5)
+                else:
+                    # Default values jika tidak ada user
+                    if limit is None:
+                        limit = 10
+                    if threshold is None:
+                        threshold = 0.5
+            
             if trace is not None:
                 trace.setdefault('steps', []).append({'step': 'init_model', 'data': {'model_type': model_type}})
                 trace.setdefault('logs', []).append(f'Inisialisasi model: {model_type}')

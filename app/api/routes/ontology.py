@@ -98,10 +98,20 @@ def ontology_search():
         return jsonify({'success': False, 'message': 'Data tidak diberikan'}), 400
     query = data.get('query', '').strip()
     model_type = data.get('model', 'word2vec')
-    limit = int(data.get('limit', 10))
-    threshold = float(data.get('threshold', 0.5))
+    limit_raw = data.get('limit')
+    threshold_raw = data.get('threshold')
+    
     if not query:
         return jsonify({'success': False, 'message': 'Query tidak boleh kosong'}), 400
+
+    # Jika limit atau threshold tidak diberikan, gunakan pengaturan dari database
+    limit = None
+    threshold = None
+    
+    if limit_raw is not None:
+        limit = int(limit_raw) if limit_raw != 0 else None
+    if threshold_raw is not None:
+        threshold = float(threshold_raw)
 
     # Ekspansi query dengan ontologi
     main_concept = ontology_service.find_concept(query)
@@ -124,7 +134,7 @@ def ontology_search():
     # Lakukan pencarian untuk semua query ekspansi
     all_results = []
     for q in expanded_queries:
-        results = search_service.semantic_search(q, model_type=model_type, limit=limit, threshold=threshold)
+        results = search_service.semantic_search(q, model_type=model_type, limit=limit, threshold=threshold, user_id=session.get('user_id'))
         for r in results['results']:
             r['source_query'] = q
             all_results.append(r)
@@ -319,6 +329,9 @@ def ontology_trace():
     Body: {"query": ..., "model": ..., "limit": ..., "threshold": ...}
     Response: data intermediate (trace/log) di setiap langkah.
     """
+    import time
+    start_time = time.time()
+    
     data = request.get_json()
     if not data:
         return jsonify({'success': False, 'message': 'Data tidak diberikan'}), 400
@@ -335,15 +348,22 @@ def ontology_trace():
         'limit': limit,
         'threshold': threshold,
         'steps': [],
-        'logs': []
+        'logs': [],
+        'metadata': {
+            'timestamp': time.strftime('%Y-%m-%d %H:%M:%S'),
+            'user_agent': request.headers.get('User-Agent', ''),
+            'ip_address': request.remote_addr
+        }
     }
 
     try:
         # Step 1: Ekspansi Ontologi
+        step_start = time.time()
         main_concept = ontology_service.find_concept(query)
         expanded_queries = [query]
         expanded_info = []
         ontology_data = []
+        
         if main_concept:
             expanded_queries = set([main_concept['label']] + main_concept.get('synonyms', []) + main_concept.get('related', []))
             expanded_queries = [q for q in expanded_queries if q]
@@ -366,29 +386,52 @@ def ontology_trace():
                 if c and c not in ontology_data:
                     ontology_data.append(c)
 
-        trace['steps'].append({'step': 'ontology_expansion', 'data': {
-            'main_concept': main_concept,
-            'expanded_queries': expanded_queries,
-            'ontology_data': ontology_data
-        }})
+        step_duration = (time.time() - step_start) * 1000
+        trace['steps'].append({
+            'step': 'ontology_expansion', 
+            'data': {
+                'main_concept': main_concept,
+                'expanded_queries': expanded_queries,
+                'ontology_data': ontology_data,
+                'duration_ms': round(step_duration, 2)
+            },
+            'logs': [f'Ekspansi ontologi selesai dalam {step_duration:.2f}ms']
+        })
         trace['logs'].append(f'Ekspansi ontologi: {expanded_queries}')
 
         # Step 2: Pencarian Semantik untuk setiap ekspansi
+        step_start = time.time()
         all_results = []
         semantic_traces = []
+        
         for q in expanded_queries:
             sub_trace = {'query': q, 'steps': [], 'logs': []}
+            sub_start = time.time()
             results = search_service.semantic_search(q, model_type=model_type, limit=limit, threshold=threshold, trace=sub_trace)
+            sub_duration = (time.time() - sub_start) * 1000
+            sub_trace['duration_ms'] = round(sub_duration, 2)
+            sub_trace['result_count'] = len(results['results'])
+            
             for r in results['results']:
                 r['source_query'] = q
                 all_results.append(r)
             semantic_traces.append(sub_trace)
-        trace['steps'].append({'step': 'semantic_search', 'data': semantic_traces})
+        
+        step_duration = (time.time() - step_start) * 1000
+        trace['steps'].append({
+            'step': 'semantic_search', 
+            'data': semantic_traces,
+            'duration_ms': round(step_duration, 2),
+            'logs': [f'Selesai pencarian semantik untuk {len(expanded_queries)} query dalam {step_duration:.2f}ms']
+        })
         trace['logs'].append(f'Selesai pencarian semantik untuk semua ekspansi, total hasil: {len(all_results)}')
 
         # Step 3: Boosting & Ranking
+        step_start = time.time()
         result_map = {}
         boosting_log = []
+        boosted_count = 0
+        
         for r in all_results:
             vid = r['verse_id']
             if vid not in result_map or r['similarity'] > result_map[vid]['similarity']:
@@ -397,17 +440,51 @@ def ontology_trace():
                 before = result_map[vid]['similarity']
                 result_map[vid]['similarity'] = min(result_map[vid]['similarity'] + 0.1, 1.0)
                 result_map[vid]['boosted'] = True
-                boosting_log.append({'verse_id': vid, 'before': before, 'after': result_map[vid]['similarity'], 'source_query': r['source_query']})
+                boosted_count += 1
+                boosting_log.append({
+                    'verse_id': vid, 
+                    'before': before, 
+                    'after': result_map[vid]['similarity'], 
+                    'source_query': r['source_query'],
+                    'boost_amount': round((result_map[vid]['similarity'] - before) * 100, 2)
+                })
             else:
                 result_map[vid]['boosted'] = False
+        
         final_results = list(result_map.values())
         final_results.sort(key=lambda x: x['similarity'], reverse=True)
         final_results = final_results[:limit]
-        trace['steps'].append({'step': 'boosting_ranking', 'data': boosting_log})
-        trace['logs'].append(f'Boosting dan ranking selesai, hasil akhir: {len(final_results)} ayat')
+        
+        step_duration = (time.time() - step_start) * 1000
+        trace['steps'].append({
+            'step': 'boosting_ranking', 
+            'data': boosting_log,
+            'duration_ms': round(step_duration, 2),
+            'logs': [
+                f'Boosting dan ranking selesai dalam {step_duration:.2f}ms',
+                f'Total ayat yang di-boost: {boosted_count}',
+                f'Hasil akhir: {len(final_results)} ayat'
+            ]
+        })
+        
+        # Tambahkan statistik akhir
+        total_duration = (time.time() - start_time) * 1000
         trace['final_results'] = final_results
         trace['result_count'] = len(final_results)
+        trace['total_duration_ms'] = round(total_duration, 2)
+        trace['statistics'] = {
+            'total_queries': len(expanded_queries),
+            'total_initial_results': len(all_results),
+            'boosted_results': boosted_count,
+            'final_results': len(final_results),
+            'average_similarity': round(sum(r['similarity'] for r in final_results) / len(final_results), 4) if final_results else 0
+        }
+        
+        trace['logs'].append(f'Proses tracing selesai dalam {total_duration:.2f}ms')
         return jsonify({'success': True, 'trace': trace})
     except Exception as e:
+        total_duration = (time.time() - start_time) * 1000
         trace['logs'].append(f'Error: {str(e)}')
+        trace['error'] = str(e)
+        trace['total_duration_ms'] = round(total_duration, 2)
         return jsonify({'success': False, 'trace': trace, 'message': str(e)}), 500 

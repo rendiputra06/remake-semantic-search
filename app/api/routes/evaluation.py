@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 import time
-from backend.db import get_relevant_verses_by_query
+from backend.db import get_relevant_verses_by_query, add_evaluation_result
 from backend.lexical_search import LexicalSearch
 from backend.thesaurus import IndonesianThesaurus
 from app.api.services.search_service import SearchService
@@ -112,7 +112,10 @@ def run_evaluation(query_id):
                     found.add(ref)
                 else:
                     raise Exception(f"Format hasil lexical tidak sesuai: {r}")
-            results.append(format_eval_result('lexical', 'Lexical', found, ground_truth, exec_time))
+            result = format_eval_result('lexical', 'Lexical', found, ground_truth, exec_time)
+            # Simpan ke database
+            add_evaluation_result(query_id, 'lexical', result['precision'], result['recall'], result['f1'], exec_time)
+            results.append(result)
         except Exception as e:
             results.append({'method': 'lexical', 'label': 'Lexical', 'error': str(e)})
 
@@ -157,7 +160,10 @@ def run_evaluation(query_id):
                     unique_refs.add(ref)
             found = set(list(unique_refs)[:result_limit])
             exec_time = round(time.time() - start, 3)
-            results.append(format_eval_result('synonym', 'Sinonim', found, ground_truth, exec_time))
+            result = format_eval_result('synonym', 'Sinonim', found, ground_truth, exec_time)
+            # Simpan ke database
+            add_evaluation_result(query_id, 'synonym', result['precision'], result['recall'], result['f1'], exec_time)
+            results.append(result)
         except Exception as e:
             results.append({'method': 'synonym', 'label': 'Sinonim', 'error': str(e)})
 
@@ -180,7 +186,10 @@ def run_evaluation(query_id):
                         found.add(ref)
                 exec_time = round(time.time() - start, 3)
                 label = f'Semantic ({model})' if model != 'ensemble' else 'Semantic (Ensemble)'
-                results.append(format_eval_result(model, label, found, ground_truth, exec_time))
+                result = format_eval_result(model, label, found, ground_truth, exec_time)
+                # Simpan ke database
+                add_evaluation_result(query_id, model, result['precision'], result['recall'], result['f1'], exec_time)
+                results.append(result)
             except Exception as e:
                 label = f'Semantic ({model})' if model != 'ensemble' else 'Semantic (Ensemble)'
                 results.append({'method': model, 'label': label, 'error': str(e)})
@@ -225,29 +234,26 @@ def run_evaluation(query_id):
                 # Gabungkan hasil berdasarkan verse_id, boost skor jika hasil dari ekspansi ontologi
                 result_map = {}
                 for r in all_results:
-                    vid = r['verse_id']
-                    if vid not in result_map or r['similarity'] > result_map[vid]['similarity']:
-                        result_map[vid] = r
-                    # Boost skor jika source_query adalah sinonim/related
-                    if r['source_query'] != query_text:
-                        result_map[vid]['similarity'] = min(result_map[vid]['similarity'] + 0.1, 1.0)
-                        result_map[vid]['boosted'] = True
-                    else:
-                        result_map[vid]['boosted'] = False
-                # Urutkan hasil
-                final_results = list(result_map.values())
-                final_results.sort(key=lambda x: x['similarity'], reverse=True)
-                final_results = final_results[:result_limit]
-                found = set()
-                for r in final_results:
                     ref = extract_verse_ref(r)
-                    if ref:
-                        found.add(ref)
+                    if not ref:
+                        continue
+                    if ref not in result_map:
+                        result_map[ref] = r
+                    else:
+                        # Boost skor jika hasil dari ekspansi ontologi
+                        if r['source_query'] != query_text:
+                            result_map[ref]['score'] = max(result_map[ref]['score'], r['score'] * 1.1)
+                # Ambil hasil terbaik
+                sorted_results = sorted(result_map.values(), key=lambda x: x['score'], reverse=True)
+                found = set([extract_verse_ref(r) for r in sorted_results[:result_limit]])
                 exec_time = round(time.time() - start, 3)
-                label = f'Semantic+Ontologi ({model})' if model != 'ensemble' else 'Semantic+Ontologi (Ensemble)'
-                results.append(format_eval_result(f'ontology_{model}', label, found, ground_truth, exec_time))
+                label = f'Ontologi ({model})'
+                result = format_eval_result(ont_key, label, found, ground_truth, exec_time)
+                # Simpan ke database
+                add_evaluation_result(query_id, ont_key, result['precision'], result['recall'], result['f1'], exec_time)
+                results.append(result)
             except Exception as e:
-                label = f'Semantic+Ontologi ({model})' if model != 'ensemble' else 'Semantic+Ontologi (Ensemble)'
-                results.append({'method': f'ontology_{model}', 'label': label, 'error': str(e)})
+                label = f'Ontologi ({model})'
+                results.append({'method': ont_key, 'label': label, 'error': str(e)})
 
     return jsonify({'success': True, 'results': results}) 

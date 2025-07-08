@@ -12,16 +12,6 @@
             <div class="card-body">
                 <form method="POST" action="{{ url_for('settings') }}">
                     <div class="row mb-3">
-                        <label for="default_model" class="col-sm-3 col-form-label">Model Default</label>
-                        <div class="col-sm-9">
-                            <select class="form-select" id="default_model" name="default_model">
-                                <option value="word2vec" {% if settings.default_model == 'word2vec' %}selected{% endif %}>Word2Vec</option>
-                                <option value="fasttext" {% if settings.default_model == 'fasttext' %}selected{% endif %}>FastText</option>
-                                <option value="glove" {% if settings.default_model == 'glove' %}selected{% endif %}>GloVe</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="row mb-3">
                         <label for="result_limit" class="col-sm-3 col-form-label">Jumlah Hasil Default</label>
                         <div class="col-sm-9">
                             <select class="form-select" id="result_limit" name="result_limit">
@@ -29,7 +19,13 @@
                                 <option value="10" {% if settings.result_limit == 10 %}selected{% endif %}>10 hasil</option>
                                 <option value="20" {% if settings.result_limit == 20 %}selected{% endif %}>20 hasil</option>
                                 <option value="50" {% if settings.result_limit == 50 %}selected{% endif %}>50 hasil</option>
+                                <option value="100" {% if settings.result_limit == 100 %}selected{% endif %}>100 hasil</option>
+                                <option value="0" {% if settings.result_limit == 0 %}selected{% endif %}>Tak Terbatas</option>
                             </select>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Pengaturan ini akan digunakan untuk semua model pencarian (Word2Vec, FastText, GloVe, Ensemble, dan Ontologi)
+                            </div>
                         </div>
                     </div>
                     <div class="row mb-3">
@@ -39,6 +35,10 @@
                             <div class="small text-muted">
                                 Nilai: <span id="thresholdValue">{{ settings.threshold }}</span>
                                 <small>(Semakin tinggi, semakin ketat filter kesamaan)</small>
+                            </div>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Pengaturan ini akan digunakan untuk semua model pencarian (Word2Vec, FastText, GloVe, Ensemble, dan Ontologi)
                             </div>
                         </div>
                     </div>

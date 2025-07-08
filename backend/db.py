@@ -362,6 +362,13 @@ def update_user_settings(user_id: int, default_model: str, result_limit: int, th
     cursor = conn.cursor()
     
     try:
+        # Validasi input
+        if result_limit < 0:
+            return False, "Jumlah hasil tidak boleh negatif"
+        
+        if threshold < 0 or threshold > 1:
+            return False, "Threshold harus antara 0 dan 1"
+        
         cursor.execute('''
         UPDATE settings 
         SET default_model = ?, result_limit = ?, threshold = ?
@@ -1343,6 +1350,42 @@ def get_evaluation_logs_by_query(query_id: int):
     logs = cursor.fetchall()
     conn.close()
     return [dict(row) for row in logs]
+
+def delete_query(query_id: int):
+    """
+    Menghapus query evaluasi beserta ayat relevan dan hasil evaluasinya
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        # Hapus dalam urutan yang benar (foreign key constraints)
+        cursor.execute('DELETE FROM evaluation_log WHERE query_id = ?', (query_id,))
+        cursor.execute('DELETE FROM evaluation_results WHERE query_id = ?', (query_id,))
+        cursor.execute('DELETE FROM relevant_verses WHERE query_id = ?', (query_id,))
+        cursor.execute('DELETE FROM queries WHERE id = ?', (query_id,))
+        conn.commit()
+        conn.close()
+        return True, "Query berhasil dihapus"
+    except Exception as e:
+        conn.rollback()
+        conn.close()
+        return False, f"Error saat menghapus query: {str(e)}"
+
+def delete_relevant_verse(verse_id: int):
+    """
+    Menghapus ayat relevan berdasarkan ID
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute('DELETE FROM relevant_verses WHERE id = ?', (verse_id,))
+        conn.commit()
+        conn.close()
+        return True, "Ayat relevan berhasil dihapus"
+    except Exception as e:
+        conn.rollback()
+        conn.close()
+        return False, f"Error saat menghapus ayat relevan: {str(e)}"
 
 if __name__ == "__main__":
     # Inisialisasi database jika dijalankan langsung

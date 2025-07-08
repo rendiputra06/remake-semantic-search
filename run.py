@@ -78,9 +78,11 @@ def settings():
     model_status = get_model_status()
     
     if request.method == 'POST':
-        default_model = request.form.get('default_model')
         result_limit = int(request.form.get('result_limit'))
         threshold = float(request.form.get('threshold'))
+        
+        # Gunakan default_model yang sudah ada atau 'word2vec' sebagai fallback
+        default_model = user_settings.get('default_model', 'word2vec')
         
         success, message = update_user_settings(session['user_id'], default_model, result_limit, threshold)
         

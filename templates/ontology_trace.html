@@ -2,7 +2,60 @@
 {% block title %}Tracing Proses Pencarian Ontologi{% endblock %}
 {% block content %}
 <div class="container mt-4">
-  <h1 class="mb-4">Tracing Proses Pencarian Semantik & Ontologi</h1>
+  <h1 class="mb-4">
+    <i class="fas fa-search-plus me-2"></i>
+    Tracing Proses Pencarian Semantik & Ontologi
+  </h1>
+  
+  <div class="alert alert-info">
+    <i class="fas fa-info-circle me-2"></i>
+    <strong>Fitur Tracing:</strong> Halaman ini menampilkan detail lengkap proses pencarian semantik dengan ekspansi ontologi, 
+    termasuk data intermediate di setiap langkah untuk analisis dan debugging.
+  </div>
+
+  <!-- Penjelasan Teori -->
+  <div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+      <h5 class="mb-0">
+        <i class="fas fa-graduation-cap me-2"></i>
+        Penjelasan Teori: Bagaimana Pencarian Semantik & Ontologi Bekerja
+      </h5>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-6">
+          <h6><i class="fas fa-lightbulb me-2"></i>Konsep Dasar</h6>
+          <p class="text-muted">
+            Pencarian semantik adalah teknik pencarian yang memahami <strong>makna</strong> dari kata-kata, bukan hanya kata yang tepat sama. 
+            Sistem ini menggunakan <strong>ontologi</strong> (struktur pengetahuan) untuk memperluas pencarian dengan konsep-konsep terkait.
+          </p>
+          
+          <h6><i class="fas fa-cogs me-2"></i>Bagaimana Sistem Bekerja</h6>
+          <ol class="text-muted">
+            <li><strong>Input Query:</strong> Anda memasukkan kata kunci</li>
+            <li><strong>Ekspansi Ontologi:</strong> Sistem mencari konsep terkait</li>
+            <li><strong>Pencarian Semantik:</strong> Mencari ayat dengan makna serupa</li>
+            <li><strong>Boosting & Ranking:</strong> Mengurutkan hasil terbaik</li>
+          </ol>
+        </div>
+        <div class="col-md-6">
+          <h6><i class="fas fa-chart-line me-2"></i>Keunggulan Sistem</h6>
+          <ul class="text-muted">
+            <li><strong>Pencarian Lebih Pintar:</strong> Memahami sinonim dan konsep terkait</li>
+            <li><strong>Hasil Lebih Relevan:</strong> Menemukan ayat yang bermakna serupa</li>
+            <li><strong>Ekspansi Otomatis:</strong> Tidak perlu mengetik semua variasi kata</li>
+            <li><strong>Transparansi:</strong> Bisa melihat proses kerja sistem</li>
+          </ul>
+          
+          <h6><i class="fas fa-question-circle me-2"></i>Contoh Praktis</h6>
+          <p class="text-muted">
+            Jika Anda mencari "iman", sistem akan otomatis mencari juga "percaya", "aqidah", dan konsep terkait lainnya, 
+            sehingga menemukan ayat-ayat yang relevan meskipun tidak menggunakan kata "iman" secara langsung.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Form Tracing -->
   <form id="trace-form" class="mb-4">
@@ -19,36 +72,379 @@
           <option value="glove">GloVe</option>
           <option value="ensemble">Ensemble</option>
         </select>
+        <small class="form-text text-muted" id="model-description">
+          <i class="fas fa-info-circle me-1"></i>Word2Vec: Model yang mempelajari hubungan kata dari konteks
+        </small>
       </div>
       <div class="col-md-2">
         <label for="limit" class="form-label">Limit</label>
         <input type="number" class="form-control" id="limit" name="limit" value="10" min="1" max="50" />
+        <small class="form-text text-muted">
+          <i class="fas fa-info-circle me-1"></i>Jumlah hasil maksimal
+        </small>
       </div>
       <div class="col-md-1">
-        <button type="submit" class="btn btn-primary w-100">Trace</button>
+        <button type="submit" class="btn btn-primary w-100">
+          <i class="fas fa-play me-1"></i>Trace
+        </button>
       </div>
     </div>
   </form>
 
+  <!-- Penjelasan Model -->
+  <div class="card mb-4">
+    <div class="card-header bg-secondary text-white">
+      <h6 class="mb-0">
+        <i class="fas fa-robot me-2"></i>
+        Penjelasan Model AI yang Digunakan
+      </h6>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-3">
+          <div class="text-center mb-3">
+            <i class="fas fa-network-wired fa-2x text-primary mb-2"></i>
+            <h6>Word2Vec</h6>
+            <p class="small text-muted">
+              Model yang mempelajari hubungan kata dari konteks kalimat. 
+              Kata-kata yang sering muncul dalam konteks yang sama akan memiliki vektor yang mirip.
+            </p>
+            <div class="badge bg-primary">Cepat</div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="text-center mb-3">
+            <i class="fas fa-language fa-2x text-success mb-2"></i>
+            <h6>FastText</h6>
+            <p class="small text-muted">
+              Model yang mempertimbangkan sub-kata (morfologi). 
+              Bagus untuk bahasa dengan banyak imbuhan seperti bahasa Indonesia.
+            </p>
+            <div class="badge bg-success">Morfologi</div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="text-center mb-3">
+            <i class="fas fa-globe fa-2x text-info mb-2"></i>
+            <h6>GloVe</h6>
+            <p class="small text-muted">
+              Model yang menggunakan statistik global dari seluruh korpus. 
+              Menangkap hubungan kata berdasarkan frekuensi kemunculan bersama.
+            </p>
+            <div class="badge bg-info">Global</div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="text-center mb-3">
+            <i class="fas fa-layer-group fa-2x text-warning mb-2"></i>
+            <h6>Ensemble</h6>
+            <p class="small text-muted">
+              Kombinasi dari ketiga model di atas. 
+              Mengambil keunggulan masing-masing model untuk hasil terbaik.
+            </p>
+            <div class="badge bg-warning">Terbaik</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Statistik Ringkas -->
+  <div id="trace-stats" class="mb-4" style="display: none;">
+    <!-- Penjelasan Statistik -->
+    <div class="alert alert-light border-start border-primary border-4 mb-3">
+      <div class="row">
+        <div class="col-md-6">
+          <h6 class="text-primary"><i class="fas fa-chart-pie me-2"></i>Memahami Statistik</h6>
+          <p class="small text-muted">
+            <strong>Statistik</strong> memberikan gambaran cepat tentang proses pencarian yang telah dilakukan. 
+            Ini membantu Anda memahami seberapa efektif sistem bekerja.
+          </p>
+        </div>
+        <div class="col-md-6">
+          <h6 class="text-info"><i class="fas fa-info-circle me-2"></i>Kartu Statistik</h6>
+          <ul class="small text-muted">
+            <li><strong>Query:</strong> Kata kunci yang Anda masukkan</li>
+            <li><strong>Ekspansi:</strong> Berapa kata kunci hasil ekspansi ontologi</li>
+            <li><strong>Hasil Awal:</strong> Total ayat yang ditemukan sebelum boosting</li>
+            <li><strong>Hasil Akhir:</strong> Ayat yang ditampilkan setelah ranking</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    
+    <div class="row">
+      <div class="col-md-3">
+        <div class="card text-center bg-primary text-white">
+          <div class="card-body">
+            <h5 class="card-title">Query</h5>
+            <p class="card-text" id="stats-query">-</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card text-center bg-success text-white">
+          <div class="card-body">
+            <h5 class="card-title">Ekspansi</h5>
+            <p class="card-text" id="stats-expansion">-</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card text-center bg-info text-white">
+          <div class="card-body">
+            <h5 class="card-title">Hasil Awal</h5>
+            <p class="card-text" id="stats-initial">-</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card text-center bg-warning text-dark">
+          <div class="card-body">
+            <h5 class="card-title">Hasil Akhir</h5>
+            <p class="card-text" id="stats-final">-</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Tombol Toggle Statistik Detail -->
+    <div class="text-center mt-3">
+      <button class="btn btn-outline-secondary btn-sm" id="toggle-stats-btn" onclick="toggleDetailedStats()">
+        <i class="fas fa-chevron-down me-1"></i>Tampilkan Statistik Detail
+      </button>
+    </div>
+    
+    <!-- Statistik Detail -->
+    <div class="row mt-3" id="detailed-stats" style="display: none;">
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header">
+            <h6 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Statistik Performa</h6>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-6">
+                <p class="mb-1"><strong>Total Durasi:</strong></p>
+                <p class="mb-1"><strong>Rata-rata Similarity:</strong></p>
+                <p class="mb-1"><strong>Ayat Di-boost:</strong></p>
+              </div>
+              <div class="col-6">
+                <p class="mb-1" id="stats-duration">-</p>
+                <p class="mb-1" id="stats-avg-similarity">-</p>
+                <p class="mb-1" id="stats-boosted">-</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header">
+            <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Metadata</h6>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-6">
+                <p class="mb-1"><strong>Timestamp:</strong></p>
+                <p class="mb-1"><strong>Model:</strong></p>
+                <p class="mb-1"><strong>Threshold:</strong></p>
+              </div>
+              <div class="col-6">
+                <p class="mb-1" id="stats-timestamp">-</p>
+                <p class="mb-1" id="stats-model">-</p>
+                <p class="mb-1" id="stats-threshold">-</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Hasil Tracing -->
   <div id="trace-result"></div>
 
+  <!-- Tombol Export -->
+  <div id="export-section" class="mt-3" style="display: none;">
+    <div class="d-flex justify-content-between align-items-center">
+      <h5><i class="fas fa-download me-2"></i>Export Data</h5>
+      <div>
+        <button class="btn btn-outline-success btn-sm me-2" onclick="exportTraceData()">
+          <i class="fas fa-file-json me-1"></i>Export Trace JSON
+        </button>
+        <button class="btn btn-outline-info btn-sm" onclick="exportTraceCSV()">
+          <i class="fas fa-file-csv me-1"></i>Export Hasil CSV
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Hasil Akhir (Tabel) -->
   <div class="mt-4">
-    <h5>Hasil Akhir</h5>
+    <h5><i class="fas fa-list me-2"></i>Hasil Akhir</h5>
+    
+    <!-- Penjelasan Hasil -->
+    <div class="alert alert-light border-start border-success border-4 mb-3">
+      <div class="row">
+        <div class="col-md-6">
+          <h6 class="text-success"><i class="fas fa-trophy me-2"></i>Memahami Hasil Akhir</h6>
+          <p class="small text-muted">
+            <strong>Hasil Akhir</strong> adalah ayat-ayat Al-Qur'an yang paling relevan dengan pencarian Anda, 
+            yang telah melalui proses ekspansi ontologi, pencarian semantik, dan boosting.
+          </p>
+          <p class="small text-muted">
+            <strong>Urutan Hasil:</strong> Ayat diurutkan berdasarkan skor similarity tertinggi ke terendah.
+          </p>
+        </div>
+        <div class="col-md-6">
+          <h6 class="text-info"><i class="fas fa-chart-bar me-2"></i>Kolom dalam Tabel</h6>
+          <ul class="small text-muted">
+            <li><strong>Verse ID:</strong> Nomor surah dan ayat (contoh: 2:255)</li>
+            <li><strong>Similarity:</strong> Skor kemiripan (0-100%)</li>
+            <li><strong>Boosted:</strong> Apakah ayat mendapat bonus skor</li>
+            <li><strong>Source Query:</strong> Kata kunci yang menemukan ayat ini</li>
+            <li><strong>Aksi:</strong> Tombol untuk melihat detail ayat</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    
     <div id="trace-final-table"></div>
   </div>
 
   <!-- Visualisasi Bubble Net -->
   <div class="mt-4">
-    <h5>Visualisasi Relasi (Bubble Net)</h5>
-    <div id="trace-bubble-net" style="height: 400px; border: 1px solid #ddd;"></div>
+    <h5><i class="fas fa-project-diagram me-2"></i>Visualisasi Relasi (Bubble Net)</h5>
+    
+    <!-- Penjelasan Visualisasi -->
+    <div class="alert alert-light border-start border-info border-4 mb-3">
+      <div class="row">
+        <div class="col-md-6">
+          <h6 class="text-info"><i class="fas fa-eye me-2"></i>Cara Membaca Visualisasi</h6>
+          <ul class="small text-muted">
+            <li><strong>Bola Biru Besar:</strong> Query utama yang Anda masukkan</li>
+            <li><strong>Bola Hijau:</strong> Kata-kata hasil ekspansi ontologi</li>
+            <li><strong>Bola Abu-abu/Kuning:</strong> Ayat-ayat hasil pencarian</li>
+            <li><strong>Garis Penghubung:</strong> Menunjukkan relasi antar elemen</li>
+            <li><strong>Ukuran Bola:</strong> Semakin besar = semakin relevan</li>
+          </ul>
+        </div>
+        <div class="col-md-6">
+          <h6 class="text-success"><i class="fas fa-lightbulb me-2"></i>Manfaat Visualisasi</h6>
+          <ul class="small text-muted">
+            <li><strong>Memahami Proses:</strong> Melihat bagaimana query berkembang</li>
+            <li><strong>Analisis Relasi:</strong> Mengetahui kata mana yang terkait</li>
+            <li><strong>Evaluasi Hasil:</strong> Melihat seberapa relevan hasil pencarian</li>
+            <li><strong>Debugging:</strong> Mengidentifikasi masalah dalam pencarian</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    
+    <div id="trace-bubble-net" style="height: 400px; border: 1px solid #ddd; border-radius: 8px;"></div>
   </div>
 
   <!-- Log/Debug Console -->
   <div class="mt-4">
-    <h5>Log / Debug</h5>
-    <pre id="trace-log" style="background:#f8f9fa; border:1px solid #ddd; padding:1em; max-height:300px; overflow:auto;"></pre>
+    <h5><i class="fas fa-terminal me-2"></i>Log / Debug</h5>
+    
+    <!-- Penjelasan Log -->
+    <div class="alert alert-light border-start border-warning border-4 mb-3">
+      <div class="row">
+        <div class="col-md-6">
+          <h6 class="text-warning"><i class="fas fa-file-alt me-2"></i>Apa itu Log?</h6>
+          <p class="small text-muted">
+            <strong>Log</strong> adalah catatan detail setiap langkah yang dilakukan sistem. 
+            Ini seperti "jurnal" yang mencatat apa yang terjadi di setiap tahap proses pencarian.
+          </p>
+          <p class="small text-muted">
+            <strong>Kegunaan:</strong>
+          </p>
+          <ul class="small text-muted">
+            <li>Memahami alur kerja sistem</li>
+            <li>Mengidentifikasi masalah</li>
+            <li>Menganalisis performa</li>
+            <li>Debugging dan troubleshooting</li>
+          </ul>
+        </div>
+        <div class="col-md-6">
+          <h6 class="text-info"><i class="fas fa-search me-2"></i>Jenis Informasi dalam Log</h6>
+          <ul class="small text-muted">
+            <li><strong>Timing:</strong> Berapa lama setiap step berjalan</li>
+            <li><strong>Data:</strong> Apa yang diproses di setiap step</li>
+            <li><strong>Hasil:</strong> Output dari setiap proses</li>
+            <li><strong>Error:</strong> Jika ada masalah atau kesalahan</li>
+            <li><strong>Statistik:</strong> Jumlah data yang diproses</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    
+    <pre id="trace-log" style="background:#f8f9fa; border:1px solid #ddd; padding:1em; max-height:300px; overflow:auto; border-radius: 8px;"></pre>
+  </div>
+</div>
+
+<!-- Modal untuk Detail Step -->
+<div class="modal fade" id="stepDetailModal" tabindex="-1" aria-labelledby="stepDetailModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="stepDetailModalLabel">
+          <i class="fas fa-info-circle me-2"></i>Detail Step
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="stepDetailContent">
+        <!-- Content will be loaded here -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+        <button type="button" class="btn btn-primary" id="exportStepData">
+          <i class="fas fa-download me-1"></i>Export JSON
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal untuk Detail Ayat -->
+<div class="modal fade" id="verseDetailModal" tabindex="-1" aria-labelledby="verseDetailModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="verseDetailModalLabel">
+          <i class="fas fa-book-open me-2"></i>Detail Ayat
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="verseDetailContent">
+        <!-- Content will be loaded here -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal untuk Detail Ontologi -->
+<div class="modal fade" id="ontologyDetailModal" tabindex="-1" aria-labelledby="ontologyDetailModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="ontologyDetailModalLabel">
+          <i class="fas fa-sitemap me-2"></i>Detail Konsep Ontologi
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="ontologyDetailContent">
+        <!-- Content will be loaded here -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+      </div>
+    </div>
   </div>
 </div>
 {% endblock %}
@@ -62,6 +458,9 @@
 />
 <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
 <script>
+  let currentTraceData = null;
+  let currentStepData = null;
+
   document.getElementById("trace-form").addEventListener("submit", function (e) {
     e.preventDefault();
     const query = document.getElementById("query").value.trim();
@@ -70,9 +469,12 @@
     const resultDiv = document.getElementById("trace-result");
     const logDiv = document.getElementById("trace-log");
     const finalTableDiv = document.getElementById("trace-final-table");
-    resultDiv.innerHTML = '<div class="text-center py-4"><div class="spinner-border" role="status"></div></div>';
+    const statsDiv = document.getElementById("trace-stats");
+    
+    resultDiv.innerHTML = '<div class="text-center py-4"><div class="spinner-border" role="status"></div><div class="mt-2">Memproses tracing...</div></div>';
     finalTableDiv.innerHTML = '';
     logDiv.textContent = '';
+    statsDiv.style.display = 'none';
 
     fetch("/api/ontology/trace", {
       method: "POST",
@@ -82,25 +484,65 @@
       .then(res => res.json())
       .then(data => {
         if (!data.success) {
-          resultDiv.innerHTML = `<div class='alert alert-danger'>${data.message || "Gagal tracing"}</div>`;
+          resultDiv.innerHTML = `<div class='alert alert-danger'><i class="fas fa-exclamation-triangle me-2"></i>${data.message || "Gagal tracing"}</div>`;
           finalTableDiv.innerHTML = '';
           logDiv.textContent = JSON.stringify(data.trace?.logs || [], null, 2);
           return;
         }
+        currentTraceData = data.trace;
         renderTrace(data.trace);
+        updateStats(data.trace);
       })
       .catch(err => {
-        resultDiv.innerHTML = `<div class='alert alert-danger'>Terjadi error: ${err}</div>`;
+        resultDiv.innerHTML = `<div class='alert alert-danger'><i class="fas fa-exclamation-triangle me-2"></i>Terjadi error: ${err}</div>`;
       });
   });
+
+  function updateStats(trace) {
+    const statsDiv = document.getElementById("trace-stats");
+    const detailedStatsDiv = document.getElementById("detailed-stats");
+    
+    // Statistik ringkas
+    document.getElementById("stats-query").textContent = trace.query || '-';
+    
+    const expansionStep = trace.steps?.find(s => s.step === 'ontology_expansion');
+    const expansionCount = expansionStep?.data?.expanded_queries?.length || 0;
+    document.getElementById("stats-expansion").textContent = expansionCount;
+    
+    const semanticStep = trace.steps?.find(s => s.step === 'semantic_search');
+    const initialCount = semanticStep?.data?.length || 0;
+    document.getElementById("stats-initial").textContent = initialCount;
+    
+    document.getElementById("stats-final").textContent = trace.result_count || 0;
+    
+    // Statistik detail
+    if (trace.statistics) {
+      document.getElementById("stats-duration").textContent = `${trace.total_duration_ms || 0} ms`;
+      document.getElementById("stats-avg-similarity").textContent = `${((trace.statistics.average_similarity || 0) * 100).toFixed(2)}%`;
+      document.getElementById("stats-boosted").textContent = trace.statistics.boosted_results || 0;
+    }
+    
+    // Metadata
+    if (trace.metadata) {
+      document.getElementById("stats-timestamp").textContent = trace.metadata.timestamp || '-';
+    }
+    document.getElementById("stats-model").textContent = trace.model || '-';
+    document.getElementById("stats-threshold").textContent = trace.threshold || '-';
+    
+    statsDiv.style.display = 'block';
+    detailedStatsDiv.style.display = 'block';
+  }
 
   function renderTrace(trace) {
     const resultDiv = document.getElementById("trace-result");
     const logDiv = document.getElementById("trace-log");
     const finalTableDiv = document.getElementById("trace-final-table");
+    const exportSection = document.getElementById("export-section");
+    
     if (!trace) {
-      resultDiv.innerHTML = '<div class="alert alert-warning">Tidak ada data trace.</div>';
+      resultDiv.innerHTML = '<div class="alert alert-warning"><i class="fas fa-exclamation-triangle me-2"></i>Tidak ada data trace.</div>';
       finalTableDiv.innerHTML = '';
+      exportSection.style.display = 'none';
       return;
     }
     // Panel step-by-step (card)
@@ -115,6 +557,8 @@
     logDiv.textContent = (trace.logs || []).join("\n");
     // Bubble net
     renderBubbleNet(trace);
+    // Tampilkan tombol export
+    exportSection.style.display = 'block';
   }
 
   function renderJsonOrTable(data) {
@@ -199,16 +643,358 @@
       const fromId = sourceQuery === mainQuery ? 'main_query' : (expNodeMap[sourceQuery] || 'main_query');
       edges.push({ from: fromId, to: nodeId, color: { color: r.boosted ? '#ffc107' : '#007bff', width: 2 }, smooth: { type: 'curvedCW', roundness: 0.1 } });
     });
-    // Render
+    // Network
     const data = { nodes: new vis.DataSet(nodes), edges: new vis.DataSet(edges) };
     const options = {
-      nodes: { borderWidth: 2, shadow: true },
-      edges: { shadow: true, smooth: { type: 'curvedCW', roundness: 0.2 } },
-      layout: { improvedLayout: true, hierarchical: { enabled: false } },
-      physics: { enabled: true, barnesHut: { gravitationalConstant: -2000, centralGravity: 0.3, springLength: 95, springConstant: 0.04, damping: 0.09 }, stabilization: { enabled: true, iterations: 500, updateInterval: 100 } },
-      interaction: { hover: true, tooltipDelay: 200, zoomView: true, dragView: true }
+      physics: { stabilization: true, barnesHut: { gravitationalConstant: -2000 } },
+      layout: { improvedLayout: true },
+      interaction: { hover: true, tooltipDelay: 200 }
     };
     new vis.Network(container, data, options);
   }
+
+  // Export functions
+  window.exportTraceData = function() {
+    if (currentTraceData) {
+      const dataStr = JSON.stringify(currentTraceData, null, 2);
+      const dataBlob = new Blob([dataStr], {type: 'application/json'});
+      const url = URL.createObjectURL(dataBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `trace_${currentTraceData.query}_${currentTraceData.model}_${Date.now()}.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+  };
+
+  window.exportTraceCSV = function() {
+    if (currentTraceData && currentTraceData.final_results) {
+      const results = currentTraceData.final_results;
+      let csvContent = "data:text/csv;charset=utf-8,";
+      
+      // Header
+      csvContent += "No,Verse ID,Surah,Ayat,Similarity,Boosted,Source Query,Arabic,Translation\n";
+      
+      // Data
+      results.forEach((result, index) => {
+        const row = [
+          index + 1,
+          result.verse_id || '',
+          result.surah_name || '',
+          result.ayat_number || '',
+          ((result.similarity || 0) * 100).toFixed(2) + '%',
+          result.boosted ? 'Ya' : 'Tidak',
+          result.source_query || '',
+          `"${(result.arabic || '').replace(/"/g, '""')}"`,
+          `"${(result.translation || '').replace(/"/g, '""')}"`
+        ];
+        csvContent += row.join(',') + '\n';
+      });
+      
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement('a');
+      link.setAttribute('href', encodedUri);
+      link.setAttribute('download', `hasil_${currentTraceData.query}_${currentTraceData.model}_${Date.now()}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
+
+  // Global functions untuk modal
+  window.showStepDetail = function(stepData, stepIndex) {
+    currentStepData = stepData;
+    const modal = new bootstrap.Modal(document.getElementById('stepDetailModal'));
+    const content = document.getElementById('stepDetailContent');
+    const title = document.getElementById('stepDetailModalLabel');
+    
+    // Penjelasan teori per step
+    const stepTheories = {
+      'ontology_expansion': {
+        title: 'Ekspansi Ontologi',
+        detailedTheory: `
+          <h6><i class="fas fa-sitemap me-2"></i>Bagaimana Ekspansi Ontologi Bekerja</h6>
+          <p class="text-muted">
+            <strong>Ontologi</strong> adalah struktur pengetahuan yang mendefinisikan konsep-konsep dan hubungannya. 
+            Dalam konteks Al-Qur'an, ontologi berisi konsep-konsep Islam seperti "iman", "shalat", "zakat", dll.
+          </p>
+          <p class="text-muted">
+            <strong>Proses Ekspansi:</strong>
+          </p>
+          <ul class="text-muted">
+            <li>Sistem mencari kata kunci dalam database ontologi</li>
+            <li>Jika ditemukan, sistem mengambil sinonim dan konsep terkait</li>
+            <li>Jika tidak ditemukan, sistem memecah kata kunci dan mencari setiap kata</li>
+            <li>Hasil ekspansi digunakan untuk pencarian yang lebih luas</li>
+          </ul>
+          <p class="text-muted">
+            <strong>Contoh:</strong> Mencari "iman" → ekspansi menjadi ["iman", "percaya", "aqidah", "keyakinan"]
+          </p>
+        `
+      },
+      'semantic_search': {
+        title: 'Pencarian Semantik',
+        detailedTheory: `
+          <h6><i class="fas fa-brain me-2"></i>Bagaimana Pencarian Semantik Bekerja</h6>
+          <p class="text-muted">
+            <strong>Word Embedding</strong> adalah teknik AI yang mengubah kata-kata menjadi vektor angka. 
+            Kata-kata dengan makna serupa akan memiliki vektor yang mirip.
+          </p>
+          <p class="text-muted">
+            <strong>Model yang Digunakan:</strong>
+          </p>
+          <ul class="text-muted">
+            <li><strong>Word2Vec:</strong> Model yang mempelajari hubungan kata dari konteks</li>
+            <li><strong>FastText:</strong> Model yang mempertimbangkan sub-kata (morfologi)</li>
+            <li><strong>GloVe:</strong> Model yang menggunakan statistik global</li>
+            <li><strong>Ensemble:</strong> Kombinasi dari semua model untuk hasil terbaik</li>
+          </ul>
+          <p class="text-muted">
+            <strong>Proses Pencarian:</strong>
+          </p>
+          <ol class="text-muted">
+            <li>Kata kunci diubah menjadi vektor</li>
+            <li>Dibandingkan dengan vektor semua ayat Al-Qur'an</li>
+            <li>Dihitung similarity (kemiripan) menggunakan cosine similarity</li>
+            <li>Ayat dengan similarity tertinggi dipilih</li>
+          </ol>
+        `
+      },
+      'boosting_ranking': {
+        title: 'Boosting & Ranking',
+        detailedTheory: `
+          <h6><i class="fas fa-sort-amount-up me-2"></i>Bagaimana Boosting & Ranking Bekerja</h6>
+          <p class="text-muted">
+            <strong>Boosting</strong> adalah teknik untuk meningkatkan skor hasil yang ditemukan melalui ekspansi ontologi, 
+            karena hasil ini dianggap lebih relevan dengan maksud pencarian pengguna.
+          </p>
+          <p class="text-muted">
+            <strong>Proses Boosting:</strong>
+          </p>
+          <ul class="text-muted">
+            <li>Ayat yang ditemukan dari query asli tetap dengan skor asli</li>
+            <li>Ayat yang ditemukan dari ekspansi mendapat bonus +0.1</li>
+            <li>Skor maksimal dibatasi pada 1.0</li>
+            <li>Semua hasil diurutkan berdasarkan skor akhir</li>
+          </ul>
+          <p class="text-muted">
+            <strong>Manfaat:</strong>
+          </p>
+          <ul class="text-muted">
+            <li>Hasil yang lebih relevan muncul di urutan teratas</li>
+            <li>Mengurangi hasil yang tidak relevan</li>
+            <li>Meningkatkan akurasi pencarian</li>
+          </ul>
+        `
+      }
+    };
+    
+    const stepTheory = stepTheories[stepData.step] || {
+      title: stepData.step.replace('_', ' ').toUpperCase(),
+      detailedTheory: `
+        <h6><i class="fas fa-info-circle me-2"></i>Penjelasan Step</h6>
+        <p class="text-muted">
+          Step ini merupakan bagian dari proses pencarian semantik yang melibatkan pengolahan data 
+          dan analisis untuk menghasilkan hasil yang relevan.
+        </p>
+      `
+    };
+    
+    title.innerHTML = `<i class="fas fa-info-circle me-2"></i>Detail Step ${stepIndex + 1}: ${stepTheory.title}`;
+    
+    let html = '';
+    
+    // Penjelasan teori detail
+    html += `<div class="mb-4">`;
+    html += stepTheory.detailedTheory;
+    html += `</div>`;
+    
+    html += `<div class="row">`;
+    html += `<div class="col-md-6">`;
+    html += `<h6><i class="fas fa-list me-2"></i>Ringkasan</h6>`;
+    html += window.renderStepSummary(stepData.data, stepData.step);
+    html += `</div>`;
+    html += `<div class="col-md-6">`;
+    html += `<h6><i class="fas fa-clock me-2"></i>Informasi Waktu</h6>`;
+    if (stepData.data && stepData.data.duration_ms) {
+      html += `<p><strong>Durasi:</strong> ${stepData.data.duration_ms} ms</p>`;
+    } else {
+      html += `<p><em>Tidak ada informasi waktu</em></p>`;
+    }
+    html += `</div>`;
+    html += `</div>`;
+    
+    html += `<div class="mt-3">`;
+    html += `<h6><i class="fas fa-code me-2"></i>Data Lengkap</h6>`;
+    html += `<div class="bg-light p-3 rounded">`;
+    html += `<pre style="max-height: 400px; overflow: auto;">${JSON.stringify(stepData.data, null, 2)}</pre>`;
+    html += `</div>`;
+    html += `</div>`;
+    
+    if (stepData.logs && stepData.logs.length > 0) {
+      html += `<div class="mt-3">`;
+      html += `<h6><i class="fas fa-terminal me-2"></i>Log Step</h6>`;
+      html += `<div class="bg-dark text-light p-3 rounded">`;
+      html += `<pre style="max-height: 200px; overflow: auto;">${stepData.logs.join('\n')}</pre>`;
+      html += `</div>`;
+      html += `</div>`;
+    }
+    
+    content.innerHTML = html;
+    modal.show();
+  };
+
+  window.showVerseDetail = function(verseData) {
+    const modal = new bootstrap.Modal(document.getElementById('verseDetailModal'));
+    const content = document.getElementById('verseDetailContent');
+    const title = document.getElementById('verseDetailModalLabel');
+    
+    title.innerHTML = `<i class="fas fa-book-open me-2"></i>Detail Ayat ${verseData.verse_id}`;
+    
+    let html = '';
+    html += `<div class="row">`;
+    html += `<div class="col-md-6">`;
+    html += `<h6><i class="fas fa-info-circle me-2"></i>Informasi Ayat</h6>`;
+    html += `<table class="table table-sm">`;
+    html += `<tr><td><strong>Surah:</strong></td><td>${verseData.surah_name || '-'}</td></tr>`;
+    html += `<tr><td><strong>Nomor Surah:</strong></td><td>${verseData.surah_number || '-'}</td></tr>`;
+    html += `<tr><td><strong>Nomor Ayat:</strong></td><td>${verseData.ayat_number || '-'}</td></tr>`;
+    html += `<tr><td><strong>Verse ID:</strong></td><td>${verseData.verse_id || '-'}</td></tr>`;
+    html += `<tr><td><strong>Similarity:</strong></td><td>${((verseData.similarity || 0) * 100).toFixed(2)}%</td></tr>`;
+    html += `<tr><td><strong>Source Query:</strong></td><td><span class="badge bg-info">${verseData.source_query || '-'}</span></td></tr>`;
+    html += `<tr><td><strong>Boosted:</strong></td><td>${verseData.boosted ? '<span class="badge bg-success">Ya</span>' : '<span class="badge bg-secondary">Tidak</span>'}</td></tr>`;
+    html += `</table>`;
+    html += `</div>`;
+    html += `<div class="col-md-6">`;
+    html += `<h6><i class="fas fa-language me-2"></i>Teks Ayat</h6>`;
+    html += `<div class="bg-light p-3 rounded">`;
+    html += `<p><strong>Arab:</strong></p>`;
+    html += `<p style="direction: rtl; text-align: right; font-size: 1.2em;">${verseData.arabic || '-'}</p>`;
+    html += `<p><strong>Terjemahan:</strong></p>`;
+    html += `<p>${verseData.translation || '-'}</p>`;
+    html += `</div>`;
+    html += `</div>`;
+    html += `</div>`;
+    
+    content.innerHTML = html;
+    modal.show();
+  };
+
+  window.showOntologyDetail = function(conceptData) {
+    const modal = new bootstrap.Modal(document.getElementById('ontologyDetailModal'));
+    const content = document.getElementById('ontologyDetailContent');
+    const title = document.getElementById('ontologyDetailModalLabel');
+    
+    title.innerHTML = `<i class="fas fa-sitemap me-2"></i>Detail Konsep: ${conceptData.label || conceptData.id}`;
+    
+    let html = '';
+    html += `<div class="row">`;
+    html += `<div class="col-md-6">`;
+    html += `<h6><i class="fas fa-info-circle me-2"></i>Informasi Konsep</h6>`;
+    html += `<table class="table table-sm">`;
+    html += `<tr><td><strong>ID:</strong></td><td>${conceptData.id || '-'}</td></tr>`;
+    html += `<tr><td><strong>Label:</strong></td><td>${conceptData.label || '-'}</td></tr>`;
+    html += `<tr><td><strong>Deskripsi:</strong></td><td>${conceptData.description || '-'}</td></tr>`;
+    html += `</table>`;
+    html += `</div>`;
+    html += `<div class="col-md-6">`;
+    html += `<h6><i class="fas fa-link me-2"></i>Relasi</h6>`;
+    if (conceptData.synonyms && conceptData.synonyms.length > 0) {
+      html += `<p><strong>Sinonim:</strong></p>`;
+      html += `<div class="mb-2">`;
+      conceptData.synonyms.forEach(syn => {
+        html += `<span class="badge bg-primary me-1">${syn}</span>`;
+      });
+      html += `</div>`;
+    }
+    if (conceptData.related && conceptData.related.length > 0) {
+      html += `<p><strong>Terkait:</strong></p>`;
+      html += `<div class="mb-2">`;
+      conceptData.related.forEach(rel => {
+        html += `<span class="badge bg-info me-1">${rel}</span>`;
+      });
+      html += `</div>`;
+    }
+    if (conceptData.broader && conceptData.broader.length > 0) {
+      html += `<p><strong>Lebih Luas:</strong></p>`;
+      html += `<div class="mb-2">`;
+      conceptData.broader.forEach(bro => {
+        html += `<span class="badge bg-success me-1">${bro}</span>`;
+      });
+      html += `</div>`;
+    }
+    if (conceptData.narrower && conceptData.narrower.length > 0) {
+      html += `<p><strong>Lebih Sempit:</strong></p>`;
+      html += `<div class="mb-2">`;
+      conceptData.narrower.forEach(nar => {
+        html += `<span class="badge bg-warning me-1">${nar}</span>`;
+      });
+      html += `</div>`;
+    }
+    html += `</div>`;
+    html += `</div>`;
+    
+    if (conceptData.verses && conceptData.verses.length > 0) {
+      html += `<div class="mt-3">`;
+      html += `<h6><i class="fas fa-book me-2"></i>Ayat Terkait (${conceptData.verses.length})</h6>`;
+      html += `<div class="bg-light p-3 rounded">`;
+      conceptData.verses.forEach(verse => {
+        html += `<span class="badge bg-secondary me-1">${verse}</span>`;
+      });
+      html += `</div>`;
+      html += `</div>`;
+    }
+    
+    content.innerHTML = html;
+    modal.show();
+  };
+
+  // Export functionality
+  document.getElementById('exportStepData').addEventListener('click', function() {
+    if (currentStepData) {
+      const dataStr = JSON.stringify(currentStepData, null, 2);
+      const dataBlob = new Blob([dataStr], {type: 'application/json'});
+      const url = URL.createObjectURL(dataBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `step_${currentStepData.step}_data.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+  });
+
+  // Toggle detailed stats
+  window.toggleDetailedStats = function() {
+    const detailedStatsDiv = document.getElementById('detailed-stats');
+    const toggleBtn = document.getElementById('toggle-stats-btn');
+    const currentIcon = toggleBtn.querySelector('i');
+    const currentText = toggleBtn.textContent.trim();
+
+    if (detailedStatsDiv.style.display === 'none') {
+      detailedStatsDiv.style.display = 'block';
+      currentIcon.classList.remove('fa-chevron-down');
+      currentIcon.classList.add('fa-chevron-up');
+      toggleBtn.innerHTML = '<i class="fas fa-chevron-up me-1"></i>Sembunyikan Statistik Detail';
+    } else {
+      detailedStatsDiv.style.display = 'none';
+      currentIcon.classList.remove('fa-chevron-up');
+      currentIcon.classList.add('fa-chevron-down');
+      toggleBtn.innerHTML = '<i class="fas fa-chevron-down me-1"></i>Tampilkan Statistik Detail';
+    }
+  };
+
+  // Update model description based on selection
+  document.getElementById('model').addEventListener('change', function() {
+    const modelDescriptions = {
+      'word2vec': 'Word2Vec: Model yang mempelajari hubungan kata dari konteks kalimat',
+      'fasttext': 'FastText: Model yang mempertimbangkan sub-kata (morfologi)',
+      'glove': 'GloVe: Model yang menggunakan statistik global dari seluruh korpus',
+      'ensemble': 'Ensemble: Kombinasi dari semua model untuk hasil terbaik'
+    };
+    
+    const selectedModel = this.value;
+    const descriptionElement = document.getElementById('model-description');
+    descriptionElement.innerHTML = `<i class="fas fa-info-circle me-1"></i>${modelDescriptions[selectedModel]}`;
+  });
 </script>
 {% endblock %} 

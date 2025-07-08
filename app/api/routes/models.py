@@ -181,10 +181,15 @@ def user_settings():
     
     settings = get_user_settings(session['user_id'])
     
+    # Handle result_limit 0 sebagai tak terbatas
+    result_limit = settings.get('result_limit', 10)
+    if result_limit == 0:
+        result_limit = 1000  # Gunakan 1000 sebagai limit maksimal untuk tak terbatas
+    
     return create_response(
         data={
             'default_model': settings.get('default_model', 'word2vec'),
-            'result_limit': settings.get('result_limit', 10),
+            'result_limit': result_limit,
             'threshold': settings.get('threshold', 0.5)
         },
         message='Pengaturan pengguna berhasil diambil'

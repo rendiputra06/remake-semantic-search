@@ -54,36 +54,13 @@ block content %}
               id="form-evaluasi"
               class="row g-2 align-items-end mt-3 d-none"
             >
-              <div class="col-md-5">
+              <div class="col-md-9">
                 <input
                   type="text"
                   class="form-control"
                   id="input-query-text"
                   placeholder="Query evaluasi (wajib)"
                   required readonly
-                />
-              </div>
-              <div class="col-md-2">
-                <input
-                  type="number"
-                  class="form-control"
-                  id="input-result-limit"
-                  min="1"
-                  max="50"
-                  value="10"
-                  placeholder="Limit"
-                />
-              </div>
-              <div class="col-md-2">
-                <input
-                  type="number"
-                  step="0.01"
-                  class="form-control"
-                  id="input-threshold"
-                  min="0"
-                  max="1"
-                  value="0.5"
-                  placeholder="Threshold"
                 />
               </div>
               <div class="col-md-3">
@@ -188,7 +165,7 @@ block content %}
       </div>
     </div>
   </div>
-  <!-- Modal Detail Ayat Relevan -->
+  <!-- Modal Detail Ayat Relevan dengan Load More -->
   <div
     class="modal fade"
     id="ayatDetailModal"
@@ -196,7 +173,7 @@ block content %}
     aria-labelledby="ayatDetailModalLabel"
     aria-hidden="true"
   >
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-xl">
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title" id="ayatDetailModalLabel">
@@ -223,11 +200,21 @@ block content %}
             </div>
           </form>
           <div id="ayat-detail-content">Memuat detail ayat...</div>
+          <!-- Load More Button -->
+          <div class="text-center mt-3 d-none" id="load-more-container">
+            <button class="btn btn-outline-primary" id="load-more-btn">
+              <span id="load-more-text">Muat Lebih Banyak</span>
+              <span class="spinner-border spinner-border-sm d-none" id="load-more-spinner"></span>
+            </button>
+            <div class="text-muted small mt-2">
+              <span id="loaded-count">0</span> dari <span id="total-count">0</span> ayat ditampilkan
+            </div>
+          </div>
         </div>
       </div>
     </div>
   </div>
-  <!-- Modal Khusus Ayat Hasil Evaluasi -->
+  <!-- Modal Khusus Ayat Hasil Evaluasi dengan Pagination -->
   <div
     class="modal fade"
     id="modalFoundVerses"
@@ -235,7 +222,7 @@ block content %}
     aria-labelledby="modalFoundVersesLabel"
     aria-hidden="true"
   >
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-xl">
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title" id="modalFoundVersesLabel">
@@ -248,7 +235,23 @@ block content %}
             aria-label="Close"
           ></button>
         </div>
-        <div class="modal-body" id="found-verses-content"></div>
+        <div class="modal-body">
+          <div id="found-verses-content"></div>
+          <!-- Pagination untuk Ayat Hasil -->
+          <div class="d-flex justify-content-between align-items-center mt-3 d-none" id="found-verses-pagination">
+            <div class="text-muted small">
+              Halaman <span id="current-page">1</span> dari <span id="total-pages">1</span>
+            </div>
+            <div class="btn-group">
+              <button class="btn btn-outline-secondary btn-sm" id="prev-page-btn">
+                <i class="fas fa-chevron-left"></i> Sebelumnya
+              </button>
+              <button class="btn btn-outline-secondary btn-sm" id="next-page-btn">
+                Selanjutnya <i class="fas fa-chevron-right"></i>
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
