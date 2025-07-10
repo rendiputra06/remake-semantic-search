@@ -2,7 +2,7 @@
 Search service implementation.
 """
 from typing import List, Dict, Optional
-from backend.db import get_db_connection, add_search_history, update_app_statistics
+from backend.db import get_db_connection, add_search_history, update_app_statistics, get_global_thresholds
 from backend.lexical_search import LexicalSearch
 from backend.word2vec_model import Word2VecModel
 from backend.fasttext_model import FastTextModel
@@ -158,50 +158,38 @@ class SearchService:
     def semantic_search(self, query: str, model_type: str = 'word2vec', 
                        language: str = 'id', limit: int = None, 
                        threshold: float = None, user_id: Optional[int] = None,
-                       trace: Optional[dict] = None) -> Dict:
+                       trace: Optional[dict] = None,
+                       aggregation_method: Optional[str] = None,
+                       vector_file: Optional[str] = None) -> Dict:
         """Perform semantic search. Mendukung tracing jika trace dict diberikan."""
         try:
-            # Jika limit atau threshold tidak diberikan, ambil dari pengaturan user
+            # Jika limit atau threshold tidak diberikan, ambil dari pengaturan global per model
             if limit is None or threshold is None:
-                from backend.db import get_user_settings
-                if user_id:
-                    user_settings = get_user_settings(user_id)
-                    if limit is None:
-                        limit = user_settings.get('result_limit', 10)
-                        # Handle result_limit 0 sebagai tak terbatas
-                        if limit == 0:
-                            limit = 1000  # Gunakan 1000 sebagai limit maksimal
-                    if threshold is None:
-                        threshold = user_settings.get('threshold', 0.5)
-                else:
-                    # Default values jika tidak ada user
-                    if limit is None:
-                        limit = 10
-                    if threshold is None:
-                        threshold = 0.5
-            
+                global_thresholds = get_global_thresholds()
+                if threshold is None:
+                    threshold = global_thresholds.get(model_type, 0.5)
+                if limit is None:
+                    limit = 10
             if trace is not None:
                 trace.setdefault('steps', []).append({'step': 'init_model', 'data': {'model_type': model_type}})
                 trace.setdefault('logs', []).append(f'Inisialisasi model: {model_type}')
             self._init_semantic_model(model_type)
             model = self._semantic_models[model_type]
-
             if trace is not None:
                 trace['steps'].append({'step': 'embedding', 'data': {'query': query}})
                 trace['logs'].append(f'Proses embedding untuk query: {query}')
-
-            results = model.search(query, language, limit, threshold)
-
+            # Perluas dukungan parameter untuk FastText
+            if model_type == 'fasttext':
+                results = model.search(query, language, limit, threshold, aggregation_method=aggregation_method, vector_path=vector_file)
+            else:
+                results = model.search(query, language, limit, threshold)
             if trace is not None:
                 trace['steps'].append({'step': 'similarity', 'data': {'result_count': len(results)}})
                 trace['logs'].append(f'Perhitungan similarity selesai, hasil: {len(results)} ayat')
-
             results = self._enhance_results_with_classification(results)
-
             if trace is not None:
                 trace['steps'].append({'step': 'ranking', 'data': {'result_count': len(results)}})
                 trace['logs'].append('Ranking dan klasifikasi hasil selesai')
-
             if user_id:
                 add_search_history(user_id, query, model_type, len(results))
                 update_app_statistics(
@@ -210,7 +198,6 @@ class SearchService:
                     model=model_type,
                     avg_results=len(results)
                 )
-
             return {
                 'query': query,
                 'model': model_type,

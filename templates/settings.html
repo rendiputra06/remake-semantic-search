@@ -11,34 +11,41 @@
             </div>
             <div class="card-body">
                 <form method="POST" action="{{ url_for('settings') }}">
+                    <!-- Hapus blok pengaturan result_limit yang lama -->
+                    <!-- Mulai dari threshold per model -->
                     <div class="row mb-3">
-                        <label for="result_limit" class="col-sm-3 col-form-label">Jumlah Hasil Default</label>
+                        <label class="col-sm-3 col-form-label">Ambang Kesamaan per Model</label>
                         <div class="col-sm-9">
-                            <select class="form-select" id="result_limit" name="result_limit">
-                                <option value="5" {% if settings.result_limit == 5 %}selected{% endif %}>5 hasil</option>
-                                <option value="10" {% if settings.result_limit == 10 %}selected{% endif %}>10 hasil</option>
-                                <option value="20" {% if settings.result_limit == 20 %}selected{% endif %}>20 hasil</option>
-                                <option value="50" {% if settings.result_limit == 50 %}selected{% endif %}>50 hasil</option>
-                                <option value="100" {% if settings.result_limit == 100 %}selected{% endif %}>100 hasil</option>
-                                <option value="0" {% if settings.result_limit == 0 %}selected{% endif %}>Tak Terbatas</option>
-                            </select>
+                            {% for model in model_list %}
+                            <div class="mb-2">
+                                <label for="threshold_{{ model }}" class="form-label">{{ model_names[model] }}</label>
+                                <input type="range" class="form-range" min="0.1" max="0.9" step="0.05" id="threshold_{{ model }}" name="threshold_{{ model }}" value="{{ thresholds[model]|default(0.5) }}" oninput="document.getElementById('thresholdValue_{{ model }}').innerText = this.value">
+                                <div class="small text-muted">
+                                    Nilai: <span id="thresholdValue_{{ model }}">{{ thresholds[model]|default(0.5) }}</span>
+                                    <small>(Semakin tinggi, semakin ketat filter kesamaan)</small>
+                                </div>
+                            </div>
+                            {% endfor %}
                             <div class="form-text">
                                 <i class="fas fa-info-circle me-1"></i>
-                                Pengaturan ini akan digunakan untuk semua model pencarian (Word2Vec, FastText, GloVe, Ensemble, dan Ontologi)
+                                Pengaturan threshold ini berlaku global untuk setiap model pencarian.
                             </div>
                         </div>
                     </div>
                     <div class="row mb-3">
-                        <label for="threshold" class="col-sm-3 col-form-label">Ambang Kesamaan</label>
+                        <label for="aggregation_method" class="col-sm-3 col-form-label">Metode Agregasi FastText</label>
                         <div class="col-sm-9">
-                            <input type="range" class="form-range" min="0.1" max="0.9" step="0.05" id="threshold" name="threshold" value="{{ settings.threshold }}" oninput="thresholdValue.innerText = this.value">
-                            <div class="small text-muted">
-                                Nilai: <span id="thresholdValue">{{ settings.threshold }}</span>
-                                <small>(Semakin tinggi, semakin ketat filter kesamaan)</small>
-                            </div>
+                            <select class="form-select" id="aggregation_method" name="aggregation_method">
+                                <option value="mean">Mean Pooling (Default)</option>
+                                <option value="tfidf">TF-IDF Weighted Pooling</option>
+                                <option value="frequency">Frequency Weighted Pooling</option>
+                                <option value="position">Position Weighted Pooling</option>
+                                <option value="hybrid">Hybrid Weighted Pooling</option>
+                                <option value="attention">Attention-based Pooling</option>
+                            </select>
                             <div class="form-text">
                                 <i class="fas fa-info-circle me-1"></i>
-                                Pengaturan ini akan digunakan untuk semua model pencarian (Word2Vec, FastText, GloVe, Ensemble, dan Ontologi)
+                                Pengaturan ini hanya berlaku untuk model <b>FastText</b>.
                             </div>
                         </div>
                     </div>

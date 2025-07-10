@@ -7,6 +7,7 @@ import numpy as np
 from gensim.models import FastText
 from typing import List, Dict, Any, Tuple
 from sklearn.metrics.pairwise import cosine_similarity
+import json
 
 def l2_normalize(vec):
     norm = np.linalg.norm(vec)
@@ -29,7 +30,7 @@ class FastTextModel:
     """
     Kelas untuk menangani model FastText
     """
-    def __init__(self, model_path: str = None, vector_path: str = None):
+    def __init__(self, model_path: str = None, vector_path: str = None, aggregation_method: str = None):
         base_dir = os.path.abspath(os.path.dirname(__file__))
         if model_path is None:
             model_path = os.path.join(base_dir, '../models/fasttext/fasttext_model.model')
@@ -40,6 +41,17 @@ class FastTextModel:
         self.model = None
         self.verse_vectors = {}
         self.verse_data = {}
+        # Auto-load aggregation_method from config if not provided
+        if aggregation_method is None:
+            config_path = os.path.join(base_dir, '../models/fasttext/system_integration.json')
+            try:
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    config = json.load(f)
+                self.aggregation_method = config.get('fasttext_aggregation_method', 'mean')
+            except Exception:
+                self.aggregation_method = 'mean'
+        else:
+            self.aggregation_method = aggregation_method
     
     def load_model(self) -> None:
         """
@@ -108,38 +120,78 @@ class FastTextModel:
         verse_vector = np.mean(token_vectors, axis=0)
         return l2_normalize(verse_vector)
     
-    def search(self, query: str, language: str = 'id', limit: int = 10, threshold: float = 0.5) -> List[Dict[str, Any]]:
+    def search(self, query: str, language: str = 'id', limit: int = 10, threshold: float = 0.5, aggregation_method: str = None, vector_path: str = None) -> List[Dict[str, Any]]:
         """
         Melakukan pencarian semantik berdasarkan query
+        aggregation_method: 'mean', 'tfidf', 'hybrid', 'attention', etc.
+        vector_path: path ke file vektor ayat (opsional)
         """
+        # Jika user ingin override file vektor
+        if vector_path is not None and os.path.exists(vector_path):
+            self.load_verse_vectors(vector_path)
+        # Jika user ingin override metode agregasi
+        method = aggregation_method or self.aggregation_method
+        # Jika file vektor yang dimuat tidak sesuai dengan metode, bisa tambahkan log warning di sini
         if self.model is None:
             raise ValueError("Model belum dimuat. Jalankan load_model() terlebih dahulu.")
-        
         if not self.verse_vectors:
             raise ValueError("Vektor ayat belum dibuat. Jalankan create_verse_vectors() terlebih dahulu.")
-        
         # Praproses query
         from backend.preprocessing import preprocess_text
         query_tokens = preprocess_text(query)
-        
-        # Hitung vektor query
-        query_vector = self._calculate_verse_vector(query_tokens)
+        # Hitung vektor query sesuai metode agregasi
+        if method == 'mean' or method is None:
+            query_vector = self._calculate_verse_vector(query_tokens)
+        elif method in ['tfidf', 'frequency', 'position', 'hybrid']:
+            from backend.weighted_pooling import WeightedPooling
+            pooling = WeightedPooling(method=method)
+            # Fit pooling dengan data ayat (jika perlu, bisa cache)
+            pooling.fit([v['tokens'] for v in self.verse_data.values()], [v['translation'] for v in self.verse_data.values()])
+            token_vectors = []
+            valid_tokens = []
+            for token in query_tokens:
+                try:
+                    vector = self.model.wv[token]
+                    token_vectors.append(vector)
+                    valid_tokens.append(token)
+                except Exception:
+                    continue
+            if not token_vectors:
+                query_vector = None
+            else:
+                query_vector = pooling.aggregate_vectors(token_vectors, valid_tokens)
+                query_vector = l2_normalize(query_vector)
+        elif method == 'attention':
+            from backend.attention_embedding import SelfAttention
+            if self.model is None:
+                raise ValueError("Model belum dimuat.")
+            vector_dim = self.model.vector_size
+            attention = SelfAttention(vector_dim, attention_dim=64)
+            token_vectors = []
+            for token in query_tokens:
+                try:
+                    vector = self.model.wv[token]
+                    token_vectors.append(vector)
+                except Exception:
+                    continue
+            if not token_vectors:
+                query_vector = None
+            else:
+                _, weighted_vectors = attention.compute_attention(token_vectors)
+                query_vector = np.mean(weighted_vectors, axis=0)
+                query_vector = l2_normalize(query_vector)
+        else:
+            # Default fallback
+            query_vector = self._calculate_verse_vector(query_tokens)
         if query_vector is None:
             return []
-        
         # Hitung kesamaan kosinus dengan semua ayat
         similarities = []
         for verse_id, verse_vector in self.verse_vectors.items():
             similarity = float(cosine_similarity([query_vector], [verse_vector])[0][0])
             similarities.append((verse_id, similarity))
-        
-        # Urutkan hasil berdasarkan kesamaan
         similarities.sort(key=lambda x: x[1], reverse=True)
-        
-        # Ambil hasil sebanyak limit
         top_results = similarities[:limit]
-        
-        # Format hasil
         results = []
         for verse_id, similarity in top_results:
             verse_info = self.verse_data[verse_id]
@@ -152,8 +204,6 @@ class FastTextModel:
                 'translation': verse_info['translation'],
                 'similarity': similarity
             })
-        
-        # Threshold adaptif jika threshold=None
         sim_scores = [r['similarity'] for r in results]
         use_threshold = threshold
         if threshold is None:

@@ -48,3 +48,6 @@ database/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Result files
+results/

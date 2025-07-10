@@ -49,6 +49,8 @@ def search():
         model_type = data.get('model', 'word2vec')
         limit_raw = data.get('limit')
         threshold_raw = data.get('threshold')
+        aggregation_method = data.get('aggregation_method', None)
+        vector_file = data.get('vector_file', None)
         
         if not query:
             return error_response(400, 'Query tidak boleh kosong')
@@ -73,7 +75,9 @@ def search():
                 model_type=model_type,
                 limit=result_limit,
                 threshold=threshold,
-                user_id=session.get('user_id')
+                user_id=session.get('user_id'),
+                aggregation_method=aggregation_method,
+                vector_file=vector_file
             )
 
             end_time = time.time()

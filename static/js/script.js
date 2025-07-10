@@ -456,3 +456,19 @@ function generateChartColors(count) {
 
   return colors;
 }
+
+// FastText Aggregation Method Settings
+$(document).ready(function () {
+  const aggSelect = document.getElementById('aggregation_method');
+  if (aggSelect) {
+    // Set value from localStorage if exists
+    const savedMethod = localStorage.getItem('aggregation_method');
+    if (savedMethod) {
+      aggSelect.value = savedMethod;
+    }
+    // Save to localStorage on change
+    aggSelect.addEventListener('change', function () {
+      localStorage.setItem('aggregation_method', aggSelect.value);
+    });
+  }
+});

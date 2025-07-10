@@ -222,6 +222,8 @@ def search():
     language = data.get('language', 'id')
     limit = int(data.get('limit', 10))
     threshold = float(data.get('threshold', 0.5))
+    aggregation_method = data.get('aggregation_method', None)
+    vector_file = data.get('vector_file', None)
     
     # Validasi model type
     if model_type not in ['word2vec', 'fasttext', 'glove']:
@@ -235,7 +237,10 @@ def search():
     
     # Lakukan pencarian
     try:
-        results = model.search(query, language, limit, threshold)
+        if model_type == 'fasttext':
+            results = model.search(query, language, limit, threshold, aggregation_method=aggregation_method, vector_path=vector_file)
+        else:
+            results = model.search(query, language, limit, threshold)
         
         # Tambahkan informasi klasifikasi untuk setiap hasil
         for result in results:

@@ -11,6 +11,7 @@ from backend.glove_model import GloVeModel
 from backend.ensemble_embedding import EnsembleEmbeddingModel
 from backend.meta_ensemble import MetaEnsembleModel, create_training_data_from_evaluation_results
 import numpy as np
+from backend.db import get_global_thresholds
 
 models_bp = Blueprint('models', __name__)
 
@@ -202,11 +203,12 @@ def default_settings():
     """
     Endpoint untuk mendapatkan pengaturan default (public, tidak memerlukan login)
     """
+    thresholds = get_global_thresholds()
     return create_response(
         data={
             'default_model': 'word2vec',
             'result_limit': 10,
-            'threshold': 0.65
+            'thresholds': thresholds
         },
         message='Pengaturan default berhasil diambil'
     )

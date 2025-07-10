@@ -82,7 +82,10 @@ def run_evaluation(query_id):
     """
     data = request.json or {}
     result_limit = int(data.get('result_limit', 10))
-    threshold = float(data.get('threshold', 0.5))
+    # Ambil threshold per model (dict), fallback ke threshold global jika tidak ada
+    threshold_per_model = data.get('threshold_per_model', {})
+    def get_threshold(model):
+        return float(threshold_per_model.get(model, 0.5))
     selected_methods = data.get('selected_methods', [])
 
     # Ambil ground truth ayat relevan
@@ -145,7 +148,7 @@ def run_evaluation(query_id):
                         query=expanded_query,
                         model_type='word2vec',
                         limit=result_limit,
-                        threshold=threshold,
+                        threshold=get_threshold('word2vec'),
                         user_id=None
                     )
                     for r in res['results']:
@@ -176,7 +179,7 @@ def run_evaluation(query_id):
                     query=query_text,
                     model_type=model,
                     limit=result_limit,
-                    threshold=threshold,
+                    threshold=get_threshold(model),
                     user_id=None
                 )
                 found = set()
@@ -201,60 +204,29 @@ def run_evaluation(query_id):
         'ontology_glove': 'glove',
         'ontology_ensemble': 'ensemble',
     }
-    for ont_key, model in ontology_model_map.items():
-        if not selected_methods or ont_key in selected_methods:
+    for method, base_model in ontology_model_map.items():
+        if not selected_methods or method in selected_methods:
             try:
                 start = time.time()
-                # Ekspansi query dengan ontologi
-                main_concept = ontology_service.find_concept(query_text)
-                expanded_queries = [query_text]
-                if main_concept:
-                    expanded_queries = set([main_concept['label']] + main_concept.get('synonyms', []) + main_concept.get('related', []))
-                    expanded_queries = [q for q in expanded_queries if q]
-                else:
-                    # Coba cari konsep dari setiap kata di query
-                    for word in query_text.split():
-                        c = ontology_service.find_concept(word)
-                        if c:
-                            expanded_queries += [c['label']] + c.get('synonyms', []) + c.get('related', [])
-                    expanded_queries = list(set(expanded_queries))
-                # Lakukan pencarian untuk semua query ekspansi
-                all_results = []
-                for q in expanded_queries:
-                    res = search_service.semantic_search(
-                        query=q,
-                        model_type=model,
-                        limit=result_limit,
-                        threshold=threshold,
-                        user_id=None
-                    )
-                    for r in res['results']:
-                        r['source_query'] = q
-                        all_results.append(r)
-                # Gabungkan hasil berdasarkan verse_id, boost skor jika hasil dari ekspansi ontologi
-                result_map = {}
-                for r in all_results:
+                res = search_service.semantic_search(
+                    query=query_text,
+                    model_type=base_model,
+                    limit=result_limit,
+                    threshold=get_threshold(base_model),
+                    user_id=None
+                )
+                found = set()
+                for r in res['results']:
                     ref = extract_verse_ref(r)
-                    if not ref:
-                        continue
-                    if ref not in result_map:
-                        result_map[ref] = r
-                    else:
-                        # Boost skor jika hasil dari ekspansi ontologi
-                        if r['source_query'] != query_text:
-                            # Ganti 'score' menjadi 'similarity'
-                            result_map[ref]['similarity'] = max(result_map[ref]['similarity'], r['similarity'] * 1.1)
-                # Ambil hasil terbaik
-                sorted_results = sorted(result_map.values(), key=lambda x: x['similarity'], reverse=True)
-                found = set([extract_verse_ref(r) for r in sorted_results[:result_limit]])
+                    if ref:
+                        found.add(ref)
                 exec_time = round(time.time() - start, 3)
-                label = f'Ontologi ({model})'
-                result = format_eval_result(ont_key, label, found, ground_truth, exec_time)
-                # Simpan ke database
-                add_evaluation_result(query_id, ont_key, result['precision'], result['recall'], result['f1'], exec_time)
+                label = f'Semantic+Ontologi ({base_model})'
+                result = format_eval_result(method, label, found, ground_truth, exec_time)
+                add_evaluation_result(query_id, method, result['precision'], result['recall'], result['f1'], exec_time)
                 results.append(result)
             except Exception as e:
-                label = f'Ontologi ({model})'
-                results.append({'method': ont_key, 'label': label, 'error': str(e)})
+                label = f'Semantic+Ontologi ({base_model})'
+                results.append({'method': method, 'label': label, 'error': str(e)})
 
     return jsonify({'success': True, 'results': results}) 

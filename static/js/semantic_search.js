@@ -1,20 +1,40 @@
 $(document).ready(function () {
-  // Ambil pengaturan user dan set limit & threshold
+  // Ambil pengaturan user dan set limit & threshold per model
   fetch('/api/models/default_settings')
     .then(res => res.json())
     .then(data => {
       if (data.success && data.data) {
         const limit = data.data.result_limit;
-        const threshold = data.data.threshold;
+        const thresholds = data.data.thresholds;
         if (limit !== undefined && limit !== null) {
           $('#limit').val(limit);
         }
-        if (threshold !== undefined && threshold !== null) {
-          $('#threshold').val(threshold);
-          $('#thresholdValue').text(threshold);
+        // Jika ada dropdown atau radio model, update threshold sesuai model
+        if (thresholds) {
+          const model = $('#model').val() || 'word2vec';
+          if (thresholds[model] !== undefined) {
+            $('#threshold').val(thresholds[model]);
+            $('#thresholdValue').text(thresholds[model]);
+          }
         }
       }
     });
+
+  // Jika user ganti model, update threshold slider
+  $('#model').on('change', function () {
+    fetch('/api/models/default_settings')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.data && data.data.thresholds) {
+          const model = $('#model').val() || 'word2vec';
+          const thresholds = data.data.thresholds;
+          if (thresholds[model] !== undefined) {
+            $('#threshold').val(thresholds[model]);
+            $('#thresholdValue').text(thresholds[model]);
+          }
+        }
+      });
+  });
   // Handle form submission
   $("#semanticSearchForm").submit(function (e) {
     e.preventDefault();
@@ -45,7 +65,7 @@ $(document).ready(function () {
 function performSemanticSearch() {
   const query = $("#query").val().trim();
   const model = $("#model").val();
-  const limit = $("#limit").val();
+  let limit = $("#limit").val();
   const threshold = $("#threshold").val();
   const showDetails = $("#showDetails").is(":checked");
 
@@ -57,12 +77,26 @@ function performSemanticSearch() {
   showLoading(true);
   hideResults();
 
+  // Ambil aggregation_method dari localStorage jika ada
+  let aggregation_method = null;
+  if (model === 'fasttext') {
+    aggregation_method = localStorage.getItem('aggregation_method') || 'mean';
+  }
+
+  // Jika limit 0 (Tak Terbatas), set ke 1000
+  if (parseInt(limit) === 0) {
+    limit = 1000;
+  }
+
   const requestData = {
     query: query,
     model: model,
-    limit: parseInt(limit) || null, // Jika 0, kirim null untuk tak terbatas
+    limit: parseInt(limit),
     threshold: parseFloat(threshold),
   };
+  if (model === 'fasttext' && aggregation_method) {
+    requestData.aggregation_method = aggregation_method;
+  }
 
   $.ajax({
     type: "POST",

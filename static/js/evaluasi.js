@@ -487,22 +487,26 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     showSpinner(evaluasiResult, "Menjalankan evaluasi...");
     
-    // Ambil pengaturan dari database
+    // Ambil pengaturan threshold per model dari API
     fetch("/api/models/default_settings")
       .then((res) => res.json())
       .then((settingsData) => {
         if (settingsData.success) {
           const settings = settingsData.data;
           const result_limit = settings.result_limit === 0 ? 1000 : settings.result_limit; // 0 = tak terbatas, gunakan 1000 sebagai limit maksimal
-          const threshold = settings.threshold;
-          
+          const thresholds = settings.thresholds || {};
+          // Kirim threshold per model ke backend
+          const threshold_per_model = {};
+          ["word2vec", "fasttext", "glove", "ensemble", "ontology"].forEach(model => {
+            threshold_per_model[model] = thresholds[model] !== undefined ? thresholds[model] : 0.5;
+          });
           return fetch(`/api/evaluation/${selectedQueryId}/run`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               query_text,
               result_limit,
-              threshold,
+              threshold_per_model,
               selected_methods: selectedMethods,
             }),
           });
@@ -514,7 +518,13 @@ document.addEventListener("DOMContentLoaded", function () {
             body: JSON.stringify({
               query_text,
               result_limit: 10,
-              threshold: 0.5,
+              threshold_per_model: {
+                word2vec: 0.5,
+                fasttext: 0.5,
+                glove: 0.5,
+                ensemble: 0.5,
+                ontology: 0.5
+              },
               selected_methods: selectedMethods,
             }),
           });

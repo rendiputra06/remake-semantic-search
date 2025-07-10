@@ -9,7 +9,7 @@ from werkzeug.utils import secure_filename
 from backend.db import (
     get_db_connection, init_db, get_user_by_id, get_user_settings,
     get_search_history, update_user_settings, get_model_status,
-    update_model_status
+    update_model_status, get_global_thresholds, update_global_thresholds
 )
 from app.admin import admin_bp 
 from app.auth import auth_bp
@@ -74,28 +74,39 @@ def profile():
 def settings():
     """Settings page."""
     user = get_user_by_id(session['user_id'])
-    user_settings = get_user_settings(session['user_id'])
     model_status = get_model_status()
-    
+    model_list = ['word2vec', 'fasttext', 'glove', 'ensemble', 'ontology']
+    model_names = {
+        'word2vec': 'Word2Vec',
+        'fasttext': 'FastText',
+        'glove': 'GloVe',
+        'ensemble': 'Ensemble',
+        'ontology': 'Ontologi'
+    }
+    thresholds = get_global_thresholds()
+
     if request.method == 'POST':
-        result_limit = int(request.form.get('result_limit'))
-        threshold = float(request.form.get('threshold'))
-        
-        # Gunakan default_model yang sudah ada atau 'word2vec' sebagai fallback
-        default_model = user_settings.get('default_model', 'word2vec')
-        
-        success, message = update_user_settings(session['user_id'], default_model, result_limit, threshold)
-        
+        # Ambil threshold per model dari form
+        new_thresholds = {}
+        for model in model_list:
+            val = request.form.get(f'threshold_{model}')
+            try:
+                val = float(val)
+            except Exception:
+                val = 0.5
+            new_thresholds[model] = val
+        success = update_global_thresholds(new_thresholds)
         if success:
-            flash(message, 'success')
+            flash('Pengaturan threshold per model berhasil diperbarui.', 'success')
         else:
-            flash(message, 'danger')
-        
+            flash('Gagal memperbarui threshold. Pastikan nilai antara 0 dan 1.', 'danger')
         return redirect(url_for('settings'))
-    
+
     return render_template('settings.html', 
                          user=user,
-                         settings=user_settings,
+                         thresholds=thresholds,
+                         model_list=model_list,
+                         model_names=model_names,
                          model_status=model_status)
 
 @app.route('/initialize_model', methods=['POST'])

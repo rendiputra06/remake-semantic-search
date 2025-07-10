@@ -184,6 +184,24 @@ def init_db():
     )
     ''')
     
+    # Buat tabel global_model_settings untuk threshold per model (global)
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS global_model_settings (
+        model TEXT PRIMARY KEY,
+        threshold REAL NOT NULL
+    )
+    ''')
+    # Inisialisasi default threshold jika belum ada
+    default_models = [
+        ('word2vec', 0.5),
+        ('fasttext', 0.5),
+        ('glove', 0.5),
+        ('ensemble', 0.5),
+        ('ontology', 0.5)
+    ]
+    for model, threshold in default_models:
+        cursor.execute('INSERT OR IGNORE INTO global_model_settings (model, threshold) VALUES (?, ?)', (model, threshold))
+    
     # Inisialisasi data awal untuk model_status
     models = ['word2vec', 'fasttext', 'glove', 'lexical', 'thesaurus']
     for model in models:
@@ -1386,6 +1404,38 @@ def delete_relevant_verse(verse_id: int):
         conn.rollback()
         conn.close()
         return False, f"Error saat menghapus ayat relevan: {str(e)}"
+
+def get_global_thresholds() -> dict:
+    """
+    Mengambil threshold semua model dari global_model_settings
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT model, threshold FROM global_model_settings')
+    rows = cursor.fetchall()
+    conn.close()
+    return {row['model']: row['threshold'] for row in rows}
+
+def update_global_thresholds(thresholds: dict) -> bool:
+    """
+    Update threshold semua model di global_model_settings
+    thresholds: dict {model: threshold}
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        for model, threshold in thresholds.items():
+            if threshold < 0 or threshold > 1:
+                raise ValueError(f"Threshold untuk {model} harus antara 0 dan 1")
+            cursor.execute('UPDATE global_model_settings SET threshold = ? WHERE model = ?', (threshold, model))
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        conn.rollback()
+        conn.close()
+        print(f"Error update_global_thresholds: {e}")
+        return False
 
 if __name__ == "__main__":
     # Inisialisasi database jika dijalankan langsung
