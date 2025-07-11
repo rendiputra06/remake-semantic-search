@@ -95,3 +95,13 @@ def ontology_search():
     Halaman pencarian ontology
     """
     return render_template('ontology_search.html') 
+
+@public_bp.route('/ensemble-test')
+def ensemble_test():
+    """
+    Halaman uji dan visualisasi model ensemble
+    """
+    user = None
+    if 'user_id' in session:
+        user = get_user_by_id(session['user_id'])
+    return render_template('ensemble_test.html', user=user) 

@@ -1,0 +1,291 @@
+{% extends "layout.html" %}
+{% block title %}Uji & Visualisasi Model Ensemble{% endblock %}
+
+{% block content %}
+<div class="container">
+  <h2 class="mb-4"><i class="fas fa-project-diagram me-2"></i>Uji & Visualisasi Model Ensemble</h2>
+  <!-- Panel Teori Ensemble -->
+  <div class="alert alert-info" id="ensemble-theory">
+    <h5 class="mb-2">Teori & Rumus Ensemble</h5>
+    <ul class="mb-1">
+      <li><b>Weighted Averaging:</b> <code>Skor = (w1 * s1 + w2 * s2 + w3 * s3) / (w1 + w2 + w3)</code> <br>di mana <b>s1, s2, s3</b> adalah skor Word2Vec, FastText, GloVe dan <b>w1, w2, w3</b> adalah bobotnya.</li>
+      <li><b>Voting Bonus:</b> Jika ayat muncul di ≥2 model, skor ensemble ditambah bonus voting.</li>
+      <li><b>Meta-Ensemble:</b> Skor diprediksi oleh model machine learning (Logistic Regression) berdasarkan skor individual dan fitur tambahan.</li>
+    </ul>
+    <small>Ensemble menggabungkan keunggulan tiap model untuk hasil lebih robust dan relevan.</small>
+  </div>
+  <form id="ensemble-form" class="mb-4">
+    <div class="row g-3 align-items-end">
+      <div class="col-md-4">
+        <label for="query" class="form-label">Query Pencarian</label>
+        <input type="text" class="form-control" id="query" name="query" required />
+      </div>
+      <div class="col-md-2">
+        <label for="method" class="form-label">Metode Ensemble</label>
+        <select class="form-select" id="method" name="method">
+          <option value="weighted">Weighted Averaging</option>
+          <option value="voting">Voting</option>
+          <option value="meta">Meta-Ensemble</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label for="threshold" class="form-label">Threshold</label>
+        <input type="number" step="0.01" min="0" max="1" class="form-control" id="threshold" name="threshold" value="0.5" />
+      </div>
+      <div class="col-md-2">
+        <label for="limit" class="form-label">Limit Hasil</label>
+        <select class="form-select" id="limit" name="limit">
+          <option value="10">10</option>
+          <option value="20">20</option>
+          <option value="50">50</option>
+          <option value="0">Tak Terbatas</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-primary w-100">
+          <i class="fas fa-search me-1"></i>Uji Ensemble
+        </button>
+      </div>
+    </div>
+    <div class="row mt-3">
+      <div class="col-md-4">
+        <label class="form-label">Bobot Word2Vec</label>
+        <input type="range" class="form-range" min="0" max="2" step="0.1" id="w2v_weight" name="w2v_weight" value="1" />
+        <span id="w2v_weight_val">1.0</span>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Bobot FastText</label>
+        <input type="range" class="form-range" min="0" max="2" step="0.1" id="ft_weight" name="ft_weight" value="1" />
+        <span id="ft_weight_val">1.0</span>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Bobot GloVe</label>
+        <input type="range" class="form-range" min="0" max="2" step="0.1" id="glove_weight" name="glove_weight" value="1" />
+        <span id="glove_weight_val">1.0</span>
+      </div>
+    </div>
+  </form>
+
+  <!-- Loading Spinner -->
+  <div id="ensemble-loading" class="text-center my-4" style="display:none;">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+    <div>Memproses uji ensemble...</div>
+  </div>
+
+  <div id="ensemble-results" class="mt-4" style="display:none;">
+    <div class="row">
+      <div class="col-md-8">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h4 class="mb-0">Hasil Ensemble</h4>
+          <div id="ensemble-summary" class="small text-muted"></div>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-bordered table-hover align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>#</th>
+                <th>Surah</th>
+                <th>Ayat</th>
+                <th>Skor Ensemble</th>
+                <th>Word2Vec</th>
+                <th>FastText</th>
+                <th>GloVe</th>
+                <th>Voting</th>
+                <th>Meta</th>
+              </tr>
+            </thead>
+            <tbody id="ensemble-table-body">
+              <!-- Hasil akan diisi via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div id="ensemble-visualization" class="mb-4">
+          <h5>Visualisasi Kontribusi Model</h5>
+          <div id="chart-container" style="height:300px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Detail Ayat -->
+  <div class="modal fade" id="ayatDetailModal" tabindex="-1" aria-labelledby="ayatDetailLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="ayatDetailLabel">Detail Ayat</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" id="ayat-detail-body">
+          <!-- Konten detail ayat -->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- jQuery CDN (diperlukan untuk modal Bootstrap dan event handler) -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+['w2v_weight','ft_weight','glove_weight'].forEach(function(id) {
+  document.getElementById(id).addEventListener('input', function() {
+    document.getElementById(id+'_val').innerText = this.value;
+  });
+});
+
+const form = document.getElementById('ensemble-form');
+const resultsDiv = document.getElementById('ensemble-results');
+const tableBody = document.getElementById('ensemble-table-body');
+const chartContainer = document.getElementById('chart-container');
+const loadingDiv = document.getElementById('ensemble-loading');
+const summaryDiv = document.getElementById('ensemble-summary');
+let chartInstance = null;
+let ayatDataMap = {};
+
+form.addEventListener('submit', function(e) {
+  e.preventDefault();
+  resultsDiv.style.display = 'none';
+  summaryDiv.innerHTML = '';
+  tableBody.innerHTML = '';
+  if (chartInstance) { chartInstance.destroy(); }
+  chartContainer.innerHTML = '';
+  loadingDiv.style.display = 'block';
+
+  const data = {
+    query: document.getElementById('query').value,
+    method: document.getElementById('method').value,
+    threshold: document.getElementById('threshold').value,
+    limit: document.getElementById('limit').value,
+    w2v_weight: document.getElementById('w2v_weight').value,
+    ft_weight: document.getElementById('ft_weight').value,
+    glove_weight: document.getElementById('glove_weight').value
+  };
+
+  fetch('/api/models/ensemble/test', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  })
+  .then(res => res.json())
+  .then(res => {
+    loadingDiv.style.display = 'none';
+    if (!res.success) throw new Error(res.message || 'Gagal mengambil hasil ensemble');
+    const results = res.data.results;
+    const visualData = res.data.visual_data;
+    ayatDataMap = {};
+    if (!results.length) {
+      tableBody.innerHTML = '<tr><td colspan="9" class="text-center">Tidak ada hasil ditemukan.</td></tr>';
+      resultsDiv.style.display = 'block';
+      return;
+    }
+    // Hitung summary
+    let totalW2V = 0, totalFT = 0, totalGloVe = 0, voting3 = 0, voting2 = 0;
+    results.forEach(r => {
+      if ((r.individual_scores?.word2vec||0) > 0) totalW2V++;
+      if ((r.individual_scores?.fasttext||0) > 0) totalFT++;
+      if ((r.individual_scores?.glove||0) > 0) totalGloVe++;
+      if (r.model_count === 3) voting3++;
+      if (r.model_count === 2) voting2++;
+      ayatDataMap[r.verse_id] = r;
+    });
+    summaryDiv.innerHTML = `
+      <span class="me-3">Total hasil: <b>${results.length}</b></span>
+      <span class="me-3">Word2Vec: <b>${totalW2V}</b></span>
+      <span class="me-3">FastText: <b>${totalFT}</b></span>
+      <span class="me-3">GloVe: <b>${totalGloVe}</b></span>
+      <span class="me-3">Voting 3: <b>${voting3}</b></span>
+      <span class="me-3">Voting 2: <b>${voting2}</b></span>
+    `;
+    // Render tabel hasil
+    results.forEach((r, i) => {
+      tableBody.innerHTML += `
+        <tr class="ayat-row" data-verse-id="${r.verse_id}">
+          <td>${i+1}</td>
+          <td>${r.surah_name || r.surah_number}</td>
+          <td>${r.ayat_number}</td>
+          <td><b>${(r.similarity||0).toFixed(3)}</b></td>
+          <td>${r.individual_scores?.word2vec?.toFixed(3) ?? '-'}</td>
+          <td>${r.individual_scores?.fasttext?.toFixed(3) ?? '-'}</td>
+          <td>${r.individual_scores?.glove?.toFixed(3) ?? '-'}</td>
+          <td>${r.model_count ?? '-'}</td>
+          <td>${r.meta_ensemble_score !== undefined ? r.meta_ensemble_score.toFixed(3) : '-'}</td>
+        </tr>
+      `;
+    });
+    // Visualisasi kontribusi skor model (bar chart rata-rata)
+    if (visualData.length) {
+      const avg = arr => arr.reduce((a,b)=>a+b,0)/arr.length;
+      const w2v = avg(visualData.map(v=>v.word2vec||0));
+      const ft = avg(visualData.map(v=>v.fasttext||0));
+      const glove = avg(visualData.map(v=>v.glove||0));
+      const ensemble = avg(visualData.map(v=>v.similarity||0));
+      const meta = visualData.some(v=>v.meta_ensemble_score!==null) ? avg(visualData.map(v=>v.meta_ensemble_score||0)) : null;
+      const labels = ['Word2Vec','FastText','GloVe','Ensemble'];
+      const dataArr = [w2v,ft,glove,ensemble];
+      if (meta!==null) { labels.push('Meta-Ensemble'); dataArr.push(meta); }
+      chartContainer.innerHTML = '<canvas id="ensembleChart"></canvas>';
+      const ctx = document.getElementById('ensembleChart').getContext('2d');
+      chartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Rata-rata Skor',
+            data: dataArr,
+            backgroundColor: [
+              'rgba(54, 162, 235, 0.7)',
+              'rgba(255, 206, 86, 0.7)',
+              'rgba(75, 192, 192, 0.7)',
+              'rgba(153, 102, 255, 0.7)',
+              'rgba(255, 99, 132, 0.7)'
+            ]
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: false },
+            tooltip: { enabled: true }
+          },
+          scales: {
+            y: { beginAtZero: true, max: 1 }
+          }
+        }
+      });
+    }
+    resultsDiv.style.display = 'block';
+  })
+  .catch(err => {
+    loadingDiv.style.display = 'none';
+    resultsDiv.style.display = 'none';
+    tableBody.innerHTML = '';
+    chartContainer.innerHTML = '';
+    if (chartInstance) { chartInstance.destroy(); }
+    const alert = document.createElement('div');
+    alert.className = 'alert alert-danger';
+    alert.innerText = err.message || 'Terjadi kesalahan.';
+    form.parentNode.insertBefore(alert, form.nextSibling);
+    setTimeout(()=>alert.remove(), 4000);
+  });
+});
+
+// Modal detail ayat
+$(document).on('click', '.ayat-row', function() {
+  const verseId = $(this).data('verse-id');
+  const ayat = ayatDataMap[verseId];
+  if (!ayat) return;
+  let html = `<div class="mb-2"><b>Surah:</b> ${ayat.surah_name || ayat.surah_number} &nbsp; <b>Ayat:</b> ${ayat.ayat_number}</div>`;
+  html += `<div class="mb-2" style="font-family:'Scheherazade',serif;font-size:1.3em;">${ayat.arabic || '-'}</div>`;
+  html += `<div class="mb-2"><b>Terjemahan:</b><br>${ayat.translation || '-'}</div>`;
+  html += `<div class="mb-2"><b>Skor Individual:</b><br>Word2Vec: ${ayat.individual_scores?.word2vec?.toFixed(3) ?? '-'}, FastText: ${ayat.individual_scores?.fasttext?.toFixed(3) ?? '-'}, GloVe: ${ayat.individual_scores?.glove?.toFixed(3) ?? '-'}</div>`;
+  html += `<div class="mb-2"><b>Skor Ensemble:</b> ${ayat.similarity?.toFixed(3) ?? '-'}</div>`;
+  if (ayat.meta_ensemble_score !== undefined) html += `<div class="mb-2"><b>Meta-Ensemble:</b> ${ayat.meta_ensemble_score?.toFixed(3) ?? '-'}</div>`;
+  $('#ayat-detail-body').html(html);
+  $('#ayatDetailModal').modal('show');
+});
+</script>
+{% endblock %} 

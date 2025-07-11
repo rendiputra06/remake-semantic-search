@@ -102,13 +102,7 @@
                 >Evaluasi</a
               >
             </li>
-            <li class="nav-item">
-              <a
-                class="nav-link {% if request.endpoint == 'public.thesaurus' or request.endpoint == 'public.thesaurus_browse' or request.endpoint == 'public.thesaurus_statistics' %}active{% endif %}"
-                href="{{ url_for('public.thesaurus') }}"
-                >Tesaurus</a
-              >
-            </li>
+            <!-- Hapus nav-item Tesaurus terpisah -->
             <!-- <li class="nav-item">
               <a
                 class="nav-link {% if request.endpoint == 'quran_index' %}active{% endif %}"
@@ -147,11 +141,23 @@
                   >
                 </li>
                 <li>
+                  <a class="dropdown-item" href="{{ url_for('public.thesaurus') }}"
+                    ><i class="fas fa-book-open me-2"></i>Tesaurus</a
+                  >
+                </li>
+                <li>
                   <a class="dropdown-item" href="{{ url_for('about') }}"
                     >Tentang</a
                   >
                 </li>
               </ul>
+            </li>
+            <li class="nav-item">
+              <a
+                class="nav-link {% if request.endpoint == 'public.ensemble_test' %}active{% endif %}"
+                href="{{ url_for('public.ensemble_test') }}"
+                ><i class="fas fa-project-diagram me-1"></i>Uji Ensemble</a
+              >
             </li>
           </ul>
 

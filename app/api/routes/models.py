@@ -346,3 +346,60 @@ def get_meta_ensemble_status():
             },
             message='Meta-ensemble model tidak tersedia'
         )
+
+@models_bp.route('/ensemble/test', methods=['POST'])
+def ensemble_test():
+    """
+    Endpoint untuk menguji dan memvisualisasikan hasil ensemble dengan parameter custom.
+    """
+    data = request.get_json()
+    query = data.get('query')
+    method = data.get('method', 'weighted')
+    threshold = float(data.get('threshold', 0.5))
+    limit = int(data.get('limit', 10))
+    w2v_weight = float(data.get('w2v_weight', 1.0))
+    ft_weight = float(data.get('ft_weight', 1.0))
+    glove_weight = float(data.get('glove_weight', 1.0))
+    use_meta_ensemble = (method == 'meta')
+
+    if not query:
+        return error_response('Query tidak boleh kosong', 400)
+
+    try:
+        init_models()
+        # Buat instance ensemble dengan bobot custom dan opsi meta
+        ensemble = EnsembleEmbeddingModel(
+            word2vec_model, fasttext_model, glove_model,
+            word2vec_weight=w2v_weight,
+            fasttext_weight=ft_weight,
+            glove_weight=glove_weight,
+            use_meta_ensemble=use_meta_ensemble
+        )
+        ensemble.load_models()
+        ensemble.load_verse_vectors()
+        # Lakukan pencarian
+        results = ensemble.search(query, limit=limit, threshold=threshold)
+        # Siapkan data untuk visualisasi (skor individual, voting, meta)
+        visual_data = []
+        for r in results:
+            visual_data.append({
+                'verse_id': r.get('verse_id'),
+                'surah_number': r.get('surah_number'),
+                'ayat_number': r.get('ayat_number'),
+                'similarity': r.get('similarity'),
+                'word2vec': r.get('individual_scores', {}).get('word2vec'),
+                'fasttext': r.get('individual_scores', {}).get('fasttext'),
+                'glove': r.get('individual_scores', {}).get('glove'),
+                'voting': r.get('model_count', None),
+                'meta_ensemble_score': r.get('meta_ensemble_score', None),
+                'meta_ensemble_probability': r.get('meta_ensemble_probability', None)
+            })
+        return create_response(
+            data={
+                'results': results,
+                'visual_data': visual_data
+            },
+            message='Uji ensemble berhasil'
+        )
+    except Exception as e:
+        return error_response(f'Error saat uji ensemble: {str(e)}', 500)
