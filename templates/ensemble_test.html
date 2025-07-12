@@ -4,35 +4,56 @@
 {% block content %}
 <div class="container">
   <h2 class="mb-4"><i class="fas fa-project-diagram me-2"></i>Uji & Visualisasi Model Ensemble</h2>
-  <!-- Panel Teori Ensemble -->
-  <div class="alert alert-info" id="ensemble-theory">
+  <!-- Toggle Rumus Ensemble Button -->
+  <div class="mb-2">
+    <button type="button" class="btn btn-outline-info btn-sm" id="toggle-theory">
+      <i class="fas fa-info-circle me-1"></i>Lihat Rumus Ensemble
+    </button>
+  </div>
+  <!-- Panel Teori Ensemble (hidden by default) -->
+  <div class="alert alert-info" id="ensemble-theory" style="display:none;">
     <h5 class="mb-2">Teori & Rumus Ensemble</h5>
     <ul class="mb-1">
-      <li><b>Weighted Averaging:</b> <code>Skor = (w1 * s1 + w2 * s2 + w3 * s3) / (w1 + w2 + w3)</code> <br>di mana <b>s1, s2, s3</b> adalah skor Word2Vec, FastText, GloVe dan <b>w1, w2, w3</b> adalah bobotnya.</li>
-      <li><b>Voting Bonus:</b> Jika ayat muncul di ≥2 model, skor ensemble ditambah bonus voting.</li>
-      <li><b>Meta-Ensemble:</b> Skor diprediksi oleh model machine learning (Logistic Regression) berdasarkan skor individual dan fitur tambahan.</li>
+      <li><b>Weighted Averaging:</b> <br>
+        <code>Skor = (w1 × s1 + w2 × s2 + w3 × s3) / (w1 + w2 + w3)</code><br>
+        <small>di mana <b>s1, s2, s3</b> adalah skor Word2Vec, FastText, GloVe dan <b>w1, w2, w3</b> adalah bobotnya. Hanya model dengan skor &gt; 0 yang dihitung.</small>
+      </li>
+      <li><b>Voting Bonus:</b> <br>
+        Jika ayat muncul di <b>≥2 model</b> (voting ≥2), maka skor ensemble <b>ditambah bonus voting</b>:
+        <br><code>Skor Ensemble Akhir = Skor Weighted + Bonus Voting</code>
+        <br><small>Bonus voting diberikan pada semua metode (baik Weighted maupun Voting) jika voting ≥2.</small>
+      </li>
+      <li><b>Voting (di sistem ini):</b> <br>
+        <code>Skor Voting = Skor Weighted + Bonus Voting (jika voting ≥2)</code><br>
+        <small>Metode voting di sini <b>bukan majority voting klasik</b>, tapi tetap menggunakan weighted averaging + bonus voting.</small>
+      </li>
+      <li><b>Meta-Ensemble:</b> <br>
+        Skor diprediksi oleh model machine learning (Logistic Regression) berdasarkan skor individual dan fitur tambahan.
+      </li>
     </ul>
-    <small>Ensemble menggabungkan keunggulan tiap model untuk hasil lebih robust dan relevan.</small>
+    <small>Ensemble menggabungkan keunggulan tiap model untuk hasil lebih robust dan relevan.<br>
+    <b>Catatan:</b> Skor ensemble bisa tinggi meski voting hanya 1 jika skor model yang relevan sangat tinggi.</small>
   </div>
+  
+  <!-- Quick Search Buttons -->
+  <div class="mb-3">
+    <label class="form-label">Quick Search:</label>
+    <div class="d-flex flex-wrap gap-2">
+      <button type="button" class="btn btn-outline-primary btn-sm quick-search" data-query="ibadah">Ibadah</button>
+      <button type="button" class="btn btn-outline-primary btn-sm quick-search" data-query="shalat">Shalat</button>
+      <button type="button" class="btn btn-outline-primary btn-sm quick-search" data-query="puasa">Puasa</button>
+      <button type="button" class="btn btn-outline-primary btn-sm quick-search" data-query="zakat">Zakat</button>
+      <button type="button" class="btn btn-outline-primary btn-sm quick-search" data-query="haji">Haji</button>
+    </div>
+  </div>
+
   <form id="ensemble-form" class="mb-4">
     <div class="row g-3 align-items-end">
-      <div class="col-md-4">
+      <div class="col-md-6">
         <label for="query" class="form-label">Query Pencarian</label>
         <input type="text" class="form-control" id="query" name="query" required />
       </div>
-      <div class="col-md-2">
-        <label for="method" class="form-label">Metode Ensemble</label>
-        <select class="form-select" id="method" name="method">
-          <option value="weighted">Weighted Averaging</option>
-          <option value="voting">Voting</option>
-          <option value="meta">Meta-Ensemble</option>
-        </select>
-      </div>
-      <div class="col-md-2">
-        <label for="threshold" class="form-label">Threshold</label>
-        <input type="number" step="0.01" min="0" max="1" class="form-control" id="threshold" name="threshold" value="0.5" />
-      </div>
-      <div class="col-md-2">
+      <div class="col-md-3">
         <label for="limit" class="form-label">Limit Hasil</label>
         <select class="form-select" id="limit" name="limit">
           <option value="10">10</option>
@@ -41,24 +62,47 @@
           <option value="0">Tak Terbatas</option>
         </select>
       </div>
-      <div class="col-md-2">
+      <div class="col-md-3">
         <button type="submit" class="btn btn-primary w-100">
           <i class="fas fa-search me-1"></i>Uji Ensemble
         </button>
       </div>
     </div>
+    
+    <!-- Toggle Button for Additional Settings -->
     <div class="row mt-3">
-      <div class="col-md-4">
+      <div class="col-12">
+        <button type="button" class="btn btn-outline-secondary btn-sm" id="toggle-settings">
+          <i class="fas fa-cog me-1"></i>Pengaturan Lanjutan
+        </button>
+      </div>
+    </div>
+    
+    <!-- Additional Settings (Hidden by default) -->
+    <div id="additional-settings" class="row mt-3" style="display: none;">
+      <div class="col-md-3">
+        <label for="method" class="form-label">Metode Ensemble</label>
+        <select class="form-select" id="method" name="method">
+          <option value="weighted">Weighted Averaging</option>
+          <option value="voting">Voting</option>
+          <option value="meta">Meta-Ensemble</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label for="threshold" class="form-label">Threshold</label>
+        <input type="number" step="0.01" min="0" max="1" class="form-control" id="threshold" name="threshold" value="0.5" />
+      </div>
+      <div class="col-md-2">
         <label class="form-label">Bobot Word2Vec</label>
         <input type="range" class="form-range" min="0" max="2" step="0.1" id="w2v_weight" name="w2v_weight" value="1" />
         <span id="w2v_weight_val">1.0</span>
       </div>
-      <div class="col-md-4">
+      <div class="col-md-2">
         <label class="form-label">Bobot FastText</label>
         <input type="range" class="form-range" min="0" max="2" step="0.1" id="ft_weight" name="ft_weight" value="1" />
         <span id="ft_weight_val">1.0</span>
       </div>
-      <div class="col-md-4">
+      <div class="col-md-2">
         <label class="form-label">Bobot GloVe</label>
         <input type="range" class="form-range" min="0" max="2" step="0.1" id="glove_weight" name="glove_weight" value="1" />
         <span id="glove_weight_val">1.0</span>
@@ -80,6 +124,10 @@
         <div class="d-flex justify-content-between align-items-center mb-2">
           <h4 class="mb-0">Hasil Ensemble</h4>
           <div id="ensemble-summary" class="small text-muted"></div>
+        </div>
+        <!-- Method Indicator -->
+        <div id="method-indicator" class="alert alert-info mb-3">
+          <strong>Metode yang digunakan:</strong> <span id="current-method"></span>
         </div>
         <div class="table-responsive">
           <table class="table table-bordered table-hover align-middle">
@@ -137,12 +185,51 @@
   });
 });
 
+// Toggle additional settings
+document.getElementById('toggle-settings').addEventListener('click', function() {
+  const settingsDiv = document.getElementById('additional-settings');
+  const icon = this.querySelector('i');
+  if (settingsDiv.style.display === 'none') {
+    settingsDiv.style.display = 'block';
+    icon.className = 'fas fa-cog me-1 fa-spin';
+    this.innerHTML = '<i class="fas fa-cog me-1 fa-spin"></i>Pengaturan Lanjutan';
+  } else {
+    settingsDiv.style.display = 'none';
+    icon.className = 'fas fa-cog me-1';
+    this.innerHTML = '<i class="fas fa-cog me-1"></i>Pengaturan Lanjutan';
+  }
+});
+
+// Quick search buttons
+document.querySelectorAll('.quick-search').forEach(button => {
+  button.addEventListener('click', function() {
+    const query = this.getAttribute('data-query');
+    document.getElementById('query').value = query;
+    document.getElementById('ensemble-form').dispatchEvent(new Event('submit'));
+  });
+});
+
+// Toggle panel teori ensemble
+const theoryPanel = document.getElementById('ensemble-theory');
+const toggleTheoryBtn = document.getElementById('toggle-theory');
+toggleTheoryBtn.addEventListener('click', function() {
+  if (theoryPanel.style.display === 'none') {
+    theoryPanel.style.display = 'block';
+    toggleTheoryBtn.innerHTML = '<i class="fas fa-info-circle me-1"></i>Sembunyikan Rumus Ensemble';
+  } else {
+    theoryPanel.style.display = 'none';
+    toggleTheoryBtn.innerHTML = '<i class="fas fa-info-circle me-1"></i>Lihat Rumus Ensemble';
+  }
+});
+
 const form = document.getElementById('ensemble-form');
 const resultsDiv = document.getElementById('ensemble-results');
 const tableBody = document.getElementById('ensemble-table-body');
 const chartContainer = document.getElementById('chart-container');
 const loadingDiv = document.getElementById('ensemble-loading');
 const summaryDiv = document.getElementById('ensemble-summary');
+const methodIndicator = document.getElementById('method-indicator');
+const currentMethodSpan = document.getElementById('current-method');
 let chartInstance = null;
 let ayatDataMap = {};
 
@@ -165,6 +252,14 @@ form.addEventListener('submit', function(e) {
     glove_weight: document.getElementById('glove_weight').value
   };
 
+  // Update method indicator
+  const methodNames = {
+    'weighted': 'Weighted Averaging',
+    'voting': 'Voting',
+    'meta': 'Meta-Ensemble'
+  };
+  currentMethodSpan.textContent = methodNames[data.method] || data.method;
+
   fetch('/api/models/ensemble/test', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -176,6 +271,7 @@ form.addEventListener('submit', function(e) {
     if (!res.success) throw new Error(res.message || 'Gagal mengambil hasil ensemble');
     const results = res.data.results;
     const visualData = res.data.visual_data;
+    const totalCount = res.data.total_count || results.length;
     ayatDataMap = {};
     if (!results.length) {
       tableBody.innerHTML = '<tr><td colspan="9" class="text-center">Tidak ada hasil ditemukan.</td></tr>';
@@ -192,14 +288,18 @@ form.addEventListener('submit', function(e) {
       if (r.model_count === 2) voting2++;
       ayatDataMap[r.verse_id] = r;
     });
-    summaryDiv.innerHTML = `
-      <span class="me-3">Total hasil: <b>${results.length}</b></span>
+    let summaryText = `<span class="me-3">Total hasil: <b>${totalCount}</b></span>`;
+    if (totalCount > 100 && document.getElementById('limit').value == '0') {
+      summaryText += `<span class="me-3 text-danger">Ditampilkan 100 dari ${totalCount} hasil</span>`;
+    }
+    summaryText += `
       <span class="me-3">Word2Vec: <b>${totalW2V}</b></span>
       <span class="me-3">FastText: <b>${totalFT}</b></span>
       <span class="me-3">GloVe: <b>${totalGloVe}</b></span>
       <span class="me-3">Voting 3: <b>${voting3}</b></span>
       <span class="me-3">Voting 2: <b>${voting2}</b></span>
     `;
+    summaryDiv.innerHTML = summaryText;
     // Render tabel hasil
     results.forEach((r, i) => {
       tableBody.innerHTML += `

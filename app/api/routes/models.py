@@ -21,31 +21,55 @@ fasttext_model = None
 glove_model = None
 ensemble_model = None
 
+# Global variables untuk caching model
+_models_initialized = False
+_cached_ensemble = None
+
 def init_models():
     """
-    Initialize all models if not already initialized
+    Inisialisasi model dengan caching untuk menghindari reload berulang
     """
-    global word2vec_model, fasttext_model, glove_model, ensemble_model
+    global word2vec_model, fasttext_model, glove_model, _models_initialized
     
-    if word2vec_model is None:
-        word2vec_model = Word2VecModel()
-        word2vec_model.load_model()
-        word2vec_model.load_verse_vectors()
-        
-    if fasttext_model is None:
-        fasttext_model = FastTextModel()
-        fasttext_model.load_model()
-        fasttext_model.load_verse_vectors()
-        
-    if glove_model is None:
-        glove_model = GloVeModel()
-        glove_model.load_model()
-        glove_model.load_verse_vectors()
-        
-    if ensemble_model is None:
-        ensemble_model = EnsembleEmbeddingModel(word2vec_model, fasttext_model, glove_model)
-        ensemble_model.load_models()
-        ensemble_model.load_verse_vectors()
+    if _models_initialized:
+        return  # Skip jika sudah diinisialisasi
+    
+    print("Initializing models (first time)...")
+    word2vec_model = Word2VecModel()
+    fasttext_model = FastTextModel()
+    glove_model = GloVeModel()
+    
+    # Load models
+    word2vec_model.load_model()
+    fasttext_model.load_model()
+    glove_model.load_model()
+    
+    # Load verse vectors
+    word2vec_model.load_verse_vectors()
+    fasttext_model.load_verse_vectors()
+    glove_model.load_verse_vectors()
+    
+    _models_initialized = True
+    print("Models initialized and cached successfully!")
+
+def get_or_create_ensemble(w2v_weight=1.0, ft_weight=1.0, glove_weight=1.0, use_meta_ensemble=False):
+    """
+    Get cached ensemble atau buat baru dengan parameter yang diberikan
+    """
+    # Buat ensemble baru dengan parameter yang diberikan
+    ensemble = EnsembleEmbeddingModel(
+        word2vec_model, fasttext_model, glove_model,
+        word2vec_weight=w2v_weight,
+        fasttext_weight=ft_weight,
+        glove_weight=glove_weight,
+        use_meta_ensemble=use_meta_ensemble
+    )
+    
+    # Load models dan verse vectors (models sudah cached)
+    ensemble.load_models()
+    ensemble.load_verse_vectors()
+    
+    return ensemble
 
 def get_word_inspection_data(word: str, model_type: str) -> dict:
     """
@@ -366,22 +390,29 @@ def ensemble_test():
         return error_response('Query tidak boleh kosong', 400)
 
     try:
+        # Initialize models sekali saja dengan caching
         init_models()
+        
         # Buat instance ensemble dengan bobot custom dan opsi meta
-        ensemble = EnsembleEmbeddingModel(
-            word2vec_model, fasttext_model, glove_model,
-            word2vec_weight=w2v_weight,
-            fasttext_weight=ft_weight,
+        ensemble = get_or_create_ensemble(
+            w2v_weight=w2v_weight,
+            ft_weight=ft_weight,
             glove_weight=glove_weight,
             use_meta_ensemble=use_meta_ensemble
         )
-        ensemble.load_models()
-        ensemble.load_verse_vectors()
+        
         # Lakukan pencarian
         results = ensemble.search(query, limit=limit, threshold=threshold)
+        total_count = len(results)
+        # Jika limit=0, hanya kirim 100 hasil pertama ke frontend
+        if limit == 0 and total_count > 100:
+            results_to_send = results[:100]
+        else:
+            results_to_send = results
+        
         # Siapkan data untuk visualisasi (skor individual, voting, meta)
         visual_data = []
-        for r in results:
+        for r in results_to_send:
             visual_data.append({
                 'verse_id': r.get('verse_id'),
                 'surah_number': r.get('surah_number'),
@@ -394,10 +425,12 @@ def ensemble_test():
                 'meta_ensemble_score': r.get('meta_ensemble_score', None),
                 'meta_ensemble_probability': r.get('meta_ensemble_probability', None)
             })
+        
         return create_response(
             data={
-                'results': results,
-                'visual_data': visual_data
+                'results': results_to_send,
+                'visual_data': visual_data,
+                'total_count': total_count
             },
             message='Uji ensemble berhasil'
         )

@@ -50,6 +50,93 @@ class MetaEnsembleModel:
         ]
         return np.array(features).reshape(1, -1)
     
+    def generate_synthetic_training_data(self) -> List[Dict[str, Any]]:
+        """
+        Generate synthetic training data menggunakan heuristik sederhana
+        """
+        training_data = []
+        
+        # Generate berbagai kombinasi skor
+        score_combinations = [
+            # High relevance cases
+            (0.8, 0.7, 0.9, 3, 15, True),
+            (0.9, 0.8, 0.7, 2, 12, True),
+            (0.7, 0.9, 0.8, 4, 18, True),
+            (0.8, 0.8, 0.8, 3, 10, True),
+            
+            # Medium relevance cases
+            (0.6, 0.5, 0.7, 2, 8, True),
+            (0.5, 0.6, 0.5, 3, 12, True),
+            (0.7, 0.4, 0.6, 1, 6, True),
+            
+            # Low relevance cases
+            (0.3, 0.2, 0.4, 1, 5, False),
+            (0.2, 0.3, 0.1, 2, 8, False),
+            (0.1, 0.1, 0.2, 1, 3, False),
+            (0.0, 0.0, 0.0, 1, 4, False),
+            
+            # Mixed cases
+            (0.8, 0.2, 0.6, 3, 10, True),
+            (0.2, 0.8, 0.3, 2, 7, True),
+            (0.6, 0.3, 0.8, 1, 9, True),
+        ]
+        
+        for w2v, ft, glove, q_len, v_len, is_relevant in score_combinations:
+            training_item = {
+                'word2vec_score': w2v,
+                'fasttext_score': ft,
+                'glove_score': glove,
+                'query_length': q_len,
+                'verse_length': v_len,
+                'is_relevant': is_relevant
+            }
+            training_data.append(training_item)
+        
+        return training_data
+    
+    def auto_initialize(self):
+        """
+        Auto-initialize meta-ensemble jika belum ada
+        """
+        if not os.path.exists(self.model_path):
+            print("Meta-ensemble model not found. Initializing...")
+            
+            # Buat direktori jika belum ada
+            os.makedirs(os.path.dirname(self.model_path), exist_ok=True)
+            
+            # Generate synthetic training data
+            synthetic_data = self.generate_synthetic_training_data()
+            
+            # Train model
+            self.train(synthetic_data)
+            self.save_model()
+            
+            print("Meta-ensemble model initialized successfully!")
+            return True
+        return False
+    
+    def validate_model(self):
+        """
+        Validasi model sebelum digunakan
+        """
+        if not self.is_trained:
+            return False, "Model belum dilatih"
+        
+        if self.model is None:
+            return False, "Model tidak tersedia"
+        
+        if self.scaler is None:
+            return False, "Scaler tidak tersedia"
+        
+        # Test prediction dengan data dummy
+        try:
+            test_result = self.predict_relevance(0.5, 0.5, 0.5, 3, 10)
+            if not isinstance(test_result, dict):
+                return False, "Prediction format tidak valid"
+            return True, "Model valid"
+        except Exception as e:
+            return False, f"Model validation failed: {e}"
+    
     def train(self, training_data: List[Dict[str, Any]]):
         """
         Melatih meta-ensemble model dengan data training
@@ -174,7 +261,7 @@ class MetaEnsembleModel:
     
     def load_model(self, input_path: str = None):
         """
-        Memuat model dan scaler
+        Enhanced model loading dengan fallback
         """
         if input_path is None:
             input_path = self.model_path
@@ -188,10 +275,14 @@ class MetaEnsembleModel:
             self.is_trained = model_data['is_trained']
             
             print(f"Meta-ensemble model loaded from {input_path}")
+            return True
             
+        except FileNotFoundError:
+            print(f"Meta-ensemble model not found at {input_path}")
+            return False
         except Exception as e:
             print(f"Error loading meta-ensemble model: {e}")
-            raise e
+            return False
     
     def get_feature_importance(self) -> Dict[str, float]:
         """

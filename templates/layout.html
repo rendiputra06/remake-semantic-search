@@ -102,6 +102,13 @@
                 >Evaluasi</a
               >
             </li>
+            <li class="nav-item">
+              <a
+                class="nav-link {% if request.endpoint == 'public.ensemble_test' %}active{% endif %}"
+                href="{{ url_for('public.ensemble_test') }}"
+                ><i class="fas fa-project-diagram me-1"></i>Uji Ensemble</a
+              >
+            </li>
             <!-- Hapus nav-item Tesaurus terpisah -->
             <!-- <li class="nav-item">
               <a
@@ -152,13 +159,7 @@
                 </li>
               </ul>
             </li>
-            <li class="nav-item">
-              <a
-                class="nav-link {% if request.endpoint == 'public.ensemble_test' %}active{% endif %}"
-                href="{{ url_for('public.ensemble_test') }}"
-                ><i class="fas fa-project-diagram me-1"></i>Uji Ensemble</a
-              >
-            </li>
+            
           </ul>
 
           <ul class="navbar-nav">

@@ -146,32 +146,23 @@ class Word2VecModel:
         """
         if self.model is None:
             raise ValueError("Model belum dimuat. Jalankan load_model() terlebih dahulu.")
-        
         if not self.verse_vectors:
             raise ValueError("Vektor ayat belum dibuat. Jalankan create_verse_vectors() terlebih dahulu.")
-        
-        # Praproses query
         from backend.preprocessing import preprocess_text
         query_tokens = preprocess_text(query)
-        
-        # Hitung vektor query
         query_vector = self._calculate_verse_vector(query_tokens)
         if query_vector is None:
             return []
-        
-        # Hitung kesamaan kosinus dengan semua ayat
         similarities = []
         for verse_id, verse_vector in self.verse_vectors.items():
             similarity = float(cosine_similarity([query_vector], [verse_vector])[0][0])
             similarities.append((verse_id, similarity))
-        
-        # Urutkan hasil berdasarkan kesamaan
         similarities.sort(key=lambda x: x[1], reverse=True)
-        
-        # Ambil hasil sebanyak limit
-        top_results = similarities[:limit]
-        
-        # Format hasil
+        # Perbaiki: jika limit=0, ambil semua hasil
+        if limit > 0:
+            top_results = similarities[:limit]
+        else:
+            top_results = similarities
         results = []
         for verse_id, similarity in top_results:
             verse_info = self.verse_data[verse_id]
@@ -184,8 +175,6 @@ class Word2VecModel:
                 'translation': verse_info['translation'],
                 'similarity': similarity
             })
-        
-        # Threshold adaptif jika threshold=None
         sim_scores = [r['similarity'] for r in results]
         use_threshold = threshold
         if threshold is None:
