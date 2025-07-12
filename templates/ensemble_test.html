@@ -126,9 +126,9 @@
           <div id="ensemble-summary" class="small text-muted"></div>
         </div>
         <!-- Method Indicator -->
-        <div id="method-indicator" class="alert alert-info mb-3">
+        <!-- <div id="method-indicator" class="alert alert-info mb-3">
           <strong>Metode yang digunakan:</strong> <span id="current-method"></span>
-        </div>
+        </div> -->
         <div class="table-responsive">
           <table class="table table-bordered table-hover align-middle">
             <thead class="table-light">
@@ -258,7 +258,7 @@ form.addEventListener('submit', function(e) {
     'voting': 'Voting',
     'meta': 'Meta-Ensemble'
   };
-  currentMethodSpan.textContent = methodNames[data.method] || data.method;
+  // currentMethodSpan.textContent = methodNames[data.method] || data.method;
 
   fetch('/api/models/ensemble/test', {
     method: 'POST',
@@ -329,6 +329,29 @@ form.addEventListener('submit', function(e) {
       if (meta!==null) { labels.push('Meta-Ensemble'); dataArr.push(meta); }
       chartContainer.innerHTML = '<canvas id="ensembleChart"></canvas>';
       const ctx = document.getElementById('ensembleChart').getContext('2d');
+      
+      // Custom plugin untuk menampilkan angka di atas bar
+      const customDataLabels = {
+        id: 'customDataLabels',
+        afterDraw: function(chart) {
+          const ctx = chart.ctx;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'bottom';
+          ctx.font = 'bold 12px Arial';
+          ctx.fillStyle = '#000';
+          
+          chart.data.datasets.forEach((dataset, datasetIndex) => {
+            chart.getDatasetMeta(datasetIndex).data.forEach((bar, index) => {
+              const data = dataset.data[index];
+              const value = data.toFixed(3);
+              const x = bar.x;
+              const y = bar.y - 5;
+              ctx.fillText(value, x, y);
+            });
+          });
+        }
+      };
+      
       chartInstance = new Chart(ctx, {
         type: 'bar',
         data: {
@@ -342,19 +365,44 @@ form.addEventListener('submit', function(e) {
               'rgba(75, 192, 192, 0.7)',
               'rgba(153, 102, 255, 0.7)',
               'rgba(255, 99, 132, 0.7)'
-            ]
+            ],
+            borderColor: [
+              'rgba(54, 162, 235, 1)',
+              'rgba(255, 206, 86, 1)',
+              'rgba(75, 192, 192, 1)',
+              'rgba(153, 102, 255, 1)',
+              'rgba(255, 99, 132, 1)'
+            ],
+            borderWidth: 1
           }]
         },
         options: {
           responsive: true,
+          maintainAspectRatio: false,
           plugins: {
             legend: { display: false },
-            tooltip: { enabled: true }
+            tooltip: { 
+              enabled: true,
+              callbacks: {
+                label: function(context) {
+                  return context.parsed.y.toFixed(3);
+                }
+              }
+            }
           },
           scales: {
-            y: { beginAtZero: true, max: 1 }
+            y: { 
+              beginAtZero: true, 
+              max: 1,
+              ticks: {
+                callback: function(value) {
+                  return value.toFixed(2);
+                }
+              }
+            }
           }
-        }
+        },
+        plugins: [customDataLabels]
       });
     }
     resultsDiv.style.display = 'block';
