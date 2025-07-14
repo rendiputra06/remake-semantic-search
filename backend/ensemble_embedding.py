@@ -51,8 +51,18 @@ class EnsembleEmbeddingModel:
         self.meta_ensemble = MetaEnsembleModel() if use_meta_ensemble else None
         if use_meta_ensemble:
             try:
-                self.meta_ensemble.load_model()
-                print("Meta-ensemble model loaded successfully")
+                # Try to load existing model first
+                if not self.meta_ensemble.load_model():
+                    # If model doesn't exist, auto-initialize
+                    self.meta_ensemble.auto_initialize()
+                
+                # Validate the model
+                is_valid, message = self.meta_ensemble.validate_model()
+                if not is_valid:
+                    print(f"Meta-ensemble validation failed: {message}")
+                    self.use_meta_ensemble = False
+                else:
+                    print("Meta-ensemble model loaded and validated successfully")
             except Exception as e:
                 print(f"Meta-ensemble model not available, falling back to weighted ensemble: {e}")
                 self.use_meta_ensemble = False
