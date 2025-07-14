@@ -223,29 +223,27 @@ def ensemble_search():
     limit = data.get('limit', 10)
     threshold = data.get('threshold', 0.5)
     use_meta_ensemble = data.get('use_meta_ensemble', False)
-    
+
     if not query:
         return error_response('Query tidak boleh kosong', 400)
-        
+    # Perbaikan: jika limit=0, jadikan None (tak terbatas)
+    if limit == 0:
+        limit = None
     try:
         # Inisialisasi model jika belum
         init_models()
-        
         # Buat ensemble model dengan opsi meta-ensemble
         ensemble = EnsembleEmbeddingModel(
             word2vec_model, fasttext_model, glove_model,
             use_meta_ensemble=use_meta_ensemble
         )
         ensemble.load_models()
-        
         # Lakukan pencarian
         results = ensemble.search(query, limit=limit, threshold=threshold)
-        
         return create_response(
             data=results,
             message='Pencarian berhasil'
         )
-        
     except Exception as e:
         return error_response(f'Error saat melakukan pencarian: {str(e)}', 500)
 
@@ -364,7 +362,9 @@ def ensemble_test():
 
     if not query:
         return error_response('Query tidak boleh kosong', 400)
-
+    # Perbaikan: jika limit=0, jadikan None (tak terbatas)
+    if limit == 0:
+        limit = None
     try:
         init_models()
         # Buat instance ensemble dengan bobot custom dan opsi meta

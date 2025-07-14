@@ -3,7 +3,7 @@ Pencarian Semantik Al-Quran{% endblock %} {% block breadcrumb %}
 <li class="breadcrumb-item active" aria-current="page">Ontologi</li>
 {% endblock %} {% block search_content %}
 <div class="container mt-4">
-  <h1 class="mb-4">Pencarian Ontologi (Eksperimen)</h1>
+  <h1 class="mb-4">Pencarian Ontologi</h1>
 
   <!-- Quick Search Section -->
   <div class="card mb-4">
@@ -117,15 +117,14 @@ Pencarian Semantik Al-Quran{% endblock %} {% block breadcrumb %}
       </div>
       <div class="col-md-2">
         <label for="limit" class="form-label">Limit</label>
-        <input
-          type="number"
-          class="form-control"
-          id="limit"
-          name="limit"
-          value="10"
-          min="1"
-          max="50"
-        />
+        <select class="form-select" id="limit" name="limit">
+          <option value="5">5 hasil</option>
+          <option value="10" selected>10 hasil</option>
+          <option value="20">20 hasil</option>
+          <option value="50">50 hasil</option>
+          <option value="100">100 hasil</option>
+          <option value="0">Tak Terbatas</option>
+        </select>
       </div>
       <div class="col-md-1">
         <button type="submit" class="btn btn-primary w-100">Cari</button>
@@ -199,6 +198,60 @@ Pencarian Semantik Al-Quran{% endblock %} {% block breadcrumb %}
     });
   });
 
+  let allResults = [];
+  let currentPage = 1;
+  const resultsPerPage = 20;
+
+  function renderResultsPage(page) {
+    const resultsDiv = document.getElementById("search-results");
+    const startIdx = (page - 1) * resultsPerPage;
+    const endIdx = startIdx + resultsPerPage;
+    const pageResults = allResults.slice(startIdx, endIdx);
+
+    let html = `<div class='list-group'>`;
+    pageResults.forEach((r, i) => {
+      html += `<div class='list-group-item'>
+        <div class='d-flex justify-content-between'>
+          <div><strong>Q.S. ${r.surah_number}:${r.ayat_number}</strong> <span class='text-muted'>(${r.surah_name})</span></div>
+        </div>
+        <div class='mt-2'><span class='text-end d-block' dir='rtl' style='font-size:1.2em'>${r.arabic}</span></div>
+        <div class='mb-1'>${r.translation || ""}</div>
+        <div class='small text-muted'>Sumber query: <span class='badge bg-light text-dark'>${r.source_query}</span></div>
+      </div>`;
+    });
+    html += `</div>`;
+
+    // Pagination controls
+    const totalPages = Math.ceil(allResults.length / resultsPerPage);
+    if (totalPages > 1) {
+      html += `
+        <div class="d-flex justify-content-between align-items-center mt-3">
+          <button class="btn btn-outline-secondary btn-sm" id="prev-page-btn" ${page === 1 ? "disabled" : ""}>Sebelumnya</button>
+          <span>Halaman ${page} dari ${totalPages}</span>
+          <button class="btn btn-outline-secondary btn-sm" id="next-page-btn" ${page === totalPages ? "disabled" : ""}>Selanjutnya</button>
+        </div>
+      `;
+    }
+
+    resultsDiv.innerHTML = html;
+
+    // Event listeners
+    if (totalPages > 1) {
+      document.getElementById("prev-page-btn").onclick = function () {
+        if (currentPage > 1) {
+          currentPage--;
+          renderResultsPage(currentPage);
+        }
+      };
+      document.getElementById("next-page-btn").onclick = function () {
+        if (currentPage < totalPages) {
+          currentPage++;
+          renderResultsPage(currentPage);
+        }
+      };
+    }
+  }
+
   document
     .getElementById("ontology-search-form")
     .addEventListener("submit", function (e) {
@@ -229,34 +282,22 @@ Pencarian Semantik Al-Quran{% endblock %} {% block breadcrumb %}
           let infoHtml = `<div class='mb-2'><strong>Query Ekspansi:</strong> ${data.expanded_queries
             .map((q) => `<span class='badge bg-info me-1'>${q}</span>`)
             .join(" ")}</div>`;
+          // Tambahkan info total hasil
+          infoHtml += `<div class='mb-2'><strong>Total hasil ditemukan:</strong> ${data.results.length} ayat</div>`;
           infoDiv.innerHTML = infoHtml;
-          // Hasil
-          if (!data.results.length) {
+
+          // Simpan semua hasil untuk pagination
+          allResults = data.results;
+          currentPage = 1;
+
+          if (!allResults.length) {
             resultsDiv.innerHTML = `<div class='alert alert-warning'>Tidak ada hasil ditemukan.</div>`;
             return;
           }
-          let html = `<div class='list-group'>`;
-          data.results.forEach((r, i) => {
-            html += `<div class='list-group-item'>
-          <div class='d-flex justify-content-between'>
-            <div><strong>Q.S. ${r.surah_number}:${
-              r.ayat_number
-            }</strong> <span class='text-muted'>(${r.surah_name})</span></div>
-          </div>
-          <div class='mt-2'><span class='text-end d-block' dir='rtl' style='font-size:1.2em'>${
-            r.arabic
-          }</span></div>
-          <div class='mb-1'>${r.translation || ""}</div>
-          <div class='small text-muted'>Sumber query: <span class='badge bg-light text-dark'>${
-            r.source_query
-          }</span></div>
-        </div>`;
-          });
-          html += `</div>`;
-          resultsDiv.innerHTML = html;
+          renderResultsPage(currentPage);
 
-          // Render bubble net visualization
-          renderBubbleNet(data.results, data.expanded_queries);
+          // Render bubble net visualisasi, gunakan data.bubble_net (maks 50)
+          renderBubbleNet(data.bubble_net, data.expanded_queries);
         })
         .catch((err) => {
           resultsDiv.innerHTML = `<div class='alert alert-danger'>Terjadi error: ${err}</div>`;

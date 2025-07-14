@@ -169,7 +169,10 @@ class Word2VecModel:
         similarities.sort(key=lambda x: x[1], reverse=True)
         
         # Ambil hasil sebanyak limit
-        top_results = similarities[:limit]
+        if limit is not None:
+            top_results = similarities[:limit]
+        else:
+            top_results = similarities[:]
         
         # Format hasil
         results = []

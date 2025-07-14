@@ -814,6 +814,11 @@ def ontology_trace():
         user = get_user_by_id(session['user_id'])
     return render_template('ontology_trace.html', user=user)
 
+@app.route('/ensemble-analysis')
+def ensemble_analysis():
+    """Halaman analisis model ensemble"""
+    return render_template('ensemble_analysis.html')
+
 @app.context_processor
 def inject_user():
     """Menyediakan data user untuk semua template."""

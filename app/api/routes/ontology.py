@@ -109,7 +109,9 @@ def ontology_search():
     threshold = None
     
     if limit_raw is not None:
-        limit = int(limit_raw) if limit_raw != 0 else None
+        limit = int(limit_raw)
+        if limit == 0:
+            limit = None
     if threshold_raw is not None:
         threshold = float(threshold_raw)
 
@@ -155,13 +157,18 @@ def ontology_search():
     # Urutkan hasil
     final_results = list(result_map.values())
     final_results.sort(key=lambda x: x['similarity'], reverse=True)
-    final_results = final_results[:limit]
+    # Jika limit None, jangan slice; jika limit ada, slice
+    if limit is not None:
+        final_results = final_results[:limit]
+    # Data untuk bubble net (visualisasi), batasi maksimal 50
+    bubble_net_results = final_results[:50]
 
     return jsonify({
         'success': True,
         'query': query,
         'expanded_queries': expanded_info,
         'results': final_results,
+        'bubble_net': bubble_net_results,
         'count': len(final_results)
     })
 

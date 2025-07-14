@@ -82,6 +82,8 @@ def run_evaluation(query_id):
     """
     data = request.json or {}
     result_limit = int(data.get('result_limit', 10))
+    if result_limit == 0:
+        result_limit = None  # None berarti tak terbatas
     # Ambil threshold per model (dict), fallback ke threshold global jika tidak ada
     threshold_per_model = data.get('threshold_per_model', {})
     def get_threshold(model):
@@ -107,14 +109,24 @@ def run_evaluation(query_id):
             search_engine = init_lexical_search()
             start = time.time()
             lexical_results = search_engine.search(query_text, exact_match=False, use_regex=False, limit=result_limit)
+            # Jika result_limit None, jangan slice hasil
+            if result_limit is None:
+                found = set()
+                for r in lexical_results:
+                    ref = extract_verse_ref(r)
+                    if ref:
+                        found.add(ref)
+                    else:
+                        raise Exception(f"Format hasil lexical tidak sesuai: {r}")
+            else:
+                found = set()
+                for r in lexical_results[:result_limit]:
+                    ref = extract_verse_ref(r)
+                    if ref:
+                        found.add(ref)
+                    else:
+                        raise Exception(f"Format hasil lexical tidak sesuai: {r}")
             exec_time = round(time.time() - start, 3)
-            found = set()
-            for r in lexical_results:
-                ref = extract_verse_ref(r)
-                if ref:
-                    found.add(ref)
-                else:
-                    raise Exception(f"Format hasil lexical tidak sesuai: {r}")
             result = format_eval_result('lexical', 'Lexical', found, ground_truth, exec_time)
             # Simpan ke database
             add_evaluation_result(query_id, 'lexical', result['precision'], result['recall'], result['f1'], exec_time)
@@ -123,52 +135,7 @@ def run_evaluation(query_id):
             results.append({'method': 'lexical', 'label': 'Lexical', 'error': str(e)})
 
     # --- 2. Evaluasi Sinonim (Expanded Query) ---
-    if not selected_methods or 'synonym' in selected_methods:
-        try:
-            thesaurus = init_thesaurus()
-            start = time.time()
-            query_words = query_text.split()
-            expanded_queries = [query_text]
-            # Ekspansi query dengan sinonim per kata
-            for word in query_words:
-                try:
-                    synonyms = thesaurus.get_synonyms(word)
-                    if synonyms:
-                        for synonym in synonyms:
-                            new_query = query_text.replace(word, synonym)
-                            expanded_queries.append(new_query)
-                except Exception:
-                    continue
-            expanded_queries = list(dict.fromkeys(expanded_queries))  # Unik
-            all_results = []
-            # Jalankan semantic search untuk setiap query hasil ekspansi
-            for expanded_query in expanded_queries:
-                try:
-                    res = search_service.semantic_search(
-                        query=expanded_query,
-                        model_type='word2vec',
-                        limit=result_limit,
-                        threshold=get_threshold('word2vec'),
-                        user_id=None
-                    )
-                    for r in res['results']:
-                        r['source_query'] = expanded_query
-                    all_results.extend(res['results'])
-                except Exception:
-                    continue
-            unique_refs = set()
-            for r in all_results:
-                ref = extract_verse_ref(r)
-                if ref:
-                    unique_refs.add(ref)
-            found = set(list(unique_refs)[:result_limit])
-            exec_time = round(time.time() - start, 3)
-            result = format_eval_result('synonym', 'Sinonim', found, ground_truth, exec_time)
-            # Simpan ke database
-            add_evaluation_result(query_id, 'synonym', result['precision'], result['recall'], result['f1'], exec_time)
-            results.append(result)
-        except Exception as e:
-            results.append({'method': 'synonym', 'label': 'Sinonim', 'error': str(e)})
+    # Dihapus: tidak ada lagi evaluasi sinonim
 
     # --- 3. Evaluasi Semantic (word2vec, fasttext, glove, ensemble) ---
     for model in ['word2vec', 'fasttext', 'glove', 'ensemble']:
@@ -182,11 +149,18 @@ def run_evaluation(query_id):
                     threshold=get_threshold(model),
                     user_id=None
                 )
-                found = set()
-                for r in res['results']:
-                    ref = extract_verse_ref(r)
-                    if ref:
-                        found.add(ref)
+                if result_limit is None:
+                    found = set()
+                    for r in res['results']:
+                        ref = extract_verse_ref(r)
+                        if ref:
+                            found.add(ref)
+                else:
+                    found = set()
+                    for r in res['results'][:result_limit]:
+                        ref = extract_verse_ref(r)
+                        if ref:
+                            found.add(ref)
                 exec_time = round(time.time() - start, 3)
                 label = f'Semantic ({model})' if model != 'ensemble' else 'Semantic (Ensemble)'
                 result = format_eval_result(model, label, found, ground_truth, exec_time)
@@ -215,11 +189,18 @@ def run_evaluation(query_id):
                     threshold=get_threshold(base_model),
                     user_id=None
                 )
-                found = set()
-                for r in res['results']:
-                    ref = extract_verse_ref(r)
-                    if ref:
-                        found.add(ref)
+                if result_limit is None:
+                    found = set()
+                    for r in res['results']:
+                        ref = extract_verse_ref(r)
+                        if ref:
+                            found.add(ref)
+                else:
+                    found = set()
+                    for r in res['results'][:result_limit]:
+                        ref = extract_verse_ref(r)
+                        if ref:
+                            found.add(ref)
                 exec_time = round(time.time() - start, 3)
                 label = f'Semantic+Ontologi ({base_model})'
                 result = format_eval_result(method, label, found, ground_truth, exec_time)

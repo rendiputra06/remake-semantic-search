@@ -1,0 +1,301 @@
+{% extends "layout.html" %}
+
+{% block title %}Analisis Model Ensemble - Mesin Pencarian Semantik Al-Quran{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="row">
+    <div class="col-12">
+      <h1 class="mb-4">
+        <i class="fas fa-project-diagram text-primary me-2"></i>
+        Analisis Model Ensemble
+      </h1>
+      
+      <!-- Overview -->
+      <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Apa itu Model Ensemble?</h5>
+        </div>
+        <div class="card-body">
+          <p class="lead">
+            Model Ensemble adalah teknik yang menggabungkan kekuatan dari tiga model word embedding: 
+            <strong>Word2Vec</strong>, <strong>FastText</strong>, dan <strong>GloVe</strong> untuk menghasilkan 
+            hasil pencarian yang lebih akurat dan robust.
+          </p>
+          <div class="row">
+            <div class="col-md-4">
+              <div class="text-center">
+                <i class="fas fa-cube fa-3x text-primary mb-2"></i>
+                <h6>Word2Vec</h6>
+                <small class="text-muted">Model berbasis konteks kata</small>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="text-center">
+                <i class="fas fa-cubes fa-3x text-success mb-2"></i>
+                <h6>FastText</h6>
+                <small class="text-muted">Model dengan sub-word representation</small>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="text-center">
+                <i class="fas fa-globe fa-3x text-warning mb-2"></i>
+                <h6>GloVe</h6>
+                <small class="text-muted">Model berbasis co-occurrence global</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cara Kerja -->
+      <div class="card mb-4">
+        <div class="card-header bg-success text-white">
+          <h5 class="mb-0"><i class="fas fa-cogs me-2"></i>Cara Kerja Model Ensemble</h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <h6><i class="fas fa-list-ol me-2"></i>Langkah-langkah Proses:</h6>
+              <ol class="list-group list-group-numbered">
+                <li class="list-group-item">
+                  <strong>Pencarian Individual</strong><br>
+                  <small class="text-muted">Setiap model mencari secara terpisah dengan query yang sama</small>
+                </li>
+                <li class="list-group-item">
+                  <strong>Penggabungan Hasil</strong><br>
+                  <small class="text-muted">Semua ayat yang ditemukan digabungkan menjadi satu set unik</small>
+                </li>
+                <li class="list-group-item">
+                  <strong>Perhitungan Skor</strong><br>
+                  <small class="text-muted">Skor ensemble dihitung dengan weighted average + voting bonus</small>
+                </li>
+                <li class="list-group-item">
+                  <strong>Filtering & Ranking</strong><br>
+                  <small class="text-muted">Hasil difilter berdasarkan threshold dan diurutkan</small>
+                </li>
+              </ol>
+            </div>
+            <div class="col-md-6">
+              <h6><i class="fas fa-chart-line me-2"></i>Ilustrasi Proses:</h6>
+              <div class="text-center">
+                <div class="border rounded p-3 mb-2">
+                  <small class="text-muted">Query: "kesabaran"</small>
+                </div>
+                <div class="row">
+                  <div class="col-4">
+                    <div class="border rounded p-2 bg-light">
+                      <small><strong>W2V</strong><br>10 hasil</small>
+                    </div>
+                  </div>
+                  <div class="col-4">
+                    <div class="border rounded p-2 bg-light">
+                      <small><strong>FT</strong><br>8 hasil</small>
+                    </div>
+                  </div>
+                  <div class="col-4">
+                    <div class="border rounded p-2 bg-light">
+                      <small><strong>Glove</strong><br>12 hasil</small>
+                    </div>
+                  </div>
+                </div>
+                <div class="mt-2">
+                  <i class="fas fa-arrow-down text-primary"></i>
+                </div>
+                <div class="border rounded p-3 bg-primary text-white">
+                  <small><strong>Ensemble</strong><br>15 hasil unik</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Rumus Matematika -->
+      <div class="card mb-4">
+        <div class="card-header bg-warning text-dark">
+          <h5 class="mb-0"><i class="fas fa-calculator me-2"></i>Rumus Perhitungan Skor Ensemble</h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <h6><i class="fas fa-weight-hanging me-2"></i>1. Weighted Average</h6>
+              <div class="bg-light p-3 rounded">
+                <code>
+                  Skor = (W₁×S₁ + W₂×S₂ + W₃×S₃) / (W₁ + W₂ + W₃)
+                </code>
+              </div>
+              <small class="text-muted">
+                Dimana:<br>
+                • W₁, W₂, W₃ = Bobot model (default: 1.0)<br>
+                • S₁, S₂, S₃ = Skor similarity dari masing-masing model
+              </small>
+            </div>
+            <div class="col-md-6">
+              <h6><i class="fas fa-vote-yea me-2"></i>2. Voting Bonus</h6>
+              <div class="bg-light p-3 rounded">
+                <code>
+                  Jika model_count ≥ 2: Skor += 0.05
+                </code>
+              </div>
+              <small class="text-muted">
+                • model_count = jumlah model yang menemukan ayat tersebut<br>
+                • Bonus 0.05 jika ayat ditemukan oleh ≥2 model
+              </small>
+            </div>
+          </div>
+          
+          <hr>
+          
+          <h6><i class="fas fa-example me-2"></i>Contoh Perhitungan:</h6>
+          <div class="bg-light p-3 rounded">
+            <p><strong>Ayat 2:255 (Ayat Kursi)</strong></p>
+            <ul>
+              <li>Word2Vec: skor = 0.8</li>
+              <li>FastText: skor = 0.7</li>
+              <li>GloVe: skor = 0.0 (tidak ditemukan)</li>
+            </ul>
+            <p><strong>Perhitungan:</strong></p>
+            <ol>
+              <li>Weighted Average: (1.0×0.8 + 1.0×0.7 + 1.0×0.0) / 3 = 0.5</li>
+              <li>Voting Bonus: Karena ditemukan oleh 2 model, +0.05</li>
+              <li><strong>Skor Final: 0.5 + 0.05 = 0.55</strong></li>
+            </ol>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mengapa Word2Vec Bisa Lebih Banyak -->
+      <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+          <h5 class="mb-0"><i class="fas fa-question-circle me-2"></i>Mengapa Word2Vec Bisa Menemukan Lebih Banyak dari Ensemble?</h5>
+        </div>
+        <div class="card-body">
+          <div class="alert alert-info">
+            <strong>YA, ini NORMAL dan bisa terjadi!</strong> Berikut penjelasannya:
+          </div>
+          
+          <div class="row">
+            <div class="col-md-6">
+              <h6><i class="fas fa-filter me-2"></i>1. Threshold Filtering</h6>
+              <p>Setelah perhitungan ensemble, hasil difilter berdasarkan threshold:</p>
+              <ul>
+                <li><strong>Word2Vec</strong>: Mungkin mengembalikan 50 hasil dengan skor > 0.3</li>
+                <li><strong>Ensemble</strong>: Setelah weighted average, hanya 30 hasil yang skornya > 0.5</li>
+                <li><strong>Hasil</strong>: Ensemble lebih sedikit karena threshold lebih ketat</li>
+              </ul>
+            </div>
+            <div class="col-md-6">
+              <h6><i class="fas fa-chart-bar me-2"></i>2. Voting Bonus Tidak Selalu Menolong</h6>
+              <p>Jika ayat hanya ditemukan oleh 1 model:</p>
+              <ul>
+                <li>Tidak dapat voting bonus</li>
+                <li>Jika skor individual rendah, weighted average tetap rendah</li>
+                <li><strong>Contoh</strong>: Ayat dengan skor [0.2, 0.0, 0.0] → rata-rata 0.067 → tidak lolos threshold</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Voting Filter -->
+      <div class="card mb-4">
+        <div class="card-header bg-secondary text-white">
+          <h5 class="mb-0"><i class="fas fa-vote-yea me-2"></i>Voting Filter (Filter ≥2 Model)</h5>
+        </div>
+        <div class="card-body">
+          <p>Kami menyediakan opsi untuk hanya mengambil ayat yang ditemukan oleh minimal 2 model:</p>
+          
+          <div class="row">
+            <div class="col-md-6">
+              <h6><i class="fas fa-check-circle text-success me-2"></i>Keuntungan:</h6>
+              <ul>
+                <li>Kualitas hasil lebih tinggi</li>
+                <li>Mengurangi false positive dari model tunggal</li>
+                <li>Hasil lebih konsisten dan reliable</li>
+                <li>Ayat yang "disetujui" oleh multiple model</li>
+              </ul>
+            </div>
+            <div class="col-md-6">
+              <h6><i class="fas fa-exclamation-triangle text-warning me-2"></i>Trade-off:</h6>
+              <ul>
+                <li>Jumlah hasil lebih sedikit</li>
+                <li>Bisa miss ayat yang hanya ditemukan oleh 1 model tapi sebenarnya relevan</li>
+                <li>Coverage lebih sempit</li>
+              </ul>
+            </div>
+          </div>
+          
+          <div class="alert alert-warning">
+            <strong>Pilihan Tergantung Kebutuhan:</strong><br>
+            • <strong>Tanpa filter</strong>: Coverage lebih luas, tapi noise lebih tinggi<br>
+            • <strong>Dengan filter</strong>: Kualitas lebih tinggi, tapi coverage lebih sempit
+          </div>
+        </div>
+      </div>
+
+      <!-- Implementasi Teknis -->
+      <div class="card mb-4">
+        <div class="card-header bg-dark text-white">
+          <h5 class="mb-0"><i class="fas fa-code me-2"></i>Implementasi Teknis</h5>
+        </div>
+        <div class="card-body">
+          <h6><i class="fas fa-file-code me-2"></i>File Utama:</h6>
+          <ul>
+            <li><code>backend/ensemble_embedding.py</code> - Implementasi model ensemble</li>
+            <li><code>app/api/services/search_service.py</code> - Service layer</li>
+            <li><code>app/api/routes/search.py</code> - API endpoint</li>
+          </ul>
+          
+          <h6><i class="fas fa-cog me-2"></i>Parameter Konfigurasi:</h6>
+          <div class="bg-light p-3 rounded">
+            <code>
+              EnsembleEmbeddingModel(<br>
+              &nbsp;&nbsp;word2vec_model, fasttext_model, glove_model,<br>
+              &nbsp;&nbsp;word2vec_weight=1.0,<br>
+              &nbsp;&nbsp;fasttext_weight=1.0,<br>
+              &nbsp;&nbsp;glove_weight=1.0,<br>
+              &nbsp;&nbsp;voting_bonus=0.05,<br>
+              &nbsp;&nbsp;use_voting_filter=False<br>
+              )
+            </code>
+          </div>
+        </div>
+      </div>
+
+      <!-- Kesimpulan -->
+      <div class="card mb-4">
+        <div class="card-header bg-success text-white">
+          <h5 class="mb-0"><i class="fas fa-lightbulb me-2"></i>Kesimpulan</h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <h6><i class="fas fa-thumbs-up text-success me-2"></i>Kelebihan Ensemble:</h6>
+              <ul>
+                <li>Robustness lebih tinggi</li>
+                <li>Coverage lebih luas</li>
+                <li>Hasil lebih stabil</li>
+                <li>Mengurangi bias model tunggal</li>
+              </ul>
+            </div>
+            <div class="col-md-6">
+              <h6><i class="fas fa-clock text-warning me-2"></i>Keterbatasan:</h6>
+              <ul>
+                <li>Komputasi lebih berat</li>
+                <li>Latensi lebih tinggi</li>
+                <li>Tuning lebih kompleks</li>
+                <li>Memori lebih besar</li>
+              </ul>
+            </div>
+          </div>
+          
+          <div class="alert alert-primary">
+            <strong>Model Ensemble</strong> adalah solusi yang tepat untuk mendapatkan hasil pencarian yang lebih akurat dan reliable dengan menggabungkan kekuatan dari multiple model embedding.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} 

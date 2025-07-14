@@ -1,0 +1,250 @@
+{% extends "layout.html" %} {% block title %}Mesin Pencarian Semantik Al-Quran{% endblock %} {% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-10">
+    <div class="text-center mb-5">
+      <h1 class="display-4 fw-bold text-primary">
+        Pencarian Semantik Al-Quran
+      </h1>
+      <p class="lead">
+        Cari ayat Al-Quran berdasarkan makna dan konsep menggunakan teknologi
+        pembelajaran mesin
+      </p>
+    </div>
+
+    <div class="card shadow-lg border-0 rounded-lg">
+      <div class="card-body p-5">
+        <form id="searchForm">
+          <div class="row mb-4">
+            <div class="col-md-9">
+              <div class="form-floating mb-3 mb-md-0">
+                <input
+                  class="form-control"
+                  id="searchQuery"
+                  type="text"
+                  placeholder="Masukkan kata kunci pencarian"
+                  required
+                />
+                <label for="searchQuery">Kata Kunci Pencarian</label>
+              </div>
+              <div class="mt-2">
+                <small class="text-muted"
+                  >Contoh pencarian:
+                  <a href="#" class="example-search"
+                    >kesabaran dalam menghadapi cobaan</a
+                  >,
+                  <a href="#" class="example-search"
+                    >berbuat baik kepada orang tua</a
+                  >, <a href="#" class="example-search">keutamaan sedekah</a>,
+                  <a href="#" class="example-search"
+                    >larangan bersikap sombong</a
+                  >,
+                  <a href="#" class="example-search"
+                    >pentingnya menuntut ilmu</a
+                  >
+                </small>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-floating mb-3">
+                <select class="form-select" id="searchType">
+                  <option value="semantic" selected>Semantik</option>
+                  <option value="lexical">Leksikal</option>
+                  <option value="expanded">Sinonim</option>
+                </select>
+                <label for="searchType">Tipe Pencarian</label>
+              </div>
+              <div class="form-floating mb-3 semantic-option">
+                <select class="form-select" id="modelType">
+                  <option value="word2vec" selected>Word2Vec</option>
+                  <option value="fasttext">FastText</option>
+                  <option value="glove">GloVe</option>
+                  <option value="ensemble">Ensemble (Averaging)</option>
+                </select>
+                <label for="modelType">Model Semantik</label>
+              </div>
+              <div class="form-floating mb-3 lexical-option d-none">
+                <select class="form-select" id="lexicalOption">
+                  <option value="keywords" selected>Kata Kunci</option>
+                  <option value="exactMatch">Frasa Persis</option>
+                  <option value="regex">Regex</option>
+                </select>
+                <label for="lexicalOption">Opsi Pencarian</label>
+              </div>
+              <div class="form-floating mt-3">
+                <select class="form-select" id="resultCount">
+                  <option value="5">5 hasil</option>
+                  <option value="10" selected>10 hasil</option>
+                  <option value="20">20 hasil</option>
+                  <option value="50">50 hasil</option>
+                  <option value="100">100 hasil</option>
+                  <option value="0">Tanpa batas</option>
+                </select>
+                <label for="resultCount">Jumlah Hasil</label>
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="d-flex align-items-center justify-content-between mt-4 mb-0"
+          >
+            <button
+              type="button"
+              class="btn btn-outline-secondary"
+              id="resetBtn"
+            >
+              <i class="fas fa-undo me-1"></i> Reset
+            </button>
+            <div class="d-flex">
+              <button
+                type="button"
+                class="btn btn-outline-primary me-2"
+                id="checkSynonymsBtn"
+              >
+                <i class="fas fa-exchange-alt me-1"></i> Cek Sinonim
+              </button>
+              <button
+                type="submit"
+                class="btn btn-primary btn-lg px-5"
+                id="searchButton"
+              >
+                <i class="fas fa-search me-1"></i>
+                <span id="searchBtnText">Cari</span>
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal untuk sinonim -->
+    <div
+      class="modal fade"
+      id="synonymsModal"
+      tabindex="-1"
+      aria-labelledby="synonymsModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="synonymsModalLabel">Sinonim Kata</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <div id="synonymsContent">
+              <p>Masukkan kata untuk melihat sinonimnya.</p>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Tutup
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card shadow mt-4 d-none" id="resultsCard">
+      <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">Hasil Pencarian</h5>
+      </div>
+      <div class="card-body p-0">
+        <div class="list-group list-group-flush" id="searchResults">
+          <!-- Hasil pencarian akan ditampilkan di sini -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading spinner -->
+    <div class="text-center my-5 d-none" id="loadingSpinner">
+      <div
+        class="spinner-border text-primary"
+        style="width: 3rem; height: 3rem"
+        role="status"
+      >
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <p class="mt-3">Sedang mencari ayat-ayat yang relevan...</p>
+    </div>
+
+    <div class="mt-5">
+      <h3 class="text-center mb-4">Tentang Model dan Tipe Pencarian</h3>
+
+      <div class="card border-primary mb-3">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0">Semantik (Word2Vec, FastText, GloVe)</h5>
+        </div>
+        <div class="card-body">
+          <p>
+            Pencarian semantik memungkinkan Anda mencari ayat-ayat Al-Quran
+            berdasarkan makna dan konteks, bukan hanya berdasarkan kecocokan
+            kata yang persis sama.
+          </p>
+          <p>
+            Teknologi ini memahami hubungan antara kata-kata dan konsep,
+            sehingga dapat menemukan ayat yang secara makna berkaitan dengan
+            pencarian Anda meskipun tidak menggunakan kata yang persis sama.
+          </p>
+          <ul class="small">
+            <li>
+              Word2Vec: Akurasi tinggi untuk hubungan kata umum dan konteks
+              semantik yang baik
+            </li>
+            <li>
+              FastText: Penanganan kata yang tidak umum dan analisis morfologi
+              yang lebih baik
+            </li>
+            <li>
+              GloVe: Menangkap pola statistik global dan keseimbangan semantik
+              lokal dan global
+            </li>
+            <li>
+              <strong>Ensemble (Averaging):</strong> Gabungan Word2Vec,
+              FastText, dan GloVe untuk hasil yang lebih robust dan akurat
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card border-success mb-3">
+        <div class="card-header bg-success text-white">
+          <h5 class="mb-0">Leksikal (Kata Kunci, Frasa Persis, Regex)</h5>
+        </div>
+        <div class="card-body">
+          <p>
+            Pencarian leksikal memungkinkan Anda menemukan ayat-ayat yang
+            mengandung kata atau frasa tertentu secara tepat.
+          </p>
+          <p>
+            Tipe pencarian ini berguna ketika Anda mencari kata atau frasa
+            spesifik dalam Al-Quran.
+          </p>
+          <ul class="small">
+            <li>
+              Kata Kunci: Mencari ayat yang mengandung semua kata kunci yang
+              Anda masukkan
+            </li>
+            <li>
+              Frasa Persis: Mencari ayat yang mengandung frasa persis seperti
+              yang Anda masukkan
+            </li>
+            <li>
+              Regex: Mencari ayat dengan menggunakan ekspresi reguler (untuk
+              pencarian lanjutan)
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card border-info mb-3">
+        <div class="card-header bg-info text-white">
+```}  // truncated for brevity, but the full file will be written in the backup file. 

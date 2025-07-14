@@ -476,7 +476,8 @@ document.addEventListener("DOMContentLoaded", function () {
     // Ambil metode yang dipilih
     const selectedMethods = Array.from(
       document.querySelectorAll(".eval-method:checked")
-    ).map((cb) => cb.value);
+    ).map((cb) => cb.value)
+      .filter((v) => v !== 'synonym'); // Pastikan sinonim tidak pernah dikirim
     if (!query_text) {
       alert("Query evaluasi wajib diisi!");
       return;
@@ -493,7 +494,7 @@ document.addEventListener("DOMContentLoaded", function () {
       .then((settingsData) => {
         if (settingsData.success) {
           const settings = settingsData.data;
-          const result_limit = settings.result_limit === 0 ? 1000 : settings.result_limit; // 0 = tak terbatas, gunakan 1000 sebagai limit maksimal
+          const result_limit = 0; // Selalu tak terbatas
           const thresholds = settings.thresholds || {};
           // Kirim threshold per model ke backend
           const threshold_per_model = {};

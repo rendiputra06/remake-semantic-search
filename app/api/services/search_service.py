@@ -79,8 +79,8 @@ class SearchService:
                         self._semantic_models['fasttext'],
                         self._semantic_models['glove']
                     )
-                    ensemble.load_models()
-                    ensemble.load_verse_vectors()
+                    # ensemble.load_models()
+                    # ensemble.load_verse_vectors()
                     self._semantic_models[model_type] = ensemble
                 else:
                     raise ValueError(f"Tipe model tidak didukung: {model_type}")
@@ -164,12 +164,13 @@ class SearchService:
         """Perform semantic search. Mendukung tracing jika trace dict diberikan."""
         try:
             # Jika limit atau threshold tidak diberikan, ambil dari pengaturan global per model
-            if limit is None or threshold is None:
+            if limit is None and threshold is None:
                 global_thresholds = get_global_thresholds()
-                if threshold is None:
-                    threshold = global_thresholds.get(model_type, 0.5)
-                if limit is None:
-                    limit = 10
+                threshold = global_thresholds.get(model_type, 0.5)
+                # limit tetap None jika None, artinya tak terbatas
+            elif threshold is None:
+                global_thresholds = get_global_thresholds()
+                threshold = global_thresholds.get(model_type, 0.5)
             if trace is not None:
                 trace.setdefault('steps', []).append({'step': 'init_model', 'data': {'model_type': model_type}})
                 trace.setdefault('logs', []).append(f'Inisialisasi model: {model_type}')

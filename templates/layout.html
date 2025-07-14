@@ -29,7 +29,7 @@
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
       <div class="container">
         <a class="navbar-brand" href="{{ url_for('index') }}">
-          <i class="fas fa-book-quran me-2"></i>Pencarian Semantik Al-Quran
+          Pencarian Semantik Al-Quran
         </a>
         <button
           class="navbar-toggler"
@@ -60,7 +60,7 @@
                 data-bs-toggle="dropdown"
                 aria-expanded="false"
               >
-                <i class="fas fa-search me-1"></i>Pencarian
+                Pencarian
               </a>
               <ul class="dropdown-menu" aria-labelledby="searchDropdown">
                 <!-- <li>
@@ -92,7 +92,7 @@
               <a
                 class="nav-link {% if request.endpoint == 'ontology_trace' %}active{% endif %}"
                 href="{{ url_for('ontology_trace') }}"
-                ><i class="fas fa-search-plus me-1"></i>Tracing</a
+                >Tracing</a
               >
             </li>
             <li class="nav-item">
@@ -137,12 +137,17 @@
                 </li>
                 <li>
                   <a class="dropdown-item" href="{{ url_for('ontology_info') }}"
-                    ><i class="fas fa-brain me-2"></i>Informasi Ontologi</a
+                    >Informasi Ontologi</a
                   >
                 </li>
                 <li>
                   <a class="dropdown-item" href="{{ url_for('public.thesaurus') }}"
-                    ><i class="fas fa-book-open me-2"></i>Tesaurus</a
+                    >Tesaurus</a
+                  >
+                </li>
+                <li>
+                  <a class="dropdown-item" href="{{ url_for('ensemble_analysis') }}"
+                    >Analisis Model Ensemble</a
                   >
                 </li>
                 <li>
@@ -156,7 +161,7 @@
               <a
                 class="nav-link {% if request.endpoint == 'public.ensemble_test' %}active{% endif %}"
                 href="{{ url_for('public.ensemble_test') }}"
-                ><i class="fas fa-project-diagram me-1"></i>Uji Ensemble</a
+                >Uji Ensemble</a
               >
             </li>
           </ul>
@@ -172,7 +177,7 @@
                 data-bs-toggle="dropdown"
                 aria-expanded="false"
               >
-                <i class="fas fa-user-shield me-1"></i> Admin
+                Admin
               </a>
               <ul
                 class="dropdown-menu dropdown-menu-end"
@@ -180,20 +185,20 @@
               >
                 <li>
                   <a class="dropdown-item" href="{{ url_for('admin.admin') }}"
-                    ><i class="fas fa-user-shield me-2"></i>Admin</a
+                    >Admin</a
                   >
                 </li>
                 <li>
                   <a
                     class="dropdown-item"
                     href="{{ url_for('ontology_admin') }}"
-                    ><i class="fas fa-database me-2"></i>Admin Ontologi</a
+                    >Admin Ontologi</a
                   >
                 </li>
                 <li><hr class="dropdown-divider" /></li>
                 <li>
                   <a class="dropdown-item" href="{{ url_for('auth.logout') }}"
-                    ><i class="fas fa-sign-out-alt me-2"></i>Keluar</a
+                    >Keluar</a
                   >
                 </li>
               </ul>

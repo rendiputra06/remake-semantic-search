@@ -83,10 +83,7 @@ function performSemanticSearch() {
     aggregation_method = localStorage.getItem('aggregation_method') || 'mean';
   }
 
-  // Jika limit 0 (Tak Terbatas), set ke 1000
-  if (parseInt(limit) === 0) {
-    limit = 1000;
-  }
+  // Jika limit 0 (Tak Terbatas), JANGAN set ke 1000, biarkan 0 dikirim ke backend
 
   const requestData = {
     query: query,

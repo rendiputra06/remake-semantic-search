@@ -191,7 +191,11 @@ class FastTextModel:
             similarity = float(cosine_similarity([query_vector], [verse_vector])[0][0])
             similarities.append((verse_id, similarity))
         similarities.sort(key=lambda x: x[1], reverse=True)
-        top_results = similarities[:limit]
+        # Ambil hasil sebanyak limit
+        if limit is not None:
+            top_results = similarities[:limit]
+        else:
+            top_results = similarities[:]
         results = []
         for verse_id, similarity in top_results:
             verse_info = self.verse_data[verse_id]

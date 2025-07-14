@@ -35,7 +35,8 @@ class EnsembleEmbeddingModel:
                  fasttext_weight: float = 1.0,
                  glove_weight: float = 1.0,
                  voting_bonus: float = 0.05,
-                 use_meta_ensemble: bool = False):
+                 use_meta_ensemble: bool = False,
+                 use_voting_filter: bool = True):
         self.word2vec_model = word2vec_model
         self.fasttext_model = fasttext_model
         self.glove_model = glove_model
@@ -46,6 +47,7 @@ class EnsembleEmbeddingModel:
         self.glove_weight = glove_weight
         self.voting_bonus = voting_bonus
         self.use_meta_ensemble = use_meta_ensemble
+        self.use_voting_filter = use_voting_filter  # Filter hanya ayat yang ditemukan >=2 model
         self.meta_ensemble = MetaEnsembleModel() if use_meta_ensemble else None
         if use_meta_ensemble:
             try:
@@ -111,9 +113,11 @@ class EnsembleEmbeddingModel:
         Mengumpulkan hasil dari setiap model, menggabungkannya, dan menghitung skor rata-rata serta menyimpan skor individual.
         """
         # 1. Dapatkan hasil dari setiap model
-        results_w2v = {res['verse_id']: res for res in self.word2vec_model.search(query, language, limit=limit*3, threshold=threshold)}
-        results_ft = {res['verse_id']: res for res in self.fasttext_model.search(query, language, limit=limit*3, threshold=threshold)}
-        results_glove = {res['verse_id']: res for res in self.glove_model.search(query, language, limit=limit*3, threshold=threshold)}
+        # Jika limit None, gunakan default besar untuk model dasar (misal 1000), tapi tetap kembalikan hasil tak terbatas di akhir
+        base_limit = limit*3 if limit is not None else 3000
+        results_w2v = {res['verse_id']: res for res in self.word2vec_model.search(query, language, limit=base_limit, threshold=threshold)}
+        results_ft = {res['verse_id']: res for res in self.fasttext_model.search(query, language, limit=base_limit, threshold=threshold)}
+        results_glove = {res['verse_id']: res for res in self.glove_model.search(query, language, limit=base_limit, threshold=threshold)}
 
         # 2. Gabungkan semua verse_id yang unik
         all_verse_ids = set(results_w2v.keys()) | set(results_ft.keys()) | set(results_glove.keys())
@@ -168,6 +172,10 @@ class EnsembleEmbeddingModel:
                 if model_count >= 2:
                     ensemble_score += self.voting_bonus
                 meta_info = {'model_count': model_count}
+            
+            # Filter berdasarkan voting jika diaktifkan
+            if self.use_voting_filter and model_count < 2:
+                continue  # Skip ayat yang hanya ditemukan oleh 1 model
             all_weighted_similarities.append(ensemble_score)
             combined_results.append({
                 'verse_id': vid,
@@ -186,4 +194,7 @@ class EnsembleEmbeddingModel:
             use_threshold = calculate_adaptive_threshold(all_weighted_similarities, fallback=0.5)
         filtered_results = [r for r in combined_results if r['similarity'] >= use_threshold]
         filtered_results.sort(key=lambda x: x['similarity'], reverse=True)
-        return filtered_results[:limit] 
+        if limit is not None:
+            return filtered_results[:limit]
+        else:
+            return filtered_results 
