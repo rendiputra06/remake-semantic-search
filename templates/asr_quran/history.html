@@ -1,0 +1,67 @@
+{% extends 'layout.html' %}
+{% block content %}
+<div class="container mt-4">
+  <h2>Riwayat Latihan ASR Quran</h2>
+  
+  <div class="card mb-4">
+    <div class="card-header">
+      <h5>Filter</h5>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-4 mb-2">
+          <label for="filter-nama" class="form-label">Nama User</label>
+          <input type="text" class="form-control" id="filter-nama" placeholder="Cari berdasarkan nama...">
+        </div>
+        <div class="col-md-4 mb-2">
+          <label for="filter-surah" class="form-label">Surah</label>
+          <select class="form-select" id="filter-surah">
+            <option value="">Semua Surah</option>
+          </select>
+        </div>
+        <div class="col-md-4 mb-2">
+          <label for="filter-tanggal" class="form-label">Tanggal</label>
+          <input type="date" class="form-control" id="filter-tanggal">
+        </div>
+      </div>
+      <div class="d-flex justify-content-end mt-2">
+        <button id="btn-reset-filter" class="btn btn-secondary me-2">Reset</button>
+        <button id="btn-apply-filter" class="btn btn-primary">Terapkan Filter</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-striped table-hover">
+      <thead>
+        <tr>
+          <th>No</th>
+          <th>Nama</th>
+          <th>Waktu</th>
+          <th>Surah</th>
+          <th>Ayat</th>
+          <th>Skor</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody id="history-table-body">
+        <!-- Data akan diisi oleh JavaScript -->
+      </tbody>
+    </table>
+  </div>
+
+  <div id="loading-indicator" class="text-center my-4" style="display: none;">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+
+  <div id="no-data-message" class="alert alert-info text-center" style="display: none;">
+    Tidak ada data riwayat latihan yang ditemukan.
+  </div>
+
+  <div id="error-message" class="alert alert-danger mt-3" style="display: none;"></div>
+</div>
+{% endblock %}
+
+{# Catatan: JS utama di static/js/asr_quran/history.js #}

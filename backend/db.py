@@ -234,6 +234,70 @@ def init_db():
     
     print("Database initialized successfully!")
 
+def init_asr_quran_db():
+    """
+    Inisialisasi database ASR Quran (asr_quran.db) dan tabel-tabel utama
+    """
+    db_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'database', 'asr_quran.db')
+    os.makedirs(os.path.dirname(db_path), exist_ok=True)
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+
+    # Tabel user latihan (jika ingin tracking user, bisa dihubungkan ke user utama via user_id)
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS asr_users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT,
+        user_id INTEGER,
+        created_at TEXT NOT NULL
+    )
+    ''')
+
+    # Tabel latihan ASR Quran
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS asr_sessions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
+        surah INTEGER,
+        ayat INTEGER,
+        mode TEXT NOT NULL, -- basic/lanjutan
+        start_time TEXT NOT NULL,
+        end_time TEXT,
+        score REAL,
+        audio_path TEXT,
+        FOREIGN KEY (user_id) REFERENCES asr_users(id)
+    )
+    ''')
+
+    # Tabel hasil detail perbandingan (per ayat, per token, dsb)
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS asr_results (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        session_id INTEGER NOT NULL,
+        ref_text TEXT NOT NULL,
+        hyp_text TEXT NOT NULL,
+        comparison_json TEXT, -- JSON detail highlight benar/salah/tambahan
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (session_id) REFERENCES asr_sessions(id)
+    )
+    ''')
+
+    # Tabel riwayat latihan (untuk query cepat)
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS asr_history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
+        session_id INTEGER,
+        score REAL,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES asr_users(id),
+        FOREIGN KEY (session_id) REFERENCES asr_sessions(id)
+    )
+    ''')
+
+    conn.commit()
+    conn.close()
+
 def get_db_connection(db_type=None):
     """
     Mendapatkan koneksi database
@@ -241,6 +305,9 @@ def get_db_connection(db_type=None):
     if db_type == 'thesaurus':
         # Koneksi untuk database thesaurus (lexical.db)
         db_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'database', 'lexical.db')
+    elif db_type == 'asr_quran':
+        # Koneksi untuk database ASR Quran (asr_quran.db)
+        db_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'database', 'asr_quran.db')
     else:
         # Koneksi untuk database utama (app.db)
         db_path = DB_PATH
@@ -1437,6 +1504,48 @@ def update_global_thresholds(thresholds: dict) -> bool:
         print(f"Error update_global_thresholds: {e}")
         return False
 
+def get_asr_history():
+    """
+    Mengambil seluruh data riwayat latihan ASR Quran (join asr_history, asr_sessions, asr_users, asr_results)
+    """
+    conn = get_db_connection('asr_quran')
+    cursor = conn.cursor()
+    query = '''
+        SELECT h.id as history_id, u.username, h.created_at as waktu, s.surah, s.ayat, s.mode, s.score, s.id as session_id,
+               r.hyp_text, r.ref_text, r.comparison_json
+        FROM asr_history h
+        JOIN asr_users u ON h.user_id = u.id
+        JOIN asr_sessions s ON h.session_id = s.id
+        LEFT JOIN asr_results r ON r.session_id = s.id
+        ORDER BY h.created_at DESC
+    '''
+    cursor.execute(query)
+    rows = cursor.fetchall()
+    conn.close()
+    return [dict(row) for row in rows]
+
+def get_asr_history_detail(history_id):
+    """
+    Mengambil detail riwayat latihan berdasarkan id (join surah, ayat, hasil, user, highlight)
+    """
+    conn = get_db_connection('asr_quran')
+    cursor = conn.cursor()
+    query = '''
+        SELECT h.id as history_id, u.username, h.created_at as waktu, s.surah, s.ayat, s.mode, s.score, s.id as session_id,
+               r.hyp_text, r.ref_text, r.comparison_json,
+               s.audio_path
+        FROM asr_history h
+        JOIN asr_users u ON h.user_id = u.id
+        JOIN asr_sessions s ON h.session_id = s.id
+        LEFT JOIN asr_results r ON r.session_id = s.id
+        WHERE h.id = ?
+        LIMIT 1
+    '''
+    cursor.execute(query, (history_id,))
+    row = cursor.fetchone()
+    conn.close()
+    return dict(row) if row else None
+
 if __name__ == "__main__":
     # Inisialisasi database jika dijalankan langsung
-    init_db() 
+    init_db()
