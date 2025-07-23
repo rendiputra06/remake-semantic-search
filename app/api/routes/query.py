@@ -128,3 +128,27 @@ def get_evaluation_logs(query_id):
     # Urutkan dari terbaru ke terlama
     logs = sorted(logs, key=lambda x: x['changed_at'], reverse=True)
     return jsonify({"success": True, "logs": logs}) 
+
+@query_bp.route('/import-ayat-excel', methods=['POST'])
+# @admin_required
+def import_ayat_excel():
+    """
+    Import ayat relevan dari data Excel (frontend kirim list ayat).
+    Format request: { ayat: ["2:255", "1:1", ...], query_id: <id> }
+    """
+    try:
+        data = request.get_json()
+        ayat_list = data.get('ayat', [])
+        query_id = data.get('query_id')
+        if not ayat_list or not isinstance(ayat_list, list):
+            return jsonify({'success': False, 'message': 'Data ayat tidak valid.'}), 400
+        if not query_id:
+            return jsonify({'success': False, 'message': 'Query ID wajib dipilih.'}), 400
+        success_count = 0
+        for ayat in ayat_list:
+            ok, _ = add_relevant_verse(query_id, ayat)
+            if ok:
+                success_count += 1
+        return jsonify({'success': True, 'message': f'{success_count} ayat berhasil diimport.'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 500

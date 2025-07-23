@@ -30,23 +30,17 @@ def import_quran_data():
     cursor.execute('SELECT COUNT(*) FROM quran_verses')
     verses_count = cursor.fetchone()[0]
     
-    if surah_count > 0 or verses_count > 0:
-        print(f"Database sudah berisi {surah_count} surah dan {verses_count} ayat")
-        response = input("Lanjutkan import? (y/N): ")
-        if response.lower() != 'y':
-            print("Import dibatalkan")
-            conn.close()
-            return
-    
-    # Hapus data yang ada jika diminta
+    # Selalu kosongkan tabel sebelum import
     cursor.execute('DELETE FROM quran_verses')
     cursor.execute('DELETE FROM quran_surah')
+    cursor.execute("DELETE FROM sqlite_sequence WHERE name='quran_verses'")
+    cursor.execute("DELETE FROM sqlite_sequence WHERE name='quran_surah'")
     
     total_surah = 0
     total_verses = 0
     
     # Iterasi semua file JSON
-    for json_file in sorted(surah_dir.glob('*.json')):
+    for json_file in sorted(surah_dir.glob('*.json'), key=lambda f: int(f.stem)):
         try:
             with open(json_file, 'r', encoding='utf-8') as f:
                 data = json.load(f)
@@ -140,4 +134,4 @@ def verify_import():
 
 if __name__ == '__main__':
     import_quran_data()
-    verify_import() 
+    verify_import()

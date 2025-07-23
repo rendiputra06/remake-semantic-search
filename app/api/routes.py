@@ -22,7 +22,7 @@ from app.admin.utils import (
     enrich_thesaurus, import_lexical_data,
     import_thesaurus_data
 )
-from backend.db import get_db_connection
+from backend.db import get_db_connection, add_relevant_verse
 from backend.excel_importer import excel_to_hierarchy_db
 
 @api_bp.route('/thesaurus/enrich', methods=['POST'])
