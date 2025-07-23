@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from backend.db import (
     add_query, get_all_queries, delete_query as db_delete_query,
-    add_relevant_verse, get_relevant_verses_by_query, delete_relevant_verse as db_delete_relevant_verse,
+    add_relevant_verse, add_relevant_verses_batch, get_relevant_verses_by_query, delete_relevant_verse as db_delete_relevant_verse,
     add_evaluation_result, get_evaluation_results_by_query, get_evaluation_logs_by_query, add_evaluation_log
 )
 import time
@@ -144,11 +144,11 @@ def import_ayat_excel():
             return jsonify({'success': False, 'message': 'Data ayat tidak valid.'}), 400
         if not query_id:
             return jsonify({'success': False, 'message': 'Query ID wajib dipilih.'}), 400
-        success_count = 0
-        for ayat in ayat_list:
-            ok, _ = add_relevant_verse(query_id, ayat)
-            if ok:
-                success_count += 1
-        return jsonify({'success': True, 'message': f'{success_count} ayat berhasil diimport.'})
+        # Gunakan batch insert agar lebih cepat
+        success, result = add_relevant_verses_batch(query_id, ayat_list)
+        if success:
+            return jsonify({'success': True, 'message': f'{result} ayat berhasil diimport.'})
+        else:
+            return jsonify({'success': False, 'message': result}), 500
     except Exception as e:
         return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 500

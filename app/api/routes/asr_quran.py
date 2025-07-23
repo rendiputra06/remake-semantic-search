@@ -16,6 +16,14 @@ def remove_arabic_diacritics(text):
     arabic_diacritics = re.compile(r'[\u064B-\u065F\u0670]')
     return arabic_diacritics.sub('', text)
 
+def filter_arabic_characters(text):
+    """
+    Menghapus semua karakter non-Arab dari teks
+    """
+    import re
+    # Hanya karakter Arab dan spasi yang diizinkan
+    return re.sub(r'[^\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF ]+', '', text)
+
 def simple_compare(ref, hyp):
     """
     Bandingkan dua string (ref, hyp) per kata, return highlight list dan skor sederhana
@@ -249,6 +257,7 @@ def api_asr_upload():
             model = whisper.load_model('base', device=device)
             result = model.transcribe(audio_path, language='ar')
             transcript = remove_arabic_diacritics(result['text'].strip())
+            transcript = filter_arabic_characters(transcript)
         except Exception as e:
             return jsonify({'error': f'Gagal transkripsi audio: {str(e)}'}), 500
         # Ambil ayat referensi

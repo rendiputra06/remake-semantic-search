@@ -127,6 +127,14 @@ document.addEventListener("DOMContentLoaded", function () {
                 return;
             }
             submitImportBtn.disabled = true;
+            Swal.fire({
+                title: "Import data ayat relevan...",
+                text: "Mohon tunggu, proses sedang berjalan.",
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                },
+            });
             fetch("/api/query/import-ayat-excel", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -134,6 +142,7 @@ document.addEventListener("DOMContentLoaded", function () {
             })
                 .then((res) => res.json())
                 .then((data) => {
+                    Swal.close();
                     if (data.success) {
                         modalImport.hide();
                         location.reload();
@@ -144,6 +153,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     }
                 })
                 .catch(() => {
+                    Swal.close();
                     importAyatError.classList.remove("d-none");
                     importAyatError.innerText =
                         "Terjadi kesalahan saat import.";

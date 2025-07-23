@@ -94,6 +94,17 @@ document.addEventListener("DOMContentLoaded", function () {
                 e.stopPropagation();
                 const id = this.getAttribute("data-id");
                 if (confirm("Hapus query ini beserta ayat relevannya?")) {
+                    // Tampilkan animasi loading SweetAlert sebelum request
+                    if (window.Swal) {
+                        Swal.fire({
+                            title: "Menghapus query...",
+                            html: "Mohon tunggu, proses sedang berjalan.",
+                            allowOutsideClick: false,
+                            didOpen: () => {
+                                Swal.showLoading();
+                            },
+                        });
+                    }
                     fetch(`/api/query/${id}`, { method: "DELETE" })
                         .then((res) => res.json())
                         .then(() => {
@@ -108,6 +119,9 @@ document.addEventListener("DOMContentLoaded", function () {
                                 ).textContent = 0;
                             }
                             loadQueries();
+                        })
+                        .finally(() => {
+                            if (window.Swal) Swal.close();
                         });
                 }
             });
@@ -713,6 +727,25 @@ document.addEventListener("DOMContentLoaded", function () {
             showAllAyatDetailModal(selectedQueryId);
         }
     });
+
+    // Export hasil evaluasi ke Excel
+    document
+        .getElementById("export-evaluasi-btn")
+        .addEventListener("click", function () {
+            // Cari tabel hasil evaluasi
+            const table = document.querySelector("#eval-summary + table");
+            if (!table) {
+                Swal.fire({
+                    icon: "warning",
+                    title: "Tidak ada data",
+                    text: "Hasil evaluasi belum tersedia untuk diekspor.",
+                });
+                return;
+            }
+            // Konversi tabel ke workbook XLSX
+            const wb = XLSX.utils.table_to_book(table, { sheet: "Evaluasi" });
+            XLSX.writeFile(wb, "hasil_evaluasi.xlsx");
+        });
 
     loadQueries();
 });

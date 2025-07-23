@@ -281,6 +281,12 @@ block content %}
             <div class="card shadow-sm">
                 <div class="card-body">
                     <h4 class="card-title mb-3">Hasil Evaluasi</h4>
+                    <button
+                        class="btn btn-success mb-2"
+                        id="export-evaluasi-btn"
+                    >
+                        Export ke Excel
+                    </button>
                     <div id="evaluasi-result" class="mb-2"></div>
                 </div>
             </div>
@@ -522,6 +528,7 @@ block content %}
     </div>
 </div>
 {% endblock %} {% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="{{ url_for('static', filename='js/evaluasi.js') }}"></script>
 <script src="{{ url_for('static', filename='js/evaluasi_import_excel.js') }}"></script>

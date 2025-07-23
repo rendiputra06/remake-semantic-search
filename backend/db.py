@@ -1361,6 +1361,26 @@ def add_relevant_verse(query_id: int, verse_ref: str):
         conn.close()
         return False, f"Error saat menambahkan relevant verse: {str(e)}"
 
+def add_relevant_verses_batch(query_id: int, ayat_list: list):
+    """
+    Menambahkan banyak ayat relevan untuk query tertentu secara batch (lebih cepat).
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        data = [(query_id, verse_ref) for verse_ref in ayat_list]
+        cursor.executemany('''
+            INSERT INTO relevant_verses (query_id, verse_ref)
+            VALUES (?, ?)
+        ''', data)
+        conn.commit()
+        conn.close()
+        return True, len(ayat_list)
+    except Exception as e:
+        conn.rollback()
+        conn.close()
+        return False, f"Error batch insert relevant verses: {str(e)}"
+
 def get_relevant_verses_by_query(query_id: int):
     """
     Mengambil semua ayat relevan untuk query tertentu
@@ -1450,6 +1470,7 @@ def delete_query(query_id: int):
         cursor.execute('DELETE FROM queries WHERE id = ?', (query_id,))
         conn.commit()
         conn.close()
+        print(f"Query {query_id} dan semua data terkait berhasil dihapus.")
         return True, "Query berhasil dihapus"
     except Exception as e:
         conn.rollback()

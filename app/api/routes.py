@@ -22,7 +22,7 @@ from app.admin.utils import (
     enrich_thesaurus, import_lexical_data,
     import_thesaurus_data
 )
-from backend.db import get_db_connection, add_relevant_verse
+from backend.db import get_db_connection, add_relevant_verse, add_relevant_verses_batch
 from backend.excel_importer import excel_to_hierarchy_db
 
 @api_bp.route('/thesaurus/enrich', methods=['POST'])
@@ -422,3 +422,27 @@ def thesaurus_search():
         
     except Exception as e:
         return error_response(500, str(e))
+
+@api_bp.route('/import-ayat-excel', methods=['POST'])
+@admin_required
+def import_ayat_excel():
+    """
+    Import ayat relevan dari data Excel (frontend kirim list ayat).
+    Format request: { ayat: ["2:255", "1:1", ...], query_id: <id> }
+    """
+    try:
+        data = request.get_json()
+        ayat_list = data.get('ayat', [])
+        query_id = data.get('query_id')
+        if not ayat_list or not isinstance(ayat_list, list):
+            return jsonify({'success': False, 'message': 'Data ayat tidak valid.'}), 400
+        if not query_id:
+            return jsonify({'success': False, 'message': 'Query ID wajib dipilih.'}), 400
+        # Gunakan batch insert agar lebih cepat
+        success, result = add_relevant_verses_batch(query_id, ayat_list)
+        if success:
+            return jsonify({'success': True, 'message': f'{result} ayat berhasil diimport.'})
+        else:
+            return jsonify({'success': False, 'message': result}), 500
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 500
