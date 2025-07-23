@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from backend.db import (
-    add_query, get_all_queries, delete_query as db_delete_query,
+    add_query, get_all_queries, delete_query as db_delete_query, reset_relevant_verses as db_reset_relevant_verses,
     add_relevant_verse, add_relevant_verses_batch, get_relevant_verses_by_query, delete_relevant_verse as db_delete_relevant_verse,
     add_evaluation_result, get_evaluation_results_by_query, get_evaluation_logs_by_query, add_evaluation_log
 )
@@ -152,3 +152,19 @@ def import_ayat_excel():
             return jsonify({'success': False, 'message': result}), 500
     except Exception as e:
         return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 500
+
+
+@query_bp.route('/<int:query_id>/relevant_verses/reset', methods=['POST'])
+# @admin_required
+def reset_relevant_verses(query_id):
+    """
+    Reset/hapus semua ayat relevan untuk query tertentu.
+    """
+    try:
+        success, message = db_reset_relevant_verses(query_id)
+        if success:
+            return jsonify({'success': True, 'message': message})
+        else:
+            return jsonify({'success': False, 'message': message}), 500
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Gagal reset ayat relevan: {str(e)}'}), 500

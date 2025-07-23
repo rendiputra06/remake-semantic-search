@@ -1493,6 +1493,22 @@ def delete_relevant_verse(verse_id: int):
         conn.close()
         return False, f"Error saat menghapus ayat relevan: {str(e)}"
 
+def reset_relevant_verses(query_id: int):
+    """
+    Menghapus semua ayat relevan untuk query tertentu
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute('DELETE FROM relevant_verses WHERE query_id = ?', (query_id,))
+        conn.commit()
+        conn.close()
+        return True, "Semua ayat relevan berhasil dihapus"
+    except Exception as e:
+        conn.rollback()
+        conn.close()
+        return False, f"Error saat menghapus ayat relevan: {str(e)}"
+
 def get_global_thresholds() -> dict:
     """
     Mengambil threshold semua model dari global_model_settings

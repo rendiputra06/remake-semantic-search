@@ -9,6 +9,9 @@ document.addEventListener("DOMContentLoaded", function () {
     const evaluasiBtn = document.getElementById("evaluasi-btn");
     const evaluasiResult = document.getElementById("evaluasi-result");
     const logBtn = document.getElementById("log-btn");
+    const resetRelevantVersesBtn = document.getElementById(
+        "reset-relevant-verses-btn"
+    );
     const logModal = new bootstrap.Modal(document.getElementById("logModal"));
     const logContent = document.getElementById("log-content");
     const ayatDetailModal = new bootstrap.Modal(
@@ -77,6 +80,12 @@ document.addEventListener("DOMContentLoaded", function () {
                     renderQueryList(queries);
                     evaluasiBtn.classList.remove("d-none");
                     logBtn.classList.remove("d-none");
+                    // Reset hasil evaluasi
+                    resetRelevantVersesBtn.classList.remove("d-none");
+                    resetRelevantVersesBtn.setAttribute(
+                        "data-id",
+                        selectedQueryId
+                    );
                     evaluasiResult.innerHTML = "";
                     // Tampilkan form evaluasi
                     formEvaluasi.classList.remove("d-none");
