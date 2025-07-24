@@ -1,0 +1,90 @@
+{% extends "asr_quran/layout.html" %} {% block title %}UML ASR Quran{% endblock
+%} {% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">UML Fitur ASR Quran</h2>
+    <div class="mb-3">
+        <a href="/asr_quran/info" class="btn btn-secondary me-2"
+            ><i class="fas fa-arrow-left"></i> Kembali ke Info</a
+        >
+        <a href="/asr_quran/upload" class="btn btn-outline-primary me-2"
+            ><i class="fas fa-microphone"></i> Upload & Uji Bacaan</a
+        >
+        <a href="/asr_quran/riwayat" class="btn btn-outline-info"
+            ><i class="fas fa-list"></i> Riwayat Latihan</a
+        >
+    </div>
+    <div class="card mb-4">
+        <div class="card-header"><strong>Use Case Diagram</strong></div>
+        <div class="card-body">
+            <p>
+                Diagram berikut menggambarkan aktor dan interaksi utama pada
+                sistem ASR Quran.
+            </p>
+            <img
+                src="/static/img/asr_quran_usecase.png"
+                alt="Use Case Diagram"
+                class="img-fluid mb-2"
+            />
+            <small class="text-muted"
+                >Aktor: User, Sistem ASR Quran. Use case: Upload audio, Uji
+                bacaan, Lihat riwayat, Hapus riwayat, Lihat info.</small
+            >
+        </div>
+    </div>
+    <div class="card mb-4">
+        <div class="card-header"><strong>Activity Diagram</strong></div>
+        <div class="card-body">
+            <p>
+                Diagram berikut menunjukkan alur aktivitas utama pada proses uji
+                bacaan ASR Quran.
+            </p>
+            <img
+                src="/static/img/asr_quran_activity.png"
+                alt="Activity Diagram"
+                class="img-fluid mb-2"
+            />
+            <small class="text-muted"
+                >Aktivitas: Pilih surah/ayat, upload audio, proses transkripsi,
+                bandingkan hasil, tampilkan skor dan highlight.</small
+            >
+        </div>
+    </div>
+    <div class="card mb-4">
+        <div class="card-header"><strong>Sequence Diagram</strong></div>
+        <div class="card-body">
+            <p>
+                Diagram berikut memperlihatkan urutan interaksi antara user,
+                frontend, dan backend saat proses uji bacaan.
+            </p>
+            <img
+                src="/static/img/asr_quran_sequence.png"
+                alt="Sequence Diagram"
+                class="img-fluid mb-2"
+            />
+            <small class="text-muted"
+                >Urutan: User upload audio → Frontend kirim ke backend → Backend
+                proses whisper → Backend kirim hasil ke frontend → Frontend
+                tampilkan hasil.</small
+            >
+        </div>
+    </div>
+    <div class="card mb-4">
+        <div class="card-header"><strong>Class Diagram</strong></div>
+        <div class="card-body">
+            <p>
+                Diagram berikut menunjukkan struktur kelas utama pada backend
+                ASR Quran.
+            </p>
+            <img
+                src="/static/img/asr_quran_class.png"
+                alt="Class Diagram"
+                class="img-fluid mb-2"
+            />
+            <small class="text-muted"
+                >Kelas utama: ASRService, User, Session, Result, History,
+                Database.</small
+            >
+        </div>
+    </div>
+</div>
+{% endblock %}

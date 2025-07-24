@@ -182,25 +182,54 @@ def run_evaluation(query_id):
         if not selected_methods or method in selected_methods:
             try:
                 start = time.time()
-                res = search_service.semantic_search(
-                    query=query_text,
-                    model_type=base_model,
-                    limit=result_limit,
-                    threshold=get_threshold(base_model),
-                    user_id=None
-                )
-                if result_limit is None:
-                    found = set()
-                    for r in res['results']:
-                        ref = extract_verse_ref(r)
-                        if ref:
-                            found.add(ref)
+                # --- Ekspansi query menggunakan ontologi ---
+                main_concept = ontology_service.find_concept(query_text)
+                expanded_queries = [query_text]
+                if main_concept:
+                    expanded_queries = set([main_concept['label']] + main_concept.get('synonyms', []) + main_concept.get('related', []))
+                    expanded_queries = [q for q in expanded_queries if q]
                 else:
-                    found = set()
-                    for r in res['results'][:result_limit]:
-                        ref = extract_verse_ref(r)
-                        if ref:
-                            found.add(ref)
+                    for word in query_text.split():
+                        c = ontology_service.find_concept(word)
+                        if c:
+                            expanded_queries += [c['label']] + c.get('synonyms', []) + c.get('related', [])
+                    expanded_queries = list(set(expanded_queries))
+                # --- Pencarian semantik untuk setiap ekspansi ---
+                all_results = []
+                for q in expanded_queries:
+                    res = search_service.semantic_search(
+                        query=q,
+                        model_type=base_model,
+                        limit=result_limit,
+                        threshold=get_threshold(base_model),
+                        user_id=None
+                    )
+                    for r in res['results']:
+                        r['source_query'] = q
+                        all_results.append(r)
+                # --- Gabungkan hasil dan boosting skor ---
+                result_map = {}
+                for r in all_results:
+                    vid = extract_verse_ref(r)
+                    if not vid:
+                        continue
+                    if vid not in result_map or r['similarity'] > result_map[vid]['similarity']:
+                        result_map[vid] = r
+                    # Boost skor jika hasil dari ekspansi (bukan query asli)
+                    if r['source_query'] != query_text:
+                        result_map[vid]['similarity'] = min(result_map[vid]['similarity'] + 0.1, 1.0)
+                        result_map[vid]['boosted'] = True
+                    else:
+                        result_map[vid]['boosted'] = False
+                final_results = list(result_map.values())
+                final_results.sort(key=lambda x: x['similarity'], reverse=True)
+                if result_limit is not None:
+                    final_results = final_results[:result_limit]
+                found = set()
+                for r in final_results:
+                    ref = extract_verse_ref(r)
+                    if ref:
+                        found.add(ref)
                 exec_time = round(time.time() - start, 3)
                 label = f'Semantic+Ontologi ({base_model})'
                 result = format_eval_result(method, label, found, ground_truth, exec_time)
@@ -210,4 +239,4 @@ def run_evaluation(query_id):
                 label = f'Semantic+Ontologi ({base_model})'
                 results.append({'method': method, 'label': label, 'error': str(e)})
 
-    return jsonify({'success': True, 'results': results}) 
+    return jsonify({'success': True, 'results': results})

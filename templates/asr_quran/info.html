@@ -1,0 +1,286 @@
+{% extends "asr_quran/layout.html" %} {% block title %}Informasi ASR Quran{%
+endblock %} {% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Informasi Fitur ASR Quran</h2>
+    <div class="mb-3">
+        <a href="/api/asr_quran/upload" class="btn btn-secondary me-2"
+            ><i class="fas fa-arrow-left"></i> Kembali ke Upload</a
+        >
+        <a href="/api/asr_quran/riwayat" class="btn btn-info"
+            ><i class="fas fa-list"></i> Riwayat Latihan</a
+        >
+    </div>
+    <div class="card mb-4">
+        <div class="card-header"><strong>Deskripsi Fitur</strong></div>
+        <div class="card-body">
+            <p>
+                ASR Quran adalah fitur untuk menguji bacaan Al Quran menggunakan
+                Automatic Speech Recognition (ASR) berbasis model
+                <b>Whisper</b> dari OpenAI. Fitur ini mendukung upload audio,
+                transkripsi otomatis, perbandingan dengan ayat referensi, dan
+                penilaian skor.
+            </p>
+        </div>
+    </div>
+    <div class="card mb-4">
+        <div class="card-header"><strong>Model Whisper</strong></div>
+        <div class="card-body">
+            <ul>
+                <li>
+                    Whisper adalah model ASR open-source dari OpenAI, mendukung
+                    banyak bahasa termasuk Arab.
+                </li>
+                <li>
+                    Model yang digunakan:
+                    <code>whisper.load_model('base')</code> (bisa diganti dengan
+                    <code>small</code>, <code>medium</code>, dll).
+                </li>
+                <li>
+                    Transkripsi dilakukan di backend, hasil diolah dan
+                    dibandingkan dengan ayat referensi.
+                </li>
+            </ul>
+        </div>
+    </div>
+    <div class="card mb-4">
+        <div class="card-header"><strong>Struktur Database</strong></div>
+        <div class="card-body">
+            <h5 class="mt-3">Tabel <b>asr_users</b></h5>
+            <table class="table table-bordered table-striped mb-4">
+                <thead>
+                    <tr>
+                        <th>Kolom</th>
+                        <th>Tipe Data</th>
+                        <th>Panjang/Detail</th>
+                        <th>Deskripsi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>id</td>
+                        <td>INTEGER (PK, Auto Increment)</td>
+                        <td>-</td>
+                        <td>ID user</td>
+                    </tr>
+                    <tr>
+                        <td>username</td>
+                        <td>VARCHAR(64)</td>
+                        <td>max 64 karakter</td>
+                        <td>Nama user</td>
+                    </tr>
+                    <tr>
+                        <td>created_at</td>
+                        <td>DATETIME</td>
+                        <td>format ISO</td>
+                        <td>Waktu pembuatan user</td>
+                    </tr>
+                </tbody>
+            </table>
+            <h5 class="mt-3">Tabel <b>asr_sessions</b></h5>
+            <table class="table table-bordered table-striped mb-4">
+                <thead>
+                    <tr>
+                        <th>Kolom</th>
+                        <th>Tipe Data</th>
+                        <th>Panjang/Detail</th>
+                        <th>Deskripsi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>id</td>
+                        <td>INTEGER (PK, Auto Increment)</td>
+                        <td>-</td>
+                        <td>ID sesi latihan</td>
+                    </tr>
+                    <tr>
+                        <td>user_id</td>
+                        <td>INTEGER (FK)</td>
+                        <td>-</td>
+                        <td>ID user</td>
+                    </tr>
+                    <tr>
+                        <td>surah</td>
+                        <td>INTEGER</td>
+                        <td>-</td>
+                        <td>Nomor surah</td>
+                    </tr>
+                    <tr>
+                        <td>ayat</td>
+                        <td>INTEGER</td>
+                        <td>-</td>
+                        <td>Nomor ayat</td>
+                    </tr>
+                    <tr>
+                        <td>mode</td>
+                        <td>VARCHAR(16)</td>
+                        <td>max 16 karakter</td>
+                        <td>Mode latihan</td>
+                    </tr>
+                    <tr>
+                        <td>start_time</td>
+                        <td>DATETIME</td>
+                        <td>format ISO</td>
+                        <td>Waktu mulai</td>
+                    </tr>
+                    <tr>
+                        <td>score</td>
+                        <td>INTEGER</td>
+                        <td>-</td>
+                        <td>Skor latihan</td>
+                    </tr>
+                    <tr>
+                        <td>audio_path</td>
+                        <td>VARCHAR(256)</td>
+                        <td>max 256 karakter</td>
+                        <td>Path file audio</td>
+                    </tr>
+                </tbody>
+            </table>
+            <h5 class="mt-3">Tabel <b>asr_results</b></h5>
+            <table class="table table-bordered table-striped mb-4">
+                <thead>
+                    <tr>
+                        <th>Kolom</th>
+                        <th>Tipe Data</th>
+                        <th>Panjang/Detail</th>
+                        <th>Deskripsi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>id</td>
+                        <td>INTEGER (PK, Auto Increment)</td>
+                        <td>-</td>
+                        <td>ID hasil</td>
+                    </tr>
+                    <tr>
+                        <td>session_id</td>
+                        <td>INTEGER (FK)</td>
+                        <td>-</td>
+                        <td>ID sesi latihan</td>
+                    </tr>
+                    <tr>
+                        <td>ref_text</td>
+                        <td>TEXT</td>
+                        <td>ayat Quran</td>
+                        <td>Teks referensi</td>
+                    </tr>
+                    <tr>
+                        <td>hyp_text</td>
+                        <td>TEXT</td>
+                        <td>ayat Quran</td>
+                        <td>Teks hasil transkripsi</td>
+                    </tr>
+                    <tr>
+                        <td>comparison_json</td>
+                        <td>TEXT (JSON)</td>
+                        <td>-</td>
+                        <td>Highlight perbandingan</td>
+                    </tr>
+                    <tr>
+                        <td>created_at</td>
+                        <td>DATETIME</td>
+                        <td>format ISO</td>
+                        <td>Waktu hasil dibuat</td>
+                    </tr>
+                </tbody>
+            </table>
+            <h5 class="mt-3">Tabel <b>asr_history</b></h5>
+            <table class="table table-bordered table-striped mb-4">
+                <thead>
+                    <tr>
+                        <th>Kolom</th>
+                        <th>Tipe Data</th>
+                        <th>Panjang/Detail</th>
+                        <th>Deskripsi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>id</td>
+                        <td>INTEGER (PK, Auto Increment)</td>
+                        <td>-</td>
+                        <td>ID riwayat</td>
+                    </tr>
+                    <tr>
+                        <td>user_id</td>
+                        <td>INTEGER (FK)</td>
+                        <td>-</td>
+                        <td>ID user</td>
+                    </tr>
+                    <tr>
+                        <td>session_id</td>
+                        <td>INTEGER (FK)</td>
+                        <td>-</td>
+                        <td>ID sesi latihan</td>
+                    </tr>
+                    <tr>
+                        <td>score</td>
+                        <td>INTEGER</td>
+                        <td>-</td>
+                        <td>Jumlah kata benar</td>
+                    </tr>
+                    <tr>
+                        <td>created_at</td>
+                        <td>DATETIME</td>
+                        <td>format ISO</td>
+                        <td>Waktu riwayat dibuat</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="card mb-4">
+        <div class="card-header"><strong>API yang Tersedia</strong></div>
+        <div class="card-body">
+            <ul>
+                <li>
+                    <code>GET /api/asr_quran/riwayat</code>: Ambil semua riwayat
+                    latihan.
+                </li>
+                <li>
+                    <code>GET /api/asr_quran/riwayat/&lt;id&gt;</code>: Detail
+                    riwayat.
+                </li>
+                <li>
+                    <code>DELETE /api/asr_quran/riwayat/&lt;id&gt;</code>: Hapus
+                    riwayat.
+                </li>
+                <li>
+                    <code>POST /api/asr_quran/riwayat/batch_delete</code>: Batch
+                    hapus riwayat.
+                </li>
+                <li>
+                    <code>POST /api/asr_quran/asr/upload</code>: Upload audio
+                    dan uji bacaan.
+                </li>
+            </ul>
+        </div>
+    </div>
+    <div class="card mb-4">
+        <div class="card-header"><strong>Contoh Hasil API</strong></div>
+        <div class="card-body">
+            <pre>
+{
+  "id": 1,
+  "nama_user": "user1",
+  "waktu": "2025-07-24 10:00:00",
+  "surah": "Al-Fatihah",
+  "ayat": "1",
+  "mode": "basic",
+  "hasil_transkripsi": "بسم الله الرحمن الرحيم",
+  "referensi_ayat": "بسم الله الرحمن الرحيم",
+  "skor": 7,
+  "detail": [
+    {"kata": "بسم", "status": "benar"},
+    {"kata": "الله", "status": "benar"},
+    {"kata": "الرحمن", "status": "benar"},
+    {"kata": "الرحيم", "status": "benar"}
+  ]
+}</pre
+            >
+        </div>
+    </div>
+</div>
+{% endblock %}

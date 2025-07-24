@@ -150,3 +150,71 @@ def export_excel():
         
     except Exception as e:
         return error_response(500, f'Error saat mengekspor data: {str(e)}')
+
+@export_bp.route('/ontology_excel', methods=['POST'])
+def export_ontology_excel():
+    """
+    Ekspor hasil pencarian ontologi ke Excel
+    """
+    try:
+        query = request.form.get('query', '')
+        search_type = 'ontology'
+        data_json = request.form.get('data', '')
+        if not data_json:
+            return error_response(400, 'Data tidak diberikan')
+        data = json.loads(data_json)
+        results = data.get('results', [])
+        if not results:
+            return error_response(400, 'Tidak ada hasil untuk diekspor')
+        df_data = []
+        title = f"Hasil Pencarian Ontologi untuk '{query}'"
+        for i, result in enumerate(results):
+            row = {
+                'Peringkat': i + 1,
+                'Surah': result.get('surah_number'),
+                'Nama Surah': result.get('surah_name'),
+                'Ayat': result.get('ayat_number'),
+                'Referensi': f"{result.get('surah_number')}:{result.get('ayat_number')}",
+                'Teks Arab': result.get('arabic'),
+                'Terjemahan': result.get('translation'),
+                'Skor Kesamaan': result.get('similarity'),
+                'Persentase Kesamaan': f"{int(result.get('similarity', 0) * 100)}%",
+                'Query Sumber': result.get('source_query'),
+                'Boosted': result.get('boosted', False),
+            }
+            df_data.append(row)
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            info_data = {
+                'Informasi': ['Query Pencarian', 'Tipe Pencarian', 'Jumlah Hasil', 'Waktu Ekspor'],
+                'Nilai': [
+                    query,
+                    search_type,
+                    len(results),
+                    datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                ]
+            }
+            if 'expanded_queries' in data:
+                expanded_queries = ', '.join(data['expanded_queries'])
+                new_row = pd.DataFrame({
+                    'Informasi': ['Query Ekspansi'],
+                    'Nilai': [expanded_queries]
+                })
+                info_df = pd.DataFrame(info_data)
+                info_df = pd.concat([info_df, new_row], ignore_index=True)
+            else:
+                info_df = pd.DataFrame(info_data)
+            info_df.to_excel(writer, sheet_name='Informasi Pencarian', index=False)
+            df = pd.DataFrame(df_data)
+            df.to_excel(writer, sheet_name='Hasil Pencarian', index=False)
+        output.seek(0)
+        safe_query = ''.join(c if c.isalnum() else '_' for c in query)
+        filename = f"Pencarian_ontology_{safe_query}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        return send_file(
+            output,
+            as_attachment=True,
+            download_name=filename,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+    except Exception as e:
+        return error_response(500, f'Error saat mengekspor data: {str(e)}')

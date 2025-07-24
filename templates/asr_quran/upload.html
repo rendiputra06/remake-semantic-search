@@ -1,42 +1,70 @@
-{% extends 'layout.html' %}
-{% block content %}
+{% extends "asr_quran/layout.html" %} {% block content %}
 <div class="container mt-4">
-  <h2>Uji Bacaan Al Quran (ASR Quran)</h2>
-  <form id="asr-upload-form" enctype="multipart/form-data">
-    <div class="mb-3">
-      <label for="nama_user" class="form-label">Nama User</label>
-      <input type="text" class="form-control" id="nama_user" name="nama_user" required>
+    <h2>Uji Bacaan Al Quran (ASR Quran)</h2>
+    <div class="mb-3 mt-4">
+        <a
+            href="/api/asr_quran/riwayat_ui"
+            class="btn btn-outline-secondary me-2"
+        >
+            <i class="fas fa-list"></i> Riwayat Latihan
+        </a>
+        <a href="/api/asr_quran/info" class="btn btn-info">
+            <i class="fas fa-info-circle"></i> Info ASR Quran
+        </a>
     </div>
-    <div class="mb-3">
-      <label for="surah" class="form-label">Surah</label>
-      <select class="form-select" id="surah" name="surah" required>
-        <option value="">Pilih Surah</option>
-      </select>
+    <form id="asr-upload-form" enctype="multipart/form-data">
+        <div class="mb-3">
+            <label for="nama_user" class="form-label">Nama User</label>
+            <input
+                type="text"
+                class="form-control"
+                id="nama_user"
+                name="nama_user"
+                required
+            />
+        </div>
+        <div class="mb-3">
+            <label for="surah" class="form-label">Surah</label>
+            <select class="form-select" id="surah" name="surah" required>
+                <option value="">Pilih Surah</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="ayat" class="form-label">Ayat</label>
+            <select class="form-select" id="ayat" name="ayat" required>
+                <option value="">Pilih Ayat</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="audio" class="form-label">Upload Audio</label>
+            <input
+                type="file"
+                class="form-control"
+                id="audio"
+                name="audio"
+                accept="audio/*"
+                required
+            />
+        </div>
+        <button type="submit" class="btn btn-primary">
+            Upload & Uji Bacaan
+        </button>
+    </form>
+    <hr />
+    <div id="asr-result" style="display: none">
+        <h4>Hasil Uji Bacaan</h4>
+        <div><b>Transkripsi:</b> <span id="asr-transcript"></span></div>
+        <div><b>Skor:</b> <span id="asr-skor"></span></div>
+        <div><b>Ayat Referensi:</b> <span id="asr-ref"></span></div>
+        <div><b>Highlight:</b></div>
+        <div id="asr-highlight"></div>
     </div>
-    <div class="mb-3">
-      <label for="ayat" class="form-label">Ayat</label>
-      <select class="form-select" id="ayat" name="ayat" required>
-        <option value="">Pilih Ayat</option>
-      </select>
-    </div>
-    <div class="mb-3">
-      <label for="audio" class="form-label">Upload Audio</label>
-      <input type="file" class="form-control" id="audio" name="audio" accept="audio/*" required>
-    </div>
-    <button type="submit" class="btn btn-primary">Upload & Uji Bacaan</button>
-  </form>
-  <hr>
-  <div id="asr-result" style="display:none;">
-    <h4>Hasil Uji Bacaan</h4>
-    <div><b>Transkripsi:</b> <span id="asr-transcript"></span></div>
-    <div><b>Skor:</b> <span id="asr-skor"></span></div>
-    <div><b>Ayat Referensi:</b> <span id="asr-ref"></span></div>
-    <div><b>Highlight:</b></div>
-    <div id="asr-highlight"></div>
-  </div>
-  <div id="asr-error" class="alert alert-danger mt-3" style="display:none;"></div>
+    <div
+        id="asr-error"
+        class="alert alert-danger mt-3"
+        style="display: none"
+    ></div>
 </div>
-{% endblock %}
-{% block extra_js %}
+{% endblock %} {% block extra_js %}
 <script src="{{ url_for('static', filename='js/asr_quran/upload.js') }}"></script>
 {% endblock %}

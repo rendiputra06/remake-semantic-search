@@ -319,3 +319,49 @@ def api_asr_upload():
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@asr_quran_bp.route('/riwayat/batch_delete', methods=['POST'])
+def api_asr_batch_delete_riwayat():
+    """
+    Endpoint untuk batch hapus data riwayat latihan berdasarkan list id
+    """
+    try:
+        data = request.get_json()
+        ids = data.get('ids', [])
+        if not ids:
+            return jsonify({'error': 'List id kosong'}), 400
+        conn = get_db_connection('asr_quran')
+        cursor = conn.cursor()
+        deleted = 0
+        for history_id in ids:
+            # Periksa apakah riwayat ada
+            row = get_asr_history_detail(history_id)
+            if not row:
+                continue
+            session_id = row['session_id']
+            cursor.execute('DELETE FROM asr_history WHERE id = ?', (history_id,))
+            cursor.execute('DELETE FROM asr_results WHERE session_id = ?', (session_id,))
+            cursor.execute('DELETE FROM asr_sessions WHERE id = ?', (session_id,))
+            # Hapus file audio jika ada
+            if row['audio_path'] and os.path.exists(row['audio_path']):
+                os.remove(row['audio_path'])
+            deleted += 1
+        conn.commit()
+        conn.close()
+        return jsonify({'success': True, 'deleted': deleted})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@asr_quran_bp.route('/riwayat_ui', methods=['GET'])
+def riwayat_page():
+    """
+    Halaman UI riwayat ASR Quran
+    """
+    return render_template('asr_quran/riwayat.html')
+
+@asr_quran_bp.route('/info', methods=['GET'])
+def info_page():
+    """
+    Halaman informasi tentang fitur ASR Quran
+    """
+    return render_template('asr_quran/info.html')

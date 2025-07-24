@@ -1,0 +1,187 @@
+{% extends "asr_quran/layout.html" %} {% block title %}Riwayat ASR Quran{%
+endblock %} {% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Riwayat Latihan ASR Quran</h2>
+    <div class="mb-3 d-flex justify-content-between">
+        <div>
+            <button id="deleteSelectedBtn" class="btn btn-danger" disabled>
+                Hapus Terpilih
+            </button>
+        </div>
+        <div>
+            <a href="/api/asr_quran/upload" class="btn btn-secondary me-2"
+                ><i class="fas fa-arrow-left"></i> Kembali</a
+            >
+            <a href="/api/asr_quran/info" class="btn btn-info"
+                ><i class="fas fa-info-circle"></i> Info ASR Quran</a
+            >
+        </div>
+    </div>
+    <table class="table table-bordered table-hover" id="asrRiwayatTable">
+        <thead>
+            <tr>
+                <th><input type="checkbox" id="selectAll" /></th>
+                <th>ID</th>
+                <th>Nama User</th>
+                <th>Waktu</th>
+                <th>Surah</th>
+                <th>Ayat</th>
+                <th>Skor</th>
+                <th>Mode</th>
+                <th>Transkripsi</th>
+                <th>Referensi</th>
+                <th>Aksi</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Data akan diisi oleh JS -->
+        </tbody>
+    </table>
+</div>
+<div
+    class="modal fade"
+    id="detailModal"
+    tabindex="-1"
+    aria-labelledby="detailModalLabel"
+    aria-hidden="true"
+>
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="detailModalLabel">
+                    Detail Riwayat ASR Quran
+                </h5>
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal"
+                    aria-label="Close"
+                ></button>
+            </div>
+            <div class="modal-body" id="detailModalBody">
+                <!-- Isi detail akan diisi JS -->
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    function loadRiwayat() {
+        fetch("/api/asr_quran/riwayat")
+            .then((res) => res.json())
+            .then((data) => {
+                const tbody = document.querySelector("#asrRiwayatTable tbody");
+                tbody.innerHTML = "";
+                data.forEach((row) => {
+                    const tr = document.createElement("tr");
+                    tr.innerHTML = `
+                    <td><input type="checkbox" class="rowCheckbox" value="${row.id}"></td>
+                    <td>${row.id}</td>
+                    <td>${row.nama_user}</td>
+                    <td>${row.waktu}</td>
+                    <td>${row.surah}</td>
+                    <td>${row.ayat}</td>
+                    <td>${row.skor}</td>
+                    <td>${row.mode}</td>
+                    <td>${row.hasil_transkripsi}</td>
+                    <td>${row.referensi_ayat}</td>
+                    <td><button class="btn btn-sm btn-info detailBtn" data-id="${row.id}">Detail</button> <button class="btn btn-sm btn-danger deleteBtn" data-id="${row.id}">Hapus</button></td>
+                `;
+                    tbody.appendChild(tr);
+                });
+                updateDeleteBtnState();
+            });
+    }
+    function updateDeleteBtnState() {
+        const checked = document.querySelectorAll(".rowCheckbox:checked");
+        document.getElementById("deleteSelectedBtn").disabled =
+            checked.length === 0;
+    }
+    document.addEventListener("DOMContentLoaded", function () {
+        loadRiwayat();
+        document
+            .getElementById("selectAll")
+            .addEventListener("change", function () {
+                document
+                    .querySelectorAll(".rowCheckbox")
+                    .forEach((cb) => (cb.checked = this.checked));
+                updateDeleteBtnState();
+            });
+        document
+            .getElementById("asrRiwayatTable")
+            .addEventListener("change", function (e) {
+                if (e.target.classList.contains("rowCheckbox"))
+                    updateDeleteBtnState();
+            });
+        document
+            .getElementById("asrRiwayatTable")
+            .addEventListener("click", function (e) {
+                if (e.target.classList.contains("deleteBtn")) {
+                    const id = e.target.getAttribute("data-id");
+                    if (confirm("Yakin ingin menghapus data ini?")) {
+                        fetch(`/api/asr_quran/riwayat/${id}`, {
+                            method: "DELETE",
+                        })
+                            .then((res) => res.json())
+                            .then(() => loadRiwayat());
+                    }
+                }
+                if (e.target.classList.contains("detailBtn")) {
+                    const id = e.target.getAttribute("data-id");
+                    fetch(`/api/asr_quran/riwayat/${id}`)
+                        .then((res) => res.json())
+                        .then((data) => {
+                            let html = `<table class='table table-bordered'>`;
+                            html += `<tr><th>ID</th><td>${data.id}</td></tr>`;
+                            html += `<tr><th>Nama User</th><td>${data.nama_user}</td></tr>`;
+                            html += `<tr><th>Waktu</th><td>${data.waktu}</td></tr>`;
+                            html += `<tr><th>Surah</th><td>${data.surah}</td></tr>`;
+                            html += `<tr><th>Ayat</th><td>${data.ayat}</td></tr>`;
+                            html += `<tr><th>Mode</th><td>${data.mode}</td></tr>`;
+                            html += `<tr><th>Skor</th><td>${data.skor}</td></tr>`;
+                            html += `<tr><th>Transkripsi</th><td>${data.hasil_transkripsi}</td></tr>`;
+                            html += `<tr><th>Referensi</th><td>${data.referensi_ayat}</td></tr>`;
+                            html += `<tr><th>Highlight</th><td>${(
+                                data.detail || []
+                            )
+                                .map(
+                                    (h) =>
+                                        `<span class='badge bg-${
+                                            h.status === "benar"
+                                                ? "success"
+                                                : h.status === "salah"
+                                                ? "danger"
+                                                : "warning"
+                                        } me-1'>${h.kata}</span>`
+                                )
+                                .join(" ")}</td></tr>`;
+                            html += `</table>`;
+                            document.getElementById(
+                                "detailModalBody"
+                            ).innerHTML = html;
+                            var modal = new bootstrap.Modal(
+                                document.getElementById("detailModal")
+                            );
+                            modal.show();
+                        });
+                }
+            });
+        document
+            .getElementById("deleteSelectedBtn")
+            .addEventListener("click", function () {
+                const ids = Array.from(
+                    document.querySelectorAll(".rowCheckbox:checked")
+                ).map((cb) => cb.value);
+                if (ids.length === 0) return;
+                if (confirm("Yakin ingin menghapus data terpilih?")) {
+                    fetch("/api/asr_quran/riwayat/batch_delete", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ ids }),
+                    })
+                        .then((res) => res.json())
+                        .then(() => loadRiwayat());
+                }
+            });
+    });
+</script>
+{% endblock %}
