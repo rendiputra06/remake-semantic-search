@@ -110,13 +110,66 @@ function renderPagination() {
   const total = (filteredConcepts.length ? filteredConcepts : concepts).length;
   const totalPages = Math.ceil(total / pageSize);
   let html = "";
+  
+  // Tambahkan info total items
+  html += `<div class="d-flex justify-content-between align-items-center mb-2">
+    <small class="text-muted">Total: ${total} konsep</small>
+    <small class="text-muted">Halaman ${currentPage} dari ${totalPages}</small>
+  </div>`;
+  
   if (totalPages > 1) {
-    html += `<nav><ul class="pagination justify-content-end mb-0">`;
-    for (let i = 1; i <= totalPages; i++) {
-      html += `<li class="page-item${
-        i === currentPage ? " active" : ""
-      }"><a class="page-link" href="#" onclick="gotoPage(${i});return false;">${i}</a></li>`;
+    html += `<nav><ul class="pagination justify-content-center mb-0">`;
+    
+    // Previous button
+    if (currentPage > 1) {
+      html += `<li class="page-item">
+        <a class="page-link" href="#" onclick="gotoPage(${currentPage - 1});return false;">
+          <i class="fas fa-chevron-left"></i>
+        </a>
+      </li>`;
     }
+    
+    // Page numbers dengan ellipsis untuk halaman banyak
+    const maxVisiblePages = 7;
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+    
+    if (endPage - startPage + 1 < maxVisiblePages) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+    
+    // First page
+    if (startPage > 1) {
+      html += `<li class="page-item"><a class="page-link" href="#" onclick="gotoPage(1);return false;">1</a></li>`;
+      if (startPage > 2) {
+        html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+      }
+    }
+    
+    // Page numbers
+    for (let i = startPage; i <= endPage; i++) {
+      html += `<li class="page-item${i === currentPage ? " active" : ""}">
+        <a class="page-link" href="#" onclick="gotoPage(${i});return false;">${i}</a>
+      </li>`;
+    }
+    
+    // Last page
+    if (endPage < totalPages) {
+      if (endPage < totalPages - 1) {
+        html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+      }
+      html += `<li class="page-item"><a class="page-link" href="#" onclick="gotoPage(${totalPages});return false;">${totalPages}</a></li>`;
+    }
+    
+    // Next button
+    if (currentPage < totalPages) {
+      html += `<li class="page-item">
+        <a class="page-link" href="#" onclick="gotoPage(${currentPage + 1});return false;">
+          <i class="fas fa-chevron-right"></i>
+        </a>
+      </li>`;
+    }
+    
     html += `</ul></nav>`;
   }
   document.getElementById("pagination-controls").innerHTML = html;
@@ -441,6 +494,7 @@ function loadStorageInfo() {
 function switchStorage(storageType) {
   if (!confirm(`Yakin ingin switch ke ${storageType} storage?`)) return;
 
+  showLoading(true);
   fetch("/api/ontology/admin/storage/switch", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -448,15 +502,25 @@ function switchStorage(storageType) {
   })
     .then((res) => res.json())
     .then((data) => {
+      showLoading(false);
       if (data.success) {
         showToast(data.message);
-        loadStorageInfo();
-        loadConcepts(); // Reload concepts after switch
+        // Update storage info dengan data baru
+        if (data.info) {
+          document.getElementById("storage-type").textContent = data.info.storage_type;
+          document.getElementById("concept-count").textContent = data.info.concept_count;
+          document.getElementById("json-path").textContent = data.info.json_path || "N/A";
+        }
+        // Reload concepts dengan delay untuk memastikan server sudah siap
+        setTimeout(() => {
+          loadConcepts();
+        }, 500);
       } else {
         showToast(data.message, "danger");
       }
     })
     .catch((err) => {
+      showLoading(false);
       showToast("Error switching storage: " + err.message, "danger");
     });
 }

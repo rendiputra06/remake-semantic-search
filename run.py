@@ -814,6 +814,14 @@ def ontology_trace():
         user = get_user_by_id(session['user_id'])
     return render_template('ontology_trace.html', user=user)
 
+@app.route('/ontology-visualization')
+def ontology_visualization():
+    """Halaman visualisasi ontologi untuk public"""
+    user = None
+    if 'user_id' in session:
+        user = get_user_by_id(session['user_id'])
+    return render_template('ontology_visualization.html', user=user)
+
 @app.route('/ensemble-analysis')
 def ensemble_analysis():
     """Halaman analisis model ensemble"""

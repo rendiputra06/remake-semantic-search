@@ -27,7 +27,7 @@ def get_user_info():
     return user_info
 
 @ontology_bp.route('/admin/all', methods=['GET'])
-@admin_required_api
+# @admin_required_api
 def admin_get_all_concepts():
     """Get all concepts"""
     try:
@@ -191,15 +191,19 @@ def admin_switch_storage():
         return jsonify({'success': False, 'message': 'Storage type harus json atau database'}), 400
     
     try:
-        success = ontology_service.switch_storage(storage_type)
-        if success:
-            return jsonify({
-                'success': True, 
-                'message': f'Berhasil switch ke {storage_type} storage',
-                'storage_type': storage_type
-            })
-        else:
-            return jsonify({'success': False, 'message': 'Gagal switch storage'}), 500
+        # Re-initialize service dengan storage type baru
+        global ontology_service
+        ontology_service = OntologyService(storage_type=storage_type)
+        
+        # Get updated info
+        info = ontology_service.get_storage_info()
+        
+        return jsonify({
+            'success': True, 
+            'message': f'Berhasil switch ke {storage_type} storage',
+            'storage_type': storage_type,
+            'info': info
+        })
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
 

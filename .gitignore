@@ -39,6 +39,7 @@ database/
 
 # Log files
 *.log
+.env
 
 # OS generated files
 .DS_Store

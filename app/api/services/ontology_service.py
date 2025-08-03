@@ -209,6 +209,7 @@ class OntologyService:
             with open(self.ontology_path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
                 self.concepts = data.get('concepts', [])
+                print(f"✅ Load dari JSON: {len(self.concepts)} konsep")
         except FileNotFoundError:
             print(f"⚠️  File JSON tidak ditemukan: {self.ontology_path}")
             self.concepts = []
@@ -347,6 +348,8 @@ class OntologyService:
             success = self._save_to_database()
             if success:
                 self.storage_type = 'database'
+                # Reload data dari database setelah switch
+                self._load_from_database()
                 print("✅ Berhasil switch ke database storage")
             return success
         else:
@@ -354,6 +357,8 @@ class OntologyService:
             success = self._save_to_json()
             if success:
                 self.storage_type = 'json'
+                # Reload data dari JSON setelah switch
+                self._load_from_json()
                 print("✅ Berhasil switch ke JSON storage")
             return success
 

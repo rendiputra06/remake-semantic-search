@@ -1,0 +1,267 @@
+{% extends "layout.html" %}
+{% block title %}Visualisasi Ontologi - Mesin Pencarian Semantik Al-Quran{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-gradient-primary text-white">
+                <div class="card-body text-center">
+                    <h1 class="display-4 mb-3">
+                        <i class="fas fa-project-diagram me-3"></i>
+                        Visualisasi Ontologi Al-Quran
+                    </h1>
+                    <p class="lead mb-0">
+                        Eksplorasi konsep-konsep dalam Al-Quran melalui berbagai jenis visualisasi interaktif
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-cogs me-2"></i>Panel Kontrol
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <label for="visualizationType" class="form-label">Jenis Visualisasi</label>
+                            <select class="form-select" id="visualizationType">
+                                <option value="bubble">Bubble Network</option>
+                                <option value="hierarchical">Hierarchical Tree</option>
+                                <option value="force">Force-Directed Graph</option>
+                                <option value="table">Tabel Konsep</option>
+                                <option value="cards">Kartu Konsep</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="searchConcept" class="form-label">Cari Konsep</label>
+                            <input type="text" class="form-control" id="searchConcept" placeholder="Masukkan konsep...">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Filter Relasi</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="filter-broader" checked>
+                                <label class="form-check-label" for="filter-broader">Broader</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="filter-narrower" checked>
+                                <label class="form-check-label" for="filter-narrower">Narrower</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="filter-related" checked>
+                                <label class="form-check-label" for="filter-related">Related</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">&nbsp;</label>
+                            <div class="d-grid">
+                                <button class="btn btn-primary" onclick="loadOntologyData()">
+                                    <i class="fas fa-sync-alt me-1"></i>Muat Data
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body text-center">
+                    <h3 id="totalConcepts">0</h3>
+                    <p class="mb-0">Total Konsep</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <h3 id="totalRelations">0</h3>
+                    <p class="mb-0">Total Relasi</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body text-center">
+                    <h3 id="totalVerses">0</h3>
+                    <p class="mb-0">Total Ayat</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body text-center">
+                    <h3 id="maxDepthValue">3</h3>
+                    <p class="mb-0">Kedalaman</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Visualization -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-network me-2"></i>
+                        <span id="visualizationTitle">Bubble Network</span>
+                    </h5>
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="zoomIn()">
+                            <i class="fas fa-search-plus"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="zoomOut()">
+                            <i class="fas fa-search-minus"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="fitView()">
+                            <i class="fas fa-compress-arrows-alt"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div id="visualizationContainer" style="height: 600px; position: relative;">
+                        <div id="loadingSpinner" class="text-center py-5" style="display: none;">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2">Memuat data ontologi...</p>
+                        </div>
+                        <div id="visualizationArea" style="height: 100%;"></div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                <span id="visualizationInfo">Klik node untuk melihat detail konsep</span>
+                            </small>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <small class="text-muted">
+                                <i class="fas fa-mouse-pointer me-1"></i>
+                                <span id="interactionInfo">Drag untuk memindahkan, scroll untuk zoom</span>
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Concept Details Modal -->
+    <div class="modal fade" id="conceptModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="conceptModalTitle">Detail Konsep</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="conceptModalBody">
+                    <!-- Content will be loaded dynamically -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                    <button type="button" class="btn btn-primary" onclick="showRelatedConcepts()">Lihat Konsep Terkait</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+<script src="{{ url_for('static', filename='js/ontology_visualization.js') }}"></script>
+
+<style>
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    border: 1px solid rgba(0, 0, 0, 0.125);
+}
+
+.card-header {
+    background-color: rgba(0, 0, 0, 0.03);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+}
+
+#visualizationContainer {
+    background: #f8f9fa;
+    border-radius: 0.375rem;
+}
+
+.node circle {
+    transition: all 0.3s ease;
+}
+
+.node circle:hover {
+    stroke-width: 3;
+    stroke: #007bff;
+}
+
+.link {
+    transition: stroke-width 0.3s ease;
+}
+
+.link:hover {
+    stroke-width: 3;
+}
+
+#conceptModal .modal-body {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.badge {
+    font-size: 0.75em;
+}
+
+.btn-group .btn {
+    border-radius: 0.25rem;
+}
+
+#loadingSpinner {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1000;
+}
+
+.concept-card {
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.concept-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.concept-table tbody tr {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.concept-table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+</style>
+{% endblock %} 
