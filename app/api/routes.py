@@ -4,6 +4,7 @@ API routes.
 from flask import jsonify, request
 from werkzeug.utils import secure_filename
 import os
+import sqlite3
 from marshmallow import ValidationError
 import json
 
@@ -54,6 +55,123 @@ def thesaurus_enrich():
         return validation_error_response(err.messages)
     except Exception as e:
         return error_response(500, str(e))
+
+@api_bp.route('/thesaurus/visualize')
+@admin_required
+def thesaurus_visualize():
+    """API untuk visualisasi tesaurus (dipindahkan dari run.py)."""
+    word = request.args.get('word')
+    depth = int(request.args.get('depth', 2))
+    if not word:
+        return jsonify({'success': False, 'message': 'Parameter kata harus disediakan'})
+
+    try:
+        # Koneksi ke database lexical bawaan
+        db_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'database', 'lexical.db')
+        conn = sqlite3.connect(db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        # Cari ID kata
+        cursor.execute("SELECT id FROM lexical WHERE word = ?", (word,))
+        word_result = cursor.fetchone()
+        if not word_result:
+            return jsonify({'success': False, 'message': f'Kata "{word}" tidak ditemukan dalam database'})
+
+        word_id = word_result['id']
+        nodes = []
+        edges = []
+
+        # Tambahkan node utama
+        nodes.append({'id': word_id, 'label': word, 'group': 'main'})
+
+        def get_relations(source_id, current_depth, max_depth):
+            if current_depth > max_depth:
+                return
+
+            # Sinonim
+            cursor.execute(
+                """
+                SELECT l.id, l.word, s.strength, 'synonym' as type
+                FROM synonyms s
+                JOIN lexical l ON s.synonym_id = l.id
+                WHERE s.word_id = ?
+                """,
+                (source_id,)
+            )
+            synonyms = cursor.fetchall()
+
+            # Antonim
+            cursor.execute(
+                """
+                SELECT l.id, l.word, a.strength, 'antonym' as type
+                FROM antonyms a
+                JOIN lexical l ON a.antonym_id = l.id
+                WHERE a.word_id = ?
+                """,
+                (source_id,)
+            )
+            antonyms = cursor.fetchall()
+
+            # Hiponim
+            cursor.execute(
+                """
+                SELECT l.id, l.word, 1.0 as strength, 'hyponym' as type
+                FROM hyponyms h
+                JOIN lexical l ON h.hyponym_id = l.id
+                WHERE h.word_id = ?
+                """,
+                (source_id,)
+            )
+            hyponyms = cursor.fetchall()
+
+            # Hipernim
+            cursor.execute(
+                """
+                SELECT l.id, l.word, 1.0 as strength, 'hypernym' as type
+                FROM hypernyms h
+                JOIN lexical l ON h.hypernym_id = l.id
+                WHERE h.word_id = ?
+                """,
+                (source_id,)
+            )
+            hypernyms = cursor.fetchall()
+
+            all_relations = synonyms + antonyms + hyponyms + hypernyms
+
+            for relation in all_relations:
+                target_id = relation['id']
+
+                # Node
+                if not any(node['id'] == target_id for node in nodes):
+                    nodes.append({'id': target_id, 'label': relation['word'], 'group': relation['type']})
+
+                # Edge
+                edge_id = f"{source_id}-{target_id}"
+                if not any(edge['id'] == edge_id for edge in edges):
+                    edges.append({
+                        'id': edge_id,
+                        'from': source_id,
+                        'to': target_id,
+                        'label': relation['type'],
+                        'type': relation['type'],
+                        'strength': relation['strength']
+                    })
+
+                if current_depth < max_depth:
+                    get_relations(target_id, current_depth + 1, max_depth)
+
+        get_relations(word_id, 1, depth)
+
+        return jsonify({'success': True, 'nodes': nodes, 'edges': edges})
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'})
+    finally:
+        try:
+            if conn:
+                conn.close()
+        except Exception:
+            pass
 
 @api_bp.route('/quran/index/roots')
 @admin_required

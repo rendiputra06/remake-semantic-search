@@ -1,0 +1,76 @@
+{# Sidebar untuk layout_loggedin - collapsible #}
+<nav id="sidebar" class="sidebar">
+  <div class="sidebar-header d-flex align-items-center justify-content-between">
+    <div class="d-flex align-items-center">
+      <i class="fas fa-quran me-2 fa-lg"></i>
+      <span class="sidebar-title">Menu</span>
+    </div>
+    <button class="btn btn-sm btn-outline-light sidebar-toggle d-lg-none" type="button" aria-label="Toggle sidebar" onclick="toggleSidebar()">
+      <i class="fas fa-bars"></i>
+    </button>
+  </div>
+
+  <ul class="sidebar-menu">
+    <li>
+      <a href="{{ url_for('index') }}" class="sidebar-link {% if request.endpoint == 'index' %}active{% endif %}">
+        <i class="fas fa-home"></i>
+        <span>Beranda</span>
+      </a>
+    </li>
+    <li class="sidebar-sep"></li>
+    <li>
+      <a href="{{ url_for('profile') }}" class="sidebar-link {% if request.endpoint == 'profile' %}active{% endif %}">
+        <i class="fas fa-user"></i>
+        <span>Profil</span>
+      </a>
+    </li>
+    <li>
+      <a href="{{ url_for('settings') }}" class="sidebar-link {% if request.endpoint == 'settings' %}active{% endif %}">
+        <i class="fas fa-cog"></i>
+        <span>Pengaturan</span>
+      </a>
+    </li>
+    <li>
+      <a href="{{ url_for('quran_index') }}" class="sidebar-link {% if request.endpoint == 'quran_index' %}active{% endif %}">
+        <i class="fas fa-book"></i>
+        <span>Index Al-Quran</span>
+      </a>
+    </li>
+    <!-- <li>
+      <a href="{{ url_for('ontology_search') }}" class="sidebar-link {% if request.endpoint == 'ontology_search' %}active{% endif %}">
+        <i class="fas fa-brain"></i>
+        <span>Ontologi</span>
+      </a>
+    </li> -->
+    <li>
+      <a href="{{ url_for('public.thesaurus_statistics') }}" class="sidebar-link {% if request.endpoint == 'public.thesaurus_statistics' %}active{% endif %}">
+        <i class="fas fa-chart-bar"></i>
+        <span>Statistik Tesaurus</span>
+      </a>
+    </li>
+
+    {% if user and user.role == 'admin' %}
+    <li class="sidebar-sep"></li>
+    <li>
+      <a href="{{ url_for('admin.admin') }}" class="sidebar-link {% if request.endpoint == 'admin.admin' %}active{% endif %}">
+        <i class="fas fa-user-shield"></i>
+        <span>Admin Panel</span>
+      </a>
+    </li>
+    <li>
+      <a href="{{ url_for('ontology_admin') }}" class="sidebar-link {% if request.endpoint == 'ontology_admin' %}active{% endif %}">
+        <i class="fas fa-database"></i>
+        <span>Admin Ontologi</span>
+      </a>
+    </li>
+    {% endif %}
+
+    <li class="sidebar-sep"></li>
+    <li>
+      <a href="{{ url_for('auth.logout') }}" class="sidebar-link">
+        <i class="fas fa-sign-out-alt"></i>
+        <span>Keluar</span>
+      </a>
+    </li>
+  </ul>
+</nav>

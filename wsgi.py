@@ -9,7 +9,4 @@ import os
 sys.path.insert(0, os.path.dirname(__file__))
 
 # Import aplikasi Flask dari run.py
-from run import app
-
-if __name__ == "__main__":
-    app.run() 
+from run import app 

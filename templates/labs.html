@@ -1,0 +1,63 @@
+{% extends "layout.html" %}
+{% block title %}Labs - Fitur Eksperimen & Ontologi{% endblock %}
+{% block content %}
+<div class="container py-5">
+  <h1 class="mb-4">Labs</h1>
+  <p class="text-muted">Halaman ini menyimpan tautan ke fitur-fitur yang disembunyikan dari antarmuka utama, termasuk tools Ontologi. Halaman ini tidak ditautkan dari menu utama.</p>
+
+  <!-- SEO: prevent indexing -->
+  <meta name="robots" content="noindex, nofollow">
+
+  <div class="row row-cols-1 row-cols-md-2 g-4">
+    <div class="col">
+      <div class="card h-100 shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title"><i class="fas fa-project-diagram me-2 text-info"></i>Pencarian Ontologi</h5>
+          <p class="card-text">Eksplorasi pencarian berbasis ekspansi konsep dan relasi ontologi Al-Quran.</p>
+          <a href="/ontology" class="btn btn-outline-primary">Buka</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="card h-100 shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title"><i class="fas fa-route me-2 text-info"></i>Tracing Ontologi & Semantik</h5>
+          <p class="card-text">Lihat proses tracing pencarian semantik dan ekspansi ontologi secara detail (step-by-step).</p>
+          <a href="/ontology-trace" class="btn btn-outline-primary">Buka</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="card h-100 shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title"><i class="fas fa-brain me-2 text-info"></i>Informasi Ontologi</h5>
+          <p class="card-text">Penjelasan dan dokumentasi tentang struktur ontologi yang digunakan.</p>
+          <a href="/ontology-info" class="btn btn-outline-primary">Buka</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="card h-100 shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title"><i class="fas fa-network-wired me-2 text-info"></i>Visualisasi Ontologi</h5>
+          <p class="card-text">Visualisasi relasi ontologi secara interaktif.</p>
+          <a href="/ontology-visualization" class="btn btn-outline-primary">Buka</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="card h-100 shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title"><i class="fas fa-tools me-2 text-secondary"></i>Admin Ontologi</h5>
+          <p class="card-text">Panel administrasi untuk pengelolaan data ontologi.</p>
+          <a href="/admin/ontology" class="btn btn-outline-secondary">Buka</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

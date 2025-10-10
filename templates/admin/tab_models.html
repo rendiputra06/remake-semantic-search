@@ -1,0 +1,39 @@
+{# Tab: Model AI #}
+<div class="tab-pane fade" id="models-pane" role="tabpanel">
+  <div class="card">
+    <div class="card-header">
+      <h5 class="mb-0">Status Model</h5>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        {% for model_name, status in model_status.items() %}
+        <div class="col-md-4 mb-3">
+          <div class="card h-100 shadow-sm">
+            <div class="card-body">
+              <h5 class="card-title">{{ model_name.upper() }}</h5>
+              <div class="mb-3">
+                <span class="badge {% if status.initialized %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                  {% if status.initialized %}Aktif{% else %}Belum Diinisialisasi{% endif %}
+                </span>
+              </div>
+              {% if status.last_updated %}
+              <p class="card-text"><small class="text-muted">Terakhir diperbarui: {{ status.last_updated }}</small></p>
+              {% endif %}
+              <form action="{{ url_for('admin.run_lexical_command_route') }}" method="post">
+                <input type="hidden" name="command" value="{{ model_name }}" />
+                <button type="submit" class="btn btn-primary btn-sm" {% if status.initialized %}disabled{% endif %}>
+                  {% if status.initialized %}
+                  <i class="fas fa-check-circle"></i> Terinisialisasi
+                  {% else %}
+                  <i class="fas fa-cog"></i> Inisialisasi Model
+                  {% endif %}
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,53 @@
+{# Modal: Upload Excel untuk Index Al-Quran #}
+<div class="modal fade" id="excelUploadModal" tabindex="-1" aria-labelledby="excelUploadModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="excelUploadModalLabel">Upload File Excel</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="excelUploadForm" enctype="multipart/form-data">
+          <div class="mb-3">
+            <label for="excel-file" class="form-label">Pilih File Excel</label>
+            <input type="file" class="form-control" id="excel-file" accept=".xls,.xlsx" required />
+          </div>
+          <div class="mb-3">
+            <label for="sheet-name" class="form-label">Nama Sheet</label>
+            <select class="form-select" id="sheet-name" disabled>
+              <option value="">Pilih file terlebih dahulu</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="parent-index" class="form-label">Index Parent (opsional)</label>
+            <select class="form-select" id="parent-index">
+              <option value="">Root (Tidak ada parent)</option>
+            </select>
+          </div>
+        </form>
+        <div class="alert alert-info">
+          <p>
+            <i class="fas fa-info-circle"></i> <strong>Catatan:</strong> Jika Anda memilih indeks parent, semua sub-indeks yang ada di bawahnya akan dihapus sebelum data baru diimpor.
+          </p>
+        </div>
+        <div id="upload-progress-container" class="d-none">
+          <div class="text-center my-3">
+            <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
+            <p class="mt-2" id="processing-text">Memproses file Excel...</p>
+          </div>
+          <div class="progress">
+            <div id="upload-progress-bar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+          </div>
+        </div>
+        <div id="preview-container" class="mt-4 d-none">
+          <h6>Preview Struktur (10 data teratas):</h6>
+          <div id="preview-data" class="border p-3 bg-light" style="max-height: 200px; overflow-y: auto"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-primary" id="upload-excel-btn">Upload</button>
+      </div>
+    </div>
+  </div>
+</div>

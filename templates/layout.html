@@ -76,6 +76,7 @@
                     Semantik
                   </a>
                 </li>
+                <!-- Ontology links hidden (moved to Labs)
                 <li>
                   <a class="dropdown-item" href="/ontology"> Ontologi </a>
                 </li>
@@ -84,6 +85,7 @@
                     <i class="fas fa-project-diagram me-1"></i>Visualisasi Ontologi 
                   </a>
                 </li>
+                -->
               </ul>
             </li>
             <!-- <li class="nav-item">
@@ -93,6 +95,7 @@
                 >Ontologi</a
               >
             </li> -->
+            <!-- Ontology tracing hidden (moved to Labs)
             <li class="nav-item">
               <a
                 class="nav-link {% if request.endpoint == 'ontology_trace' %}active{% endif %}"
@@ -100,6 +103,7 @@
                 >Tracing</a
               >
             </li>
+            -->
             <li class="nav-item">
               <a
                 class="nav-link {% if request.endpoint == 'public.evaluasi' %}active{% endif %}"
@@ -147,11 +151,13 @@
                     >Model Inspector</a
                   >
                 </li>
+                <!-- Ontology info hidden (moved to Labs)
                 <li>
                   <a class="dropdown-item" href="{{ url_for('ontology_info') }}"
                     >Informasi Ontologi</a
                   >
                 </li>
+                -->
                 <li>
                   <a class="dropdown-item" href="{{ url_for('public.thesaurus') }}"
                     >Tesaurus</a
@@ -194,6 +200,7 @@
                     >Admin</a
                   >
                 </li>
+                <!-- Admin Ontologi hidden (moved to Labs)
                 <li>
                   <a
                     class="dropdown-item"
@@ -201,6 +208,7 @@
                     >Admin Ontologi</a
                   >
                 </li>
+                -->
                 <li><hr class="dropdown-divider" /></li>
                 <li>
                   <a class="dropdown-item" href="{{ url_for('auth.logout') }}"

@@ -1,0 +1,57 @@
+{# Tab: Statistik #}
+<div class="tab-pane fade" id="stats-pane" role="tabpanel" aria-labelledby="stats-tab">
+  <div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">Statistik Index & Ayat</h5>
+      <button class="btn btn-sm btn-outline-primary" id="refresh-stats-btn">
+        <i class="fas fa-sync-alt"></i> Refresh
+      </button>
+    </div>
+    <div class="card-body">
+      <div id="stats-loading" class="text-center py-5">
+        <div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div>
+        <p class="mt-2">Memuat statistik...</p>
+      </div>
+      <div id="stats-content" class="d-none">
+        <div class="row mb-4">
+          <div class="col-md-3">
+            <div class="card bg-primary text-white h-100"><div class="card-body text-center"><h5>Total Index</h5><h2 id="total-categories">-</h2></div></div>
+          </div>
+          <div class="col-md-3">
+            <div class="card bg-success text-white h-100"><div class="card-body text-center"><h5>Total Ayat</h5><h2 id="total-ayat">-</h2></div></div>
+          </div>
+          <div class="col-md-3">
+            <div class="card bg-info text-white h-100"><div class="card-body text-center"><h5>Index dengan Ayat</h5><h2 id="categories-with-ayat">-</h2></div></div>
+          </div>
+          <div class="col-md-3">
+            <div class="card bg-warning text-dark h-100"><div class="card-body text-center"><h5>Root Index</h5><h2 id="root-categories">-</h2></div></div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-6">
+            <div class="card h-100">
+              <div class="card-header"><h5 class="mb-0">Index berdasarkan Level</h5></div>
+              <div class="card-body">
+                <table class="table table-striped">
+                  <thead><tr><th>Level</th><th>Jumlah</th><th>Persentase</th></tr></thead>
+                  <tbody id="level-stats-tbody"><tr><td colspan="3" class="text-center">Tidak ada data</td></tr></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="card h-100">
+              <div class="card-header"><h5 class="mb-0">Surah yang Paling Banyak Diindeks</h5></div>
+              <div class="card-body">
+                <table class="table table-striped">
+                  <thead><tr><th>Surah</th><th>Jumlah Ayat</th><th>Persentase</th></tr></thead>
+                  <tbody id="surah-stats-tbody"><tr><td colspan="3" class="text-center">Tidak ada data</td></tr></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
