@@ -25,24 +25,18 @@ def init_model(model_type='word2vec'):
     if model_type == 'word2vec':
         if word2vec_model is None:
             try:
-                # Gunakan path yang relatif terhadap root project
-                model_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'models/idwiki_word2vec/idwiki_word2vec_200_new_lower.model')
-                word2vec_model = Word2VecModel(model_path=model_path)
+                # Gunakan default path dari backend model agar robust di Docker
+                word2vec_model = Word2VecModel()
                 
-                # Cek apakah file vektor ayat sudah ada
-                vectors_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'database/vectors/word2vec_verses.pkl')
-                
-                if os.path.exists(vectors_path):
-                    # Muat model dan vektor ayat yang sudah ada
-                    word2vec_model.load_model()
-                    word2vec_model.load_verse_vectors(vectors_path)
-                    print(f"Word2Vec model and verse vectors loaded successfully!")
-                else:
+                # Muat model
+                word2vec_model.load_model()
+                # Coba muat vektor dengan path default backend
+                try:
+                    word2vec_model.load_verse_vectors()
+                    print("Word2Vec verse vectors loaded (default path)")
+                except Exception:
                     # Buat vektor ayat baru
                     from backend.preprocessing import process_quran_data
-                    
-                    # Muat model
-                    word2vec_model.load_model()
                     
                     # Proses data Al-Quran
                     print("Processing Quran data...")
@@ -52,10 +46,10 @@ def init_model(model_type='word2vec'):
                     # Buat vektor ayat
                     word2vec_model.create_verse_vectors(preprocessed_verses)
                     
-                    # Simpan vektor untuk penggunaan di masa mendatang
-                    vectors_dir = os.path.dirname(vectors_path)
+                    # Simpan vektor ke path default backend
+                    vectors_dir = os.path.dirname(word2vec_model.vector_path)
                     os.makedirs(vectors_dir, exist_ok=True)
-                    word2vec_model.save_verse_vectors(vectors_path)
+                    word2vec_model.save_verse_vectors(word2vec_model.vector_path)
             except Exception as e:
                 print(f"Error initializing Word2Vec model: {e}")
                 traceback.print_exc()
@@ -66,24 +60,18 @@ def init_model(model_type='word2vec'):
     elif model_type == 'fasttext':
         if fasttext_model is None:
             try:
-                # Gunakan path yang relatif terhadap root project
-                model_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'models/fasttext/fasttext_model.model')
-                fasttext_model = FastTextModel(model_path=model_path)
+                # Gunakan default path dari backend model agar robust di Docker
+                fasttext_model = FastTextModel()
                 
-                # Cek apakah file vektor ayat sudah ada
-                vectors_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'database/vectors/fasttext_verses.pkl')
-                
-                if os.path.exists(vectors_path):
-                    # Muat model dan vektor ayat yang sudah ada
-                    fasttext_model.load_model()
-                    fasttext_model.load_verse_vectors(vectors_path)
-                    print(f"FastText model and verse vectors loaded successfully!")
-                else:
+                # Muat model
+                fasttext_model.load_model()
+                # Coba muat vektor default backend
+                try:
+                    fasttext_model.load_verse_vectors()
+                    print("FastText verse vectors loaded (default path)")
+                except Exception:
                     # Buat vektor ayat baru
                     from backend.preprocessing import process_quran_data
-                    
-                    # Muat model
-                    fasttext_model.load_model()
                     
                     # Proses data Al-Quran
                     print("Processing Quran data...")
@@ -93,10 +81,10 @@ def init_model(model_type='word2vec'):
                     # Buat vektor ayat
                     fasttext_model.create_verse_vectors(preprocessed_verses)
                     
-                    # Simpan vektor untuk penggunaan di masa mendatang
-                    vectors_dir = os.path.dirname(vectors_path)
+                    # Simpan vektor ke path default backend
+                    vectors_dir = os.path.dirname(fasttext_model.vector_path)
                     os.makedirs(vectors_dir, exist_ok=True)
-                    fasttext_model.save_verse_vectors(vectors_path)
+                    fasttext_model.save_verse_vectors(fasttext_model.vector_path)
             except Exception as e:
                 print(f"Error initializing FastText model: {e}")
                 traceback.print_exc()
@@ -107,24 +95,18 @@ def init_model(model_type='word2vec'):
     elif model_type == 'glove':
         if glove_model is None:
             try:
-                # Gunakan path yang relatif terhadap root project
-                model_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'models/glove/alquran_vectors.txt')
-                glove_model = GloVeModel(model_path=model_path)
+                # Gunakan default path dari backend model agar robust di Docker
+                glove_model = GloVeModel()
                 
-                # Cek apakah file vektor ayat sudah ada
-                vectors_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'database/vectors/glove_verses.pkl')
-                
-                if os.path.exists(vectors_path):
-                    # Muat model dan vektor ayat yang sudah ada
-                    glove_model.load_model()
-                    glove_model.load_verse_vectors(vectors_path)
-                    print(f"GloVe model and verse vectors loaded successfully!")
-                else:
+                # Muat model
+                glove_model.load_model()
+                # Coba muat vektor default backend
+                try:
+                    glove_model.load_verse_vectors()
+                    print("GloVe verse vectors loaded (default path)")
+                except Exception:
                     # Buat vektor ayat baru
                     from backend.preprocessing import process_quran_data
-                    
-                    # Muat model
-                    glove_model.load_model()
                     
                     # Proses data Al-Quran
                     print("Processing Quran data...")
@@ -134,10 +116,10 @@ def init_model(model_type='word2vec'):
                     # Buat vektor ayat
                     glove_model.create_verse_vectors(preprocessed_verses)
                     
-                    # Simpan vektor untuk penggunaan di masa mendatang
-                    vectors_dir = os.path.dirname(vectors_path)
+                    # Simpan vektor ke path default backend
+                    vectors_dir = os.path.dirname(glove_model.vector_path)
                     os.makedirs(vectors_dir, exist_ok=True)
-                    glove_model.save_verse_vectors(vectors_path)
+                    glove_model.save_verse_vectors(glove_model.vector_path)
             except Exception as e:
                 print(f"Error initializing GloVe model: {e}")
                 traceback.print_exc()

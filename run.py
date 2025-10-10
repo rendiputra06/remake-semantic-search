@@ -18,6 +18,7 @@ from app.auth.decorators import login_required, admin_required
 from backend.monitoring import monitoring_bp
 from app.api import init_app as init_api
 from app.api.routes.ontology import ontology_bp
+from app.dual_search import blueprint as dual_search_bp
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)  # Replace with proper config
@@ -28,6 +29,7 @@ app.register_blueprint(admin_bp, url_prefix='/admin')
 app.register_blueprint(public_bp, url_prefix='')
 app.register_blueprint(monitoring_bp, url_prefix='/monitoring')
 app.register_blueprint(ontology_bp, url_prefix='/api/ontology')
+app.register_blueprint(dual_search_bp, url_prefix='/dual-search')
 
 # Initialize API routes
 init_api(app)

@@ -1,0 +1,107 @@
+{% extends "layout.html" %}
+{% block title %}Pencarian Kombinasi Model{% endblock %}
+
+{% block content %}
+<div class="py-3">
+  <h2 class="mb-3">Pencarian Kombinasi Model</h2>
+  <form method="post" action="{{ url_for('dual_search.search') }}" class="row g-3 align-items-end">
+    <div class="col-md-6">
+      <label class="form-label" for="query">Query</label>
+      <input type="text" name="query" id="query" class="form-control" value="{{ query or '' }}" placeholder="Masukkan kata kunci..." required />
+    </div>
+    <div class="col-md-3">
+      <label class="form-label" for="combo">Kombinasi</label>
+      <select name="combo" id="combo" class="form-select">
+        <option value="w2v_ft" {{ 'selected' if combo=='w2v_ft' else '' }}>Word2Vec + FastText</option>
+        <option value="w2v_glove" {{ 'selected' if combo=='w2v_glove' else '' }}>Word2Vec + GloVe</option>
+        <option value="ft_glove" {{ 'selected' if combo=='ft_glove' else '' }}>FastText + GloVe</option>
+        <option value="ensemble3" {{ 'selected' if combo=='ensemble3' else '' }}>Ensemble (3 Model)</option>
+      </select>
+    </div>
+    <div class="col-md-2">
+      <label class="form-label" for="limit">Limit</label>
+      <input type="number" min="1" name="limit" id="limit" class="form-control" value="{{ request.form.get('limit', 10) if request.form else 10 }}" />
+    </div>
+    <div class="col-md-1">
+      <label class="form-label" for="threshold">Thres</label>
+      <input type="number" step="0.01" min="0" max="1" name="threshold" id="threshold" class="form-control" value="{{ request.form.get('threshold','') if request.form else '' }}" />
+    </div>
+    <div class="col-12">
+      <button class="btn btn-primary" type="submit"><i class="fas fa-search"></i> Cari</button>
+    </div>
+  </form>
+
+  {% if error %}
+  <div class="alert alert-danger mt-3">{{ error }}</div>
+  {% endif %}
+
+  {% if model_summaries %}
+  <div class="row mt-4">
+    {% set model_names = {'word2vec':'Word2Vec', 'fasttext':'FastText', 'glove':'GloVe'} %}
+    {% for key, summary in model_summaries.items() %}
+    <div class="col-md-4 mb-3">
+      <div class="card h-100">
+        <div class="card-header">
+          <strong>Ringkasan {{ model_names.get(key, key|capitalize) }}</strong>
+        </div>
+        <div class="card-body">
+          <div class="mb-2">Total hasil: <span class="badge bg-secondary">{{ summary.total }}</span></div>
+          {% if summary.top_refs and summary.top_refs|length > 0 %}
+          <div>
+            <div class="text-muted mb-1">Top {{ summary.top_refs|length }} (format Qs.X:Y):</div>
+            <div>
+              {% for ref in summary.top_refs %}
+                <span class="badge bg-light text-dark me-1 mb-1">{{ ref }}</span>
+              {% endfor %}
+            </div>
+          </div>
+          {% else %}
+            <div class="text-muted">Tidak ada hasil.</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if results %}
+  <div class="card mt-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">Hasil Pencarian</h5>
+      <span class="text-muted">Total: {{ results|length }}</span>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-striped table-hover align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>#</th>
+              <th>Surah</th>
+              <th>Ayat</th>
+              <th>Teks Arab</th>
+              <th>Terjemahan</th>
+              <th>Skor</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in results %}
+            <tr>
+              <td>{{ loop.index }}</td>
+              <td>{{ item.surah_name }} ({{ item.surah_number }})</td>
+              <td>{{ item.ayat_number }}</td>
+              <td style="font-family: 'Amiri', serif; font-size: 1.1rem;">{{ item.arabic }}</td>
+              <td>{{ item.translation }}</td>
+              <td><span class="badge bg-primary">{{ '%.3f'|format(item.similarity) }}</span></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% elif query %}
+  <div class="alert alert-warning mt-3">Tidak ada hasil ditemukan untuk query ini.</div>
+  {% endif %}
+</div>
+{% endblock %}
