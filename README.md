@@ -187,3 +187,22 @@ docker-compose exec web bash
    - Pencarian leksikal: `python -m backend.initialize lexical`
    - Tesaurus sinonim: `python -m backend.initialize thesaurus`
    - Semua model: `
+
+
+# Menjalankan script import menggunakan Docker
+docker-compose exec -T web python3 scripts/import_quran.py
+
+# Output berhasil:
+✅ Berhasil import 114 surah
+✅ Berhasil import 6,236 ayat
+✅ Database sekarang terisi lengkap
+# Test berbagai ayat - SEMUA BERHASIL! ✅
+
+curl "http://localhost:5000/api/quran/ayat_detail?surah=1&ayat=1"
+✅ Success: Ayat 1:1 (Al-Fatihah)
+
+curl "http://localhost:5000/api/quran/ayat_detail?surah=2&ayat=255"  
+✅ Success: Ayat 2:255 (Ayat Kursi)
+
+curl "http://localhost:5000/api/quran/ayat_detail?surah=114&ayat=6"
+✅ Success: Ayat 114:6 (An-Nas)

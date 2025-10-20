@@ -17,6 +17,7 @@ from .routes.quran import quran_bp
 from .routes.public_quran import public_quran_bp
 from .routes.query import query_bp
 from .routes.evaluation import evaluation_bp
+from .routes.evaluation_v2 import evaluation_v2_bp
 from .routes.asr_quran import asr_quran_bp
 
 from .utils import error_response, validation_error_response
@@ -41,6 +42,7 @@ def init_app(app):
     app.register_blueprint(public_quran_bp, url_prefix='/api/public/quran')
     app.register_blueprint(query_bp, url_prefix='/api/query')
     app.register_blueprint(evaluation_bp, url_prefix='/api/evaluation')
+    app.register_blueprint(evaluation_v2_bp, url_prefix='/api/evaluation-v2')
     app.register_blueprint(asr_quran_bp, url_prefix='/api/asr_quran')
 
     # Register error handlers

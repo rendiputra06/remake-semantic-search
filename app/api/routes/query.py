@@ -140,16 +140,32 @@ def import_ayat_excel():
         data = request.get_json()
         ayat_list = data.get('ayat', [])
         query_id = data.get('query_id')
+
         if not ayat_list or not isinstance(ayat_list, list):
             return jsonify({'success': False, 'message': 'Data ayat tidak valid.'}), 400
+
         if not query_id:
             return jsonify({'success': False, 'message': 'Query ID wajib dipilih.'}), 400
-        # Gunakan batch insert agar lebih cepat
+
+        # Enhanced batch insert dengan detailed statistics
         success, result = add_relevant_verses_batch(query_id, ayat_list)
+
         if success:
-            return jsonify({'success': True, 'message': f'{result} ayat berhasil diimport.'})
+            stats = result
+            message = f'{stats["inserted"]} ayat baru berhasil diimport.'
+            if stats["duplicates"] > 0:
+                message += f' {stats["duplicates"]} duplikasi diabaikan.'
+            if stats["existing_before"] > 0:
+                message += f' Total ayat relevan: {stats["existing_before"] + stats["inserted"]}.'
+
+            return jsonify({
+                'success': True,
+                'message': message,
+                'statistics': stats
+            })
         else:
             return jsonify({'success': False, 'message': result}), 500
+
     except Exception as e:
         return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 500
 

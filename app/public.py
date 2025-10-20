@@ -68,6 +68,10 @@ def thesaurus_word_detail(word):
 def evaluasi():
     return render_template('evaluasi.html')
 
+@public_bp.route('/evaluasi/v2')
+def evaluasi_v2():
+    return render_template('evaluasi_v2.html')
+
 @public_bp.route('/search')
 def search_main():
     """

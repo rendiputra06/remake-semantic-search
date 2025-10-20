@@ -4,7 +4,20 @@
 {% block content %}
 <div class="py-3">
   <h2 class="mb-3">Pencarian Kombinasi Model</h2>
-  <form method="post" action="{{ url_for('dual_search.search') }}" class="row g-3 align-items-end">
+
+  <!-- Quick Search Buttons -->
+  <div class="mb-3">
+    <label class="form-label">Quick Search:</label>
+    <div class="d-flex flex-wrap gap-2">
+      <button type="button" class="btn btn-outline-primary btn-sm ds-quick" data-query="ibadah">Ibadah</button>
+      <button type="button" class="btn btn-outline-primary btn-sm ds-quick" data-query="shalat">Shalat</button>
+      <button type="button" class="btn btn-outline-primary btn-sm ds-quick" data-query="puasa">Puasa</button>
+      <button type="button" class="btn btn-outline-primary btn-sm ds-quick" data-query="zakat">Zakat</button>
+      <button type="button" class="btn btn-outline-primary btn-sm ds-quick" data-query="haji">Haji</button>
+    </div>
+  </div>
+
+  <form id="dual-form" method="post" action="{{ url_for('dual_search.search') }}" data-api-url="{{ url_for('dual_search.api_search') }}" class="row g-3 align-items-end">
     <div class="col-md-6">
       <label class="form-label" for="query">Query</label>
       <input type="text" name="query" id="query" class="form-control" value="{{ query or '' }}" placeholder="Masukkan kata kunci..." required />
@@ -28,52 +41,98 @@
     </div>
     <div class="col-12">
       <button class="btn btn-primary" type="submit"><i class="fas fa-search"></i> Cari</button>
+      <button class="btn btn-outline-secondary btn-sm ms-2" type="button" id="toggle-advanced">
+        <i class="fas fa-cog me-1"></i>Pengaturan Lanjutan
+      </button>
     </div>
   </form>
+
+  <!-- Advanced Options (hidden by default) -->
+  <div id="ds-advanced" class="row mt-3" style="display:none;">
+    <div class="col-md-3">
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="require_both" name="require_both" checked>
+        <label class="form-check-label" for="require_both">Hanya ayat yang muncul di kedua model (intersection)</label>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label" for="voting_bonus">Voting Bonus</label>
+      <input type="number" step="0.01" min="0" max="1" class="form-control" id="voting_bonus" name="voting_bonus" value="0.05" />
+    </div>
+    <div class="col-md-3">
+      <label class="form-label" for="a_weight">Bobot Model A</label>
+      <input type="range" class="form-range" min="0" max="2" step="0.1" id="a_weight" name="a_weight" value="1" />
+      <small id="a_weight_label">A = (sesuai kombinasi)</small>
+      <div><span id="a_weight_val">1.0</span></div>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label" for="b_weight">Bobot Model B</label>
+      <input type="range" class="form-range" min="0" max="2" step="0.1" id="b_weight" name="b_weight" value="1" />
+      <small id="b_weight_label">B = (sesuai kombinasi)</small>
+      <div><span id="b_weight_val">1.0</span></div>
+    </div>
+    <!-- Ensemble-only settings -->
+    <div class="col-12 mt-3">
+      <div class="alert alert-secondary py-2 mb-2"><strong>Pengaturan khusus Ensemble (3 Model)</strong></div>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label" for="method">Metode Ensemble</label>
+      <select class="form-select" id="method" name="method">
+        <option value="weighted">Weighted Averaging</option>
+        <option value="meta">Meta-Ensemble</option>
+      </select>
+    </div>
+    <div class="col-md-3">
+      <div class="form-check mt-4">
+        <input class="form-check-input" type="checkbox" id="use_voting_filter" name="use_voting_filter" checked>
+        <label class="form-check-label" for="use_voting_filter">Filter ayat (muncul ≥2 model)</label>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <label class="form-label">Bobot Word2Vec</label>
+      <input type="range" class="form-range" min="0" max="2" step="0.1" id="w2v_weight" name="w2v_weight" value="1" />
+      <div><span id="w2v_weight_val">1.0</span></div>
+    </div>
+    <div class="col-md-2">
+      <label class="form-label">Bobot FastText</label>
+      <input type="range" class="form-range" min="0" max="2" step="0.1" id="ft_weight" name="ft_weight" value="1" />
+      <div><span id="ft_weight_val">1.0</span></div>
+    </div>
+    <div class="col-md-2">
+      <label class="form-label">Bobot GloVe</label>
+      <input type="range" class="form-range" min="0" max="2" step="0.1" id="glove_weight" name="glove_weight" value="1" />
+      <div><span id="glove_weight_val">1.0</span></div>
+    </div>
+  </div>
 
   {% if error %}
   <div class="alert alert-danger mt-3">{{ error }}</div>
   {% endif %}
 
-  {% if model_summaries %}
-  <div class="row mt-4">
-    {% set model_names = {'word2vec':'Word2Vec', 'fasttext':'FastText', 'glove':'GloVe'} %}
-    {% for key, summary in model_summaries.items() %}
-    <div class="col-md-4 mb-3">
-      <div class="card h-100">
-        <div class="card-header">
-          <strong>Ringkasan {{ model_names.get(key, key|capitalize) }}</strong>
-        </div>
-        <div class="card-body">
-          <div class="mb-2">Total hasil: <span class="badge bg-secondary">{{ summary.total }}</span></div>
-          {% if summary.top_refs and summary.top_refs|length > 0 %}
-          <div>
-            <div class="text-muted mb-1">Top {{ summary.top_refs|length }} (format Qs.X:Y):</div>
-            <div>
-              {% for ref in summary.top_refs %}
-                <span class="badge bg-light text-dark me-1 mb-1">{{ ref }}</span>
-              {% endfor %}
-            </div>
-          </div>
-          {% else %}
-            <div class="text-muted">Tidak ada hasil.</div>
-          {% endif %}
-        </div>
-      </div>
+  <!-- Loading Spinner -->
+  <div id="ds-loading" class="text-center my-4" style="display:none;">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
     </div>
-    {% endfor %}
+    <div>Memproses pencarian...</div>
   </div>
-  {% endif %}
+
+  <!-- Dynamic Model Summaries (AJAX) -->
+  <div id="model-summaries" class="row mt-4"></div>
 
   {% if results %}
   <div class="card mt-4">
     <div class="card-header d-flex justify-content-between align-items-center">
       <h5 class="mb-0">Hasil Pencarian</h5>
-      <span class="text-muted">Total: {{ results|length }}</span>
+      <div class="d-flex align-items-center gap-2">
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="export-json"><i class="fas fa-file-export me-1"></i>JSON</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="export-csv"><i class="fas fa-file-csv me-1"></i>CSV</button>
+        <span class="text-muted">Total: {{ results|length }}</span>
+      </div>
     </div>
     <div class="card-body">
       <div class="table-responsive">
-        <table class="table table-striped table-hover align-middle">
+        <table class="table table-striped table-hover align-middle" id="dual-results-table">
           <thead class="table-light">
             <tr>
               <th>#</th>
@@ -84,9 +143,9 @@
               <th>Skor</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody id="dual-results-body">
             {% for item in results %}
-            <tr>
+            <tr class="ds-row" data-index="{{ loop.index0 }}">
               <td>{{ loop.index }}</td>
               <td>{{ item.surah_name }} ({{ item.surah_number }})</td>
               <td>{{ item.ayat_number }}</td>
@@ -103,5 +162,22 @@
   {% elif query %}
   <div class="alert alert-warning mt-3">Tidak ada hasil ditemukan untuk query ini.</div>
   {% endif %}
+
+  <!-- Modal Detail Ayat -->
+  <div class="modal fade" id="dsDetailModal" tabindex="-1" aria-labelledby="dsDetailLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="dsDetailLabel">Detail Ayat</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" id="ds-detail-body"></div>
+      </div>
+    </div>
+  </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/dual_search.js') }}"></script>
 {% endblock %}

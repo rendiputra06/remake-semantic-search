@@ -110,12 +110,31 @@
               >
             </li>
             -->
-            <li class="nav-item">
+            <li class="nav-item dropdown">
               <a
-                class="nav-link {% if request.endpoint == 'public.evaluasi' %}active{% endif %}"
-                href="{{ url_for('public.evaluasi') }}"
-                >Evaluasi</a
+                class="nav-link dropdown-toggle"
+                href="#"
+                id="evaluasiDropdown"
+                role="button"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
               >
+                Evaluasi
+              </a>
+              <ul class="dropdown-menu" aria-labelledby="evaluasiDropdown">
+                <li>
+                  <a class="dropdown-item {% if request.endpoint == 'public.evaluasi' %}active{% endif %}"
+                     href="{{ url_for('public.evaluasi') }}">
+                    <i class="fas fa-vial me-2"></i>Versi 1 (Lengkap)
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item {% if request.endpoint == 'public.evaluasi_v2' %}active{% endif %}"
+                     href="{{ url_for('public.evaluasi_v2') }}">
+                    <i class="fas fa-vial-circle-check me-2"></i>Versi 2 (Tanpa Ontologi)
+                  </a>
+                </li>
+              </ul>
             </li>
             <li class="nav-item">
               <a

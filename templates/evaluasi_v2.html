@@ -1,0 +1,371 @@
+{% extends "layout.html" %} {% block title %}Evaluasi Pencarian - Versi 2{% endblock %} {%
+block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Evaluasi Pencarian <span class="badge bg-info">Versi 2</span></h2>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">Beranda</a></li>
+                <li class="breadcrumb-item">
+                    <a href="{{ url_for('public.evaluasi') }}">Evaluasi</a>
+                </li>
+                <li class="breadcrumb-item active">Versi 2</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="row g-4">
+        <!-- Panel Query (Kiri) -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-search me-2"></i>Query Evaluasi
+                        <span class="badge bg-light text-primary ms-2" id="query-count">0</span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form id="form-add-query" class="mb-3">
+                        <div class="mb-3">
+                            <label for="query-text" class="form-label fw-bold">Query Text</label>
+                            <input
+                                type="text"
+                                class="form-control form-control-lg"
+                                id="query-text"
+                                placeholder="Masukkan query evaluasi..."
+                                required
+                            />
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 btn-lg">
+                            <i class="fas fa-plus me-2"></i>Tambah Query
+                        </button>
+                    </form>
+                    <hr>
+                    <div id="query-list" class="query-list">
+                        <!-- Daftar query akan dimuat di sini -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel Utama (Kanan) -->
+        <div class="col-lg-8">
+            <!-- Panel Ayat Relevan -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-check-circle me-2"></i>Ayat Relevan
+                        <span class="badge bg-light text-success ms-2" id="ayat-count">0</span>
+                    </h5>
+                </div>
+                <div class="card-body" id="relevant-verse-section">
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-info-circle fa-3x mb-3 text-info"></i>
+                        <p>Pilih query untuk melihat/mengelola ayat relevan.</p>
+                    </div>
+                    <div id="relevant-verse-list"></div>
+                    <div class="d-flex flex-wrap gap-2 mt-3">
+                        <button class="btn btn-info d-none" id="evaluasi-btn">
+                            <i class="fas fa-eye me-1"></i>Detail Ayat Relevan
+                        </button>
+                        <button class="btn btn-outline-secondary d-none" id="log-btn">
+                            <i class="fas fa-history me-1"></i>Lihat Log
+                        </button>
+                        <button class="btn btn-primary" id="import-ayat-excel-btn">
+                            <i class="fas fa-file-excel me-1"></i>Import dari Excel
+                        </button>
+                        <button class="btn btn-warning btn-reset-relevant-verses d-none" id="reset-relevant-verses-btn">
+                            <i class="fas fa-undo me-1"></i>Reset Ayat
+                        </button>
+                    </div>
+
+                    <!-- Form Evaluasi -->
+                    <form id="form-evaluasi" class="row g-3 align-items-end mt-4 d-none">
+                        <div class="col-md-8">
+                            <label for="input-query-text" class="form-label fw-bold">Query Evaluasi</label>
+                            <input type="text" class="form-control" id="input-query-text"
+                                   placeholder="Query evaluasi (wajib)" required readonly />
+                        </div>
+                        <div class="col-md-4">
+                            <button type="submit" class="btn btn-success w-100 btn-lg">
+                                <i class="fas fa-play me-2"></i>Jalankan Evaluasi
+                            </button>
+                        </div>
+
+                        <!-- Pilihan Model (Tanpa Ontologi) -->
+                        <div class="col-12 mt-3">
+                            <label class="fw-bold mb-3 fs-5">
+                                <i class="fas fa-cogs me-2"></i>Pilih Model Evaluasi:
+                            </label>
+                            <div class="row g-3" id="eval-methods-checkboxes">
+                                <!-- Lexical & Sinonim -->
+                                <div class="col-md-6">
+                                    <div class="card border-primary">
+                                        <div class="card-header bg-primary text-white py-2">
+                                            <h6 class="mb-0">
+                                                <i class="fas fa-font me-1"></i>Lexical & Sinonim
+                                            </h6>
+                                        </div>
+                                        <div class="card-body py-2">
+                                            <button type="button"
+                                                    class="btn btn-sm btn-outline-primary mb-2 select-all-methods"
+                                                    data-group="lexsyn">
+                                                <i class="fas fa-check-square me-1"></i>Select All
+                                            </button>
+                                            <div class="form-check">
+                                                <input class="form-check-input eval-method" type="checkbox"
+                                                       value="lexical" id="method-lexical" checked data-group="lexsyn" />
+                                                <label class="form-check-label" for="method-lexical">
+                                                    <strong>Lexical</strong> - Pencarian berbasis kata
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Semantic Models -->
+                                <div class="col-md-6">
+                                    <div class="card border-info">
+                                        <div class="card-header bg-info text-white py-2">
+                                            <h6 class="mb-0">
+                                                <i class="fas fa-brain me-1"></i>Model Semantik
+                                            </h6>
+                                        </div>
+                                        <div class="card-body py-2">
+                                            <button type="button"
+                                                    class="btn btn-sm btn-outline-info mb-2 select-all-methods"
+                                                    data-group="semantic">
+                                                <i class="fas fa-check-square me-1"></i>Select All
+                                            </button>
+                                            <div class="form-check">
+                                                <input class="form-check-input eval-method" type="checkbox"
+                                                       value="word2vec" id="method-word2vec" checked data-group="semantic" />
+                                                <label class="form-check-label" for="method-word2vec">
+                                                    <strong>Word2Vec</strong> - Embedding berbasis konteks
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input eval-method" type="checkbox"
+                                                       value="fasttext" id="method-fasttext" checked data-group="semantic" />
+                                                <label class="form-check-label" for="method-fasttext">
+                                                    <strong>FastText</strong> - Embedding subword-aware
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input eval-method" type="checkbox"
+                                                       value="glove" id="method-glove" checked data-group="semantic" />
+                                                <label class="form-check-label" for="method-glove">
+                                                    <strong>GloVe</strong> - Global vectors for word
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input eval-method" type="checkbox"
+                                                       value="ensemble" id="method-ensemble" checked data-group="semantic" />
+                                                <label class="form-check-label" for="method-ensemble">
+                                                    <strong>Ensemble</strong> - Kombinasi semua model
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Panel Hasil Evaluasi -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-warning">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>Hasil Evaluasi
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <button class="btn btn-success" id="export-evaluasi-btn">
+                            <i class="fas fa-download me-2"></i>Export ke Excel
+                        </button>
+                        <div class="btn-group" role="group">
+                            <input type="radio" class="btn-check" name="view-mode" id="table-view" checked>
+                            <label class="btn btn-outline-primary btn-sm" for="table-view">
+                                <i class="fas fa-table me-1"></i>Table
+                            </label>
+                            <input type="radio" class="btn-check" name="view-mode" id="chart-view">
+                            <label class="btn btn-outline-primary btn-sm" for="chart-view">
+                                <i class="fas fa-chart-line me-1"></i>Chart
+                            </label>
+                        </div>
+                    </div>
+                    <div id="evaluasi-result" class="mb-2"></div>
+                    <div id="evaluasi-chart" class="d-none" style="height: 400px;"></div>
+                </div>
+            </div>
+
+            <!-- Panel Teori Evaluasi -->
+            <div class="card shadow-sm mt-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-graduation-cap me-2"></i>Teori Evaluasi
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <p class="mb-3">
+                                Evaluasi hasil pencarian menggunakan metrik <strong>Precision</strong>,
+                                <strong>Recall</strong>, dan <strong>F1-Score</strong>:
+                            </p>
+                            <ul class="list-unstyled">
+                                <li class="mb-2">
+                                    <i class="fas fa-bullseye text-success me-2"></i>
+                                    <strong>Precision</strong> = TP / (TP + FP)<br>
+                                    <small class="text-muted">Seberapa akurat hasil yang dikembalikan</small>
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-search text-info me-2"></i>
+                                    <strong>Recall</strong> = TP / (TP + FN)<br>
+                                    <small class="text-muted">Seberapa lengkap hasil yang ditemukan</small>
+                                </li>
+                                <li class="mb-0">
+                                    <i class="fas fa-balance-scale text-warning me-2"></i>
+                                    <strong>F1-Score</strong> = 2 × (Precision × Recall) / (Precision + Recall)<br>
+                                    <small class="text-muted">Rata-rata harmonis precision dan recall</small>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <div class="bg-light p-3 rounded">
+                                    <h6 class="text-muted">Keterangan</h6>
+                                    <small>
+                                        <strong>TP</strong>: True Positive<br>
+                                        <strong>FP</strong>: False Positive<br>
+                                        <strong>FN</strong>: False Negative
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal components (sama seperti versi 1) -->
+<!-- Modal Log Perubahan -->
+<div class="modal fade" id="logModal" tabindex="-1" aria-labelledby="logModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="logModalLabel">Log Perubahan Evaluasi</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="log-content">Memuat log...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Detail Ayat Relevan -->
+<div class="modal fade" id="ayatDetailModal" tabindex="-1" aria-labelledby="ayatDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="ayatDetailModalLabel">Detail Ayat Relevan</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+                <div class="modal-body">
+                    <form id="form-add-verse-modal" class="mb-3">
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="verse-ref-modal"
+                                   placeholder="Format: surah:ayat (misal: 2:255)" required />
+                            <button class="btn btn-success" type="submit">Tambah Ayat</button>
+                        </div>
+                    </form>
+                    <div id="ayat-detail-content">Memuat detail ayat...</div>
+                    <!-- Load More Button -->
+                    <div class="text-center mt-3 d-none" id="load-more-container">
+                        <button class="btn btn-outline-primary" id="load-more-btn">
+                            <span id="load-more-text">Muat Lebih Banyak</span>
+                            <span class="spinner-border spinner-border-sm d-none" id="load-more-spinner"></span>
+                        </button>
+                        <div class="text-muted small mt-2">
+                            <span id="loaded-count">0</span> dari <span id="total-count">0</span> ayat ditampilkan
+                        </div>
+                    </div>
+                </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Import Excel -->
+<div class="modal fade" id="modalImportAyatExcel" tabindex="-1" aria-labelledby="modalImportAyatExcelLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalImportAyatExcelLabel">Import Ayat Relevan dari Excel</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formImportAyatExcel">
+                    <div class="mb-3">
+                        <label for="inputExcelFile" class="form-label">Pilih File Excel</label>
+                        <input class="form-control" type="file" id="inputExcelFile" accept=".xlsx,.xls" required />
+                    </div>
+                    <div class="mb-3 d-none" id="sheetSelectGroup">
+                        <label for="selectSheet" class="form-label">Pilih Sheet</label>
+                        <select class="form-select" id="selectSheet"></select>
+                    </div>
+                    <div class="mb-3 d-none" id="previewAyatGroup">
+                        <label class="form-label">Preview Data Ayat</label>
+                        <div id="previewAyatExcel" style="max-height: 200px; overflow: auto"></div>
+                    </div>
+                    <div class="mb-3 d-none text-danger" id="importAyatError"></div>
+                    <button type="submit" class="btn btn-success w-100 d-none" id="submitImportAyatExcel">
+                        Import Data Ayat
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+<!-- Modal Khusus Ayat Hasil Evaluasi dengan Pagination -->
+<div class="modal fade" id="modalFoundVerses" tabindex="-1" aria-labelledby="modalFoundVersesLabel" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="modalFoundVersesLabel">
+                    <i class="fas fa-search me-2"></i>Ayat Hasil Pencarian
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                <div id="found-verses-content" class="mb-3">
+                    <!-- Konten akan dimuat di sini -->
+                </div>
+                <!-- Pagination untuk Ayat Hasil -->
+                <div class="d-flex justify-content-between align-items-center mt-3 d-none" id="found-verses-pagination">
+                    <div class="text-muted small">
+                        Halaman <span id="current-page" class="fw-bold">1</span> dari <span id="total-pages" class="fw-bold">1</span>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-outline-primary btn-sm" id="prev-page-btn" disabled>
+                            <i class="fas fa-chevron-left me-1"></i>Sebelumnya
+                        </button>
+                        <button class="btn btn-outline-primary btn-sm" id="next-page-btn" disabled>
+                            Selanjutnya<i class="fas fa-chevron-right ms-1"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ url_for('static', filename='js/evaluasi_v2.js') }}"></script>
+<script src="{{ url_for('static', filename='js/evaluasi_import_excel.js') }}"></script>
+{% endblock %}

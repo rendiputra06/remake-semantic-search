@@ -1363,19 +1363,47 @@ def add_relevant_verse(query_id: int, verse_ref: str):
 
 def add_relevant_verses_batch(query_id: int, ayat_list: list):
     """
+    Enhanced batch insert dengan deduplication dan detailed feedback.
     Menambahkan banyak ayat relevan untuk query tertentu secara batch (lebih cepat).
+    Sekarang dengan existing verse checking dan detailed statistics.
     """
     conn = get_db_connection()
     cursor = conn.cursor()
+
     try:
-        data = [(query_id, verse_ref) for verse_ref in ayat_list]
-        cursor.executemany('''
-            INSERT INTO relevant_verses (query_id, verse_ref)
-            VALUES (?, ?)
-        ''', data)
+        # Get existing verses for this query untuk deduplication
+        cursor.execute('SELECT verse_ref FROM relevant_verses WHERE query_id = ?', (query_id,))
+        existing_verses = {row['verse_ref'] for row in cursor.fetchall()}
+
+        # Filter out duplicates dan hitung statistik
+        new_verses = []
+        duplicates_found = 0
+
+        for verse_ref in ayat_list:
+            if verse_ref in existing_verses:
+                duplicates_found += 1
+            else:
+                new_verses.append(verse_ref)
+                existing_verses.add(verse_ref)  # Add to set untuk mencegah duplikasi dalam list yang sama
+
+        # Insert only new verses
+        if new_verses:
+            data = [(query_id, verse_ref) for verse_ref in new_verses]
+            cursor.executemany('''
+                INSERT INTO relevant_verses (query_id, verse_ref)
+                VALUES (?, ?)
+            ''', data)
+
         conn.commit()
         conn.close()
-        return True, len(ayat_list)
+
+        return True, {
+            'inserted': len(new_verses),
+            'duplicates': duplicates_found,
+            'total_processed': len(ayat_list),
+            'existing_before': len(existing_verses) - len(new_verses)
+        }
+
     except Exception as e:
         conn.rollback()
         conn.close()

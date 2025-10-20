@@ -44,6 +44,8 @@ document.addEventListener("DOMContentLoaded", function () {
             .then((data) => {
                 if (data.success) {
                     renderQueryList(data.data);
+                    // Update timestamp untuk tracking perubahan
+                    localStorage.setItem('lastQueryUpdate', Date.now());
                 }
             });
     }
@@ -758,3 +760,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
     loadQueries();
 });
+
+// Auto-refresh query list jika ada perubahan dari halaman lain
+setInterval(() => {
+    const lastUpdate = localStorage.getItem('lastQueryUpdate');
+    if (lastUpdate && (!window.lastQueryCheck || parseInt(lastUpdate) > window.lastQueryCheck)) {
+        window.lastQueryCheck = parseInt(lastUpdate);
+        loadQueries(); // Reload query list jika ada perubahan
+    }
+}, 2000); // Check setiap 2 detik

@@ -52,7 +52,7 @@ def init_models():
     _models_initialized = True
     print("Models initialized and cached successfully!")
 
-def get_or_create_ensemble(w2v_weight=1.0, ft_weight=1.0, glove_weight=1.0, use_meta_ensemble=False):
+def get_or_create_ensemble(w2v_weight=1.0, ft_weight=1.0, glove_weight=1.0, use_meta_ensemble=False, voting_bonus=0.05):
     """
     Get cached ensemble atau buat baru dengan parameter yang diberikan
     """
@@ -62,13 +62,14 @@ def get_or_create_ensemble(w2v_weight=1.0, ft_weight=1.0, glove_weight=1.0, use_
         word2vec_weight=w2v_weight,
         fasttext_weight=ft_weight,
         glove_weight=glove_weight,
+        voting_bonus=voting_bonus,
         use_meta_ensemble=use_meta_ensemble
     )
-    
+
     # Load models dan verse vectors (models sudah cached)
     ensemble.load_models()
     ensemble.load_verse_vectors()
-    
+
     return ensemble
 
 def get_word_inspection_data(word: str, model_type: str) -> dict:
@@ -382,6 +383,7 @@ def ensemble_test():
     w2v_weight = float(data.get('w2v_weight', 1.0))
     ft_weight = float(data.get('ft_weight', 1.0))
     glove_weight = float(data.get('glove_weight', 1.0))
+    voting_bonus = float(data.get('voting_bonus', 0.05))
     use_meta_ensemble = (method == 'meta')
 
     if not query:
@@ -398,6 +400,7 @@ def ensemble_test():
             w2v_weight=w2v_weight,
             ft_weight=ft_weight,
             glove_weight=glove_weight,
+            voting_bonus=voting_bonus,
             use_meta_ensemble=use_meta_ensemble
         )
         
