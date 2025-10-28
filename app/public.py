@@ -72,6 +72,13 @@ def evaluasi():
 def evaluasi_v2():
     return render_template('evaluasi_v2.html')
 
+@public_bp.route('/evaluasi/v3')
+def evaluasi_v3():
+    """
+    Halaman evaluasi versi 3 dengan konfigurasi ensemble lanjutan
+    """
+    return render_template('evaluasi_v3.html')
+
 @public_bp.route('/search')
 def search_main():
     """
