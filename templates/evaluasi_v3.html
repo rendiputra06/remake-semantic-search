@@ -405,6 +405,16 @@
                     </div>
                 </form>
                 <div id="ayat-detail-content">Memuat detail ayat...</div>
+                <!-- Load More Button (match V2) -->
+                <div class="text-center mt-3 d-none" id="load-more-container">
+                    <button class="btn btn-outline-primary" id="load-more-btn">
+                        <span id="load-more-text">Muat Lebih Banyak</span>
+                        <span class="spinner-border spinner-border-sm d-none" id="load-more-spinner"></span>
+                    </button>
+                    <div class="text-muted small mt-2">
+                        <span id="loaded-count">0</span> dari <span id="total-count">0</span> ayat ditampilkan
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -431,6 +441,7 @@
                         <label class="form-label">Preview Data Ayat</label>
                         <div id="previewAyatExcel" style="max-height: 200px; overflow: auto"></div>
                     </div>
+                    <div class="alert alert-danger d-none" id="importAyatError"></div>
                     <button type="submit" class="btn btn-success w-100 d-none" id="submitImportAyatExcel">
                         Import Data Ayat
                     </button>
