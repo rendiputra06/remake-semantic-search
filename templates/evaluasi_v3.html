@@ -3,41 +3,49 @@
 
 {% block content %}
 <style>
-.weight-slider-container {
-  background: linear-gradient(to right, #f8f9fa 0%, #e9ecef 100%);
-  border-radius: 10px;
-  padding: 15px;
-  margin-bottom: 10px;
-  transition: all 0.3s ease;
-}
+    .weight-slider-container {
+        background: linear-gradient(to right, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 10px;
+        transition: all 0.3s ease;
+    }
 
-.weight-slider-container:hover {
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-  transform: translateY(-2px);
-}
+    .weight-slider-container:hover {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
+    }
 
-.metric-card {
-  border-left: 4px solid;
-  transition: all 0.3s ease;
-}
+    .metric-card {
+        border-left: 4px solid;
+        transition: all 0.3s ease;
+    }
 
-.metric-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 16px rgba(0,0,0,0.15);
-}
+    .metric-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+    }
 
-.metric-card.precision { border-color: #28a745; }
-.metric-card.recall { border-color: #17a2b8; }
-.metric-card.f1 { border-color: #ffc107; }
+    .metric-card.precision {
+        border-color: #28a745;
+    }
 
-.winner-badge {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 0.25rem 0.75rem;
-  border-radius: 20px;
-  font-size: 0.75rem;
-  font-weight: bold;
-}
+    .metric-card.recall {
+        border-color: #17a2b8;
+    }
+
+    .metric-card.f1 {
+        border-color: #ffc107;
+    }
+
+    .winner-badge {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: bold;
+    }
 </style>
 
 <div class="container mt-4">
@@ -45,7 +53,7 @@
         <div>
             <h2>
                 <i class="fas fa-flask me-2 text-primary"></i>
-                Evaluasi Pencarian 
+                Evaluasi Pencarian
                 <span class="badge bg-primary">Versi 3 - Advanced</span>
             </h2>
             <p class="text-muted mb-0">
@@ -66,27 +74,22 @@
         <!-- Panel Query (Kiri) -->
         <div class="col-lg-4">
             <div class="card shadow-sm h-100">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-search me-2"></i>Query Evaluasi
-                        <span class="badge bg-light text-primary ms-2" id="query-count">0</span>
-                    </h5>
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center py-2">
+                    <h6 class="mb-0">
+                        <i class="fas fa-search me-2"></i>Daftar Query
+                    </h6>
+                    <button class="btn btn-xs btn-light" id="btn-add-query-modal">
+                        <i class="fas fa-plus"></i>
+                    </button>
                 </div>
-                <div class="card-body">
-                    <form id="form-add-query" class="mb-3">
-                        <div class="mb-3">
-                            <label for="query-text" class="form-label fw-bold">Query Text</label>
-                            <input type="text" class="form-control form-control-lg" id="query-text"
-                                   placeholder="Masukkan query evaluasi..." required />
-                        </div>
-                        <button type="submit" class="btn btn-primary w-100 btn-lg">
-                            <i class="fas fa-plus me-2"></i>Tambah Query
-                        </button>
-                    </form>
-                    <hr>
-                    <div id="query-list" class="query-list">
+                <div class="card-body p-0">
+                    <div id="query-list" class="list-group list-group-flush"
+                        style="max-height: 500px; overflow-y: auto;">
                         <!-- Daftar query akan dimuat di sini -->
                     </div>
+                </div>
+                <div class="card-footer bg-light py-2">
+                    <small class="text-muted"><span id="query-count">0</span> query tersedia</small>
                 </div>
             </div>
         </div>
@@ -102,20 +105,21 @@
                     </h5>
                 </div>
                 <div class="card-body" id="relevant-verse-section">
-                    <div class="text-center text-muted py-4">
-                        <i class="fas fa-info-circle fa-3x mb-3 text-info"></i>
-                        <p>Pilih query untuk melihat/mengelola ayat relevan.</p>
+                    <div id="relevant-verse-summary" class="mb-2">
+                        <div class="text-center text-muted py-3" id="no-query-selected">
+                            <p class="mb-0">Pilih query untuk mengelola ayat.</p>
+                        </div>
+                        <div id="relevant-verse-list" class="mb-2"></div>
                     </div>
-                    <div id="relevant-verse-list"></div>
-                    <div class="d-flex flex-wrap gap-2 mt-3">
-                        <button class="btn btn-info d-none" id="evaluasi-btn">
-                            <i class="fas fa-eye me-1"></i>Detail Ayat Relevan
+                    <div class="d-flex flex-wrap gap-2">
+                        <button class="btn btn-sm btn-primary d-none" id="evaluasi-btn">
+                            <i class="fas fa-edit me-1"></i>Kelola Ayat
                         </button>
-                        <button class="btn btn-primary" id="import-ayat-excel-btn">
-                            <i class="fas fa-file-excel me-1"></i>Import dari Excel
+                        <button class="btn btn-sm btn-outline-success" id="import-ayat-excel-btn">
+                            <i class="fas fa-file-excel me-1"></i>Import
                         </button>
-                        <button class="btn btn-warning btn-reset-relevant-verses d-none" id="reset-relevant-verses-btn">
-                            <i class="fas fa-undo me-1"></i>Reset Ayat
+                        <button class="btn btn-sm btn-outline-warning d-none" id="reset-relevant-verses-btn">
+                            <i class="fas fa-trash me-1"></i>Reset
                         </button>
                     </div>
 
@@ -125,7 +129,7 @@
                             <div class="col-md-8">
                                 <label for="input-query-text" class="form-label fw-bold">Query Evaluasi</label>
                                 <input type="text" class="form-control" id="input-query-text"
-                                       placeholder="Query evaluasi (wajib)" required readonly />
+                                    placeholder="Query evaluasi (wajib)" required readonly />
                             </div>
                             <div class="col-md-4">
                                 <label for="result-limit" class="form-label fw-bold">Limit Hasil</label>
@@ -139,9 +143,14 @@
                         </div>
 
                         <!-- Toggle Button for Advanced Settings -->
-                        <div class="mb-3">
-                            <button type="button" class="btn btn-outline-secondary btn-sm" id="toggle-advanced-settings">
+                        <div class="mb-3 d-flex gap-2">
+                            <button type="button" class="btn btn-outline-secondary btn-sm flex-grow-1"
+                                id="toggle-advanced-settings">
                                 <i class="fas fa-cog me-1"></i>Pengaturan Ensemble Lanjutan
+                            </button>
+                            <button type="button" class="btn btn-outline-info btn-sm" data-bs-toggle="modal"
+                                data-bs-target="#technicalDocModal">
+                                <i class="fas fa-question-circle"></i>
                             </button>
                         </div>
 
@@ -153,99 +162,93 @@
                                 </h6>
                             </div>
                             <div class="card-body">
-                                <!-- Quick Presets -->
-                                <div class="mb-4">
-                                    <label class="form-label fw-semibold">
-                                        <i class="fas fa-magic me-1 text-primary"></i>Quick Presets
-                                    </label>
-                                    <div class="d-flex flex-wrap gap-2">
-                                        <button type="button" class="btn btn-sm btn-outline-primary quick-preset-btn" data-preset="balanced">
-                                            <i class="fas fa-balance-scale me-1"></i>Balanced
-                                        </button>
-                                        <button type="button" class="btn btn-sm btn-outline-success quick-preset-btn" data-preset="precision">
-                                            <i class="fas fa-bullseye me-1"></i>Precision Focus
-                                        </button>
-                                        <button type="button" class="btn btn-sm btn-outline-info quick-preset-btn" data-preset="recall">
-                                            <i class="fas fa-search-plus me-1"></i>Recall Focus
-                                        </button>
-                                        <button type="button" class="btn btn-sm btn-outline-warning quick-preset-btn" data-preset="conservative">
-                                            <i class="fas fa-shield-alt me-1"></i>Conservative
-                                        </button>
-                                    </div>
-                                </div>
 
                                 <!-- Ensemble Method -->
                                 <div class="row mb-4">
-                                    <div class="col-md-6 mb-3">
+                                    <div class="col-md-12 mb-3">
                                         <label for="ensemble-method" class="form-label fw-semibold">
                                             <i class="fas fa-project-diagram me-1 text-primary"></i>Metode Ensemble
                                         </label>
-                                        <select class="form-select" id="ensemble-method">
+                                        <select class="form-select mb-3" id="ensemble-method">
                                             <option value="weighted" selected>Weighted Averaging</option>
                                             <option value="voting">Voting</option>
                                             <option value="meta">Meta-Ensemble (ML)</option>
                                             <option value="all">Semua (Perbandingan)</option>
                                         </select>
-                                        <div class="form-text">Pilih metode penggabungan model</div>
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label for="ensemble-threshold" class="form-label fw-semibold">
-                                            <i class="fas fa-filter me-1 text-warning"></i>Threshold Ensemble
-                                        </label>
-                                        <input type="number" step="0.01" min="0" max="1" class="form-control" 
-                                               id="ensemble-threshold" value="0.5" />
-                                        <div class="form-text">Minimum skor untuk hasil ensemble</div>
+
+                                        <div class="card bg-light border-0">
+                                            <div class="card-body py-2 px-3">
+                                                <div class="form-check form-switch mb-2">
+                                                    <input class="form-check-input" type="checkbox"
+                                                        id="use-final-threshold" checked>
+                                                    <label class="form-check-label fw-semibold small"
+                                                        for="use-final-threshold">Gunakan Final Ensemble
+                                                        Threshold</label>
+                                                </div>
+                                                <div id="final-threshold-wrapper">
+                                                    <div class="d-flex align-items-center gap-2">
+                                                        <input type="number" step="0.01" min="0" max="1"
+                                                            class="form-control form-control-sm" id="ensemble-threshold"
+                                                            value="0.5" style="width: 80px;" />
+                                                        <span class="small text-muted">Minimum skor gabungan untuk hasil
+                                                            akhir</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
 
-                                <!-- Model Weights -->
+                                <!-- Per-Model Thresholds (Replacing Weights) -->
                                 <div class="border-top pt-4">
                                     <h6 class="mb-3">
-                                        <i class="fas fa-balance-scale me-2 text-info"></i>Bobot Model
+                                        <i class="fas fa-filter me-2 text-info"></i>Threshold Model Dasar
                                     </h6>
                                     <div class="row">
                                         <div class="col-md-4 mb-3">
                                             <div class="weight-slider-container">
-                                                <label for="w2v-weight" class="form-label">
+                                                <label for="w2v-threshold" class="form-label">
                                                     <i class="fas fa-robot me-1 text-primary"></i>Word2Vec
-                                                    <span class="badge bg-primary ms-2" id="w2v-weight-val">1.0</span>
+                                                    <span class="badge bg-primary ms-2"
+                                                        id="w2v-threshold-val">0.5</span>
                                                 </label>
-                                                <input type="range" class="form-range" min="0" max="2" step="0.1" 
-                                                       id="w2v-weight" value="1" />
+                                                <input type="range" class="form-range" min="0" max="1" step="0.05"
+                                                    id="w2v-threshold" value="0.5" />
                                                 <div class="d-flex justify-content-between text-muted small">
                                                     <span>0.0</span>
-                                                    <span>Pengaruh: <span id="w2v-impact">Normal</span></span>
-                                                    <span>2.0</span>
+                                                    <span>Tingkat: <span id="w2v-impact">Normal</span></span>
+                                                    <span>1.0</span>
                                                 </div>
                                             </div>
                                         </div>
                                         <div class="col-md-4 mb-3">
                                             <div class="weight-slider-container">
-                                                <label for="ft-weight" class="form-label">
+                                                <label for="ft-threshold" class="form-label">
                                                     <i class="fas fa-font me-1 text-warning"></i>FastText
-                                                    <span class="badge bg-warning text-dark ms-2" id="ft-weight-val">1.0</span>
+                                                    <span class="badge bg-warning text-dark ms-2"
+                                                        id="ft-threshold-val">0.5</span>
                                                 </label>
-                                                <input type="range" class="form-range" min="0" max="2" step="0.1" 
-                                                       id="ft-weight" value="1" />
+                                                <input type="range" class="form-range" min="0" max="1" step="0.05"
+                                                    id="ft-threshold" value="0.5" />
                                                 <div class="d-flex justify-content-between text-muted small">
                                                     <span>0.0</span>
-                                                    <span>Pengaruh: <span id="ft-impact">Normal</span></span>
-                                                    <span>2.0</span>
+                                                    <span>Tingkat: <span id="ft-impact">Normal</span></span>
+                                                    <span>1.0</span>
                                                 </div>
                                             </div>
                                         </div>
                                         <div class="col-md-4 mb-3">
                                             <div class="weight-slider-container">
-                                                <label for="glove-weight" class="form-label">
+                                                <label for="glove-threshold" class="form-label">
                                                     <i class="fas fa-globe me-1 text-info"></i>GloVe
-                                                    <span class="badge bg-info ms-2" id="glove-weight-val">1.0</span>
+                                                    <span class="badge bg-info ms-2" id="glove-threshold-val">0.5</span>
                                                 </label>
-                                                <input type="range" class="form-range" min="0" max="2" step="0.1" 
-                                                       id="glove-weight" value="1" />
+                                                <input type="range" class="form-range" min="0" max="1" step="0.05"
+                                                    id="glove-threshold" value="0.5" />
                                                 <div class="d-flex justify-content-between text-muted small">
                                                     <span>0.0</span>
-                                                    <span>Pengaruh: <span id="glove-impact">Normal</span></span>
-                                                    <span>2.0</span>
+                                                    <span>Tingkat: <span id="glove-impact">Normal</span></span>
+                                                    <span>1.0</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -262,8 +265,8 @@
                                             <label for="voting-bonus" class="form-label fw-semibold">
                                                 <i class="fas fa-trophy me-1 text-success"></i>Voting Bonus
                                             </label>
-                                            <input type="number" step="0.01" min="0" max="0.5" class="form-control" 
-                                                   id="voting-bonus" value="0.05" />
+                                            <input type="number" step="0.01" min="0" max="0.5" class="form-control"
+                                                id="voting-bonus" value="0.05" />
                                             <div class="form-text">Bonus untuk ayat di ≥2 model</div>
                                         </div>
                                         <div class="col-md-6 mb-3">
@@ -281,63 +284,52 @@
                         </div>
 
                         <!-- Model Selection -->
-                        <div class="mb-3">
-                            <label class="fw-bold mb-3 fs-5">
-                                <i class="fas fa-cogs me-2"></i>Pilih Model Evaluasi:
-                            </label>
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <div class="card border-primary">
-                                        <div class="card-header bg-primary text-white py-2">
-                                            <h6 class="mb-0"><i class="fas fa-font me-1"></i>Lexical</h6>
-                                        </div>
-                                        <div class="card-body py-2">
-                                            <div class="form-check">
-                                                <input class="form-check-input eval-method" type="checkbox"
-                                                       value="lexical" id="method-lexical" checked />
-                                                <label class="form-check-label" for="method-lexical">
-                                                    <strong>Lexical</strong> - Pencarian berbasis kata
-                                                </label>
-                                            </div>
-                                        </div>
+                        <div class="mb-4">
+                            <div class="card border-0 bg-light shadow-sm">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <label class="fw-bold fs-6 mb-0">
+                                            <i class="fas fa-layer-group me-2 text-primary"></i>Model Evaluasi
+                                        </label>
+                                        <button type="button"
+                                            class="btn btn-xs btn-outline-secondary select-all-methods">
+                                            <i class="fas fa-check-square me-1"></i>Select All
+                                        </button>
                                     </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="card border-info">
-                                        <div class="card-header bg-info text-white py-2">
-                                            <h6 class="mb-0"><i class="fas fa-brain me-1"></i>Model Semantik</h6>
+                                    <div class="row g-2">
+                                        <div class="col-md-4">
+                                            <div class="form-check form-check-inline">
+                                                <input class="form-check-input eval-method" type="checkbox"
+                                                    value="lexical" id="method-lexical" checked>
+                                                <label class="form-check-label" for="method-lexical">Lexical</label>
+                                            </div>
                                         </div>
-                                        <div class="card-body py-2">
-                                            <button type="button" class="btn btn-sm btn-outline-info mb-2 select-all-methods">
-                                                <i class="fas fa-check-square me-1"></i>Select All
-                                            </button>
-                                            <div class="form-check">
+                                        <div class="col-md-4">
+                                            <div class="form-check form-check-inline">
                                                 <input class="form-check-input eval-method" type="checkbox"
-                                                       value="word2vec" id="method-word2vec" checked />
-                                                <label class="form-check-label" for="method-word2vec">
-                                                    <strong>Word2Vec</strong>
-                                                </label>
+                                                    value="word2vec" id="method-word2vec" checked>
+                                                <label class="form-check-label" for="method-word2vec">Word2Vec</label>
                                             </div>
-                                            <div class="form-check">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-check form-check-inline">
                                                 <input class="form-check-input eval-method" type="checkbox"
-                                                       value="fasttext" id="method-fasttext" checked />
-                                                <label class="form-check-label" for="method-fasttext">
-                                                    <strong>FastText</strong>
-                                                </label>
+                                                    value="fasttext" id="method-fasttext" checked>
+                                                <label class="form-check-label" for="method-fasttext">FastText</label>
                                             </div>
-                                            <div class="form-check">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-check form-check-inline">
                                                 <input class="form-check-input eval-method" type="checkbox"
-                                                       value="glove" id="method-glove" checked />
-                                                <label class="form-check-label" for="method-glove">
-                                                    <strong>GloVe</strong>
-                                                </label>
+                                                    value="glove" id="method-glove" checked>
+                                                <label class="form-check-label" for="method-glove">GloVe</label>
                                             </div>
-                                            <div class="form-check">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-check form-check-inline">
                                                 <input class="form-check-input eval-method" type="checkbox"
-                                                       value="ensemble" id="method-ensemble" checked />
-                                                <label class="form-check-label" for="method-ensemble">
-                                                    <strong>Ensemble</strong> - Kombinasi model
-                                                </label>
+                                                    value="ensemble" id="method-ensemble" checked>
+                                                <label class="form-check-label" for="method-ensemble">Ensemble</label>
                                             </div>
                                         </div>
                                     </div>
@@ -364,24 +356,12 @@
                         <button class="btn btn-success" id="export-evaluasi-btn">
                             <i class="fas fa-download me-2"></i>Export ke Excel
                         </button>
-                        <div class="btn-group" role="group">
-                            <input type="radio" class="btn-check" name="view-mode" id="table-view" checked>
-                            <label class="btn btn-outline-primary btn-sm" for="table-view">
-                                <i class="fas fa-table me-1"></i>Table
-                            </label>
-                            <input type="radio" class="btn-check" name="view-mode" id="chart-view">
-                            <label class="btn btn-outline-primary btn-sm" for="chart-view">
-                                <i class="fas fa-chart-line me-1"></i>Chart
-                            </label>
-                            <input type="radio" class="btn-check" name="view-mode" id="comparison-view">
-                            <label class="btn btn-outline-primary btn-sm" for="comparison-view">
-                                <i class="fas fa-columns me-1"></i>Comparison
-                            </label>
-                        </div>
+                        <button class="btn btn-success" id="export-evaluasi-btn">
+                            <i class="fas fa-download me-2"></i>Export ke Excel
+                        </button>
                     </div>
                     <div id="evaluasi-result" class="mb-2"></div>
-                    <div id="evaluasi-chart" class="d-none" style="height: 400px;"></div>
-                    <div id="evaluasi-comparison" class="d-none"></div>
+                    <div id="evaluasi-result" class="mb-2"></div>
                 </div>
             </div>
         </div>
@@ -389,6 +369,256 @@
 </div>
 
 <!-- Modals (reuse from v2) -->
+<!-- Modal Detail Hasil Evaluasi -->
+<!-- Modal Detail Hasil Evaluasi -->
+<div class="modal fade" id="resultDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-dark text-white py-3">
+                <div class="d-flex align-items-center">
+                    <div class="bg-primary rounded-circle p-2 me-3">
+                        <i class="fas fa-microchip fa-lg"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title mb-0" id="result-detail-title">Laporan Analisis Model</h5>
+                        <small class="text-secondary" id="result-detail-subtitle">Parameter teknis & evaluasi
+                            performa</small>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4 bg-light">
+                <!-- Section 1: Dashboard Performa -->
+                <div class="row g-3 mb-4">
+                    <!-- F1-Score Card -->
+                    <div class="col-md-4">
+                        <div class="card border-0 shadow-sm text-center h-100 bg-white">
+                            <div class="card-body">
+                                <h6 class="text-muted small text-uppercase fw-bold mb-2">F1-Score (Overall)</h6>
+                                <h2 class="text-primary mb-0 fw-bold" id="detail-f1">0%</h2>
+                                <div class="progress mt-2" style="height: 6px;">
+                                    <div class="progress-bar bg-primary" id="detail-f1-progress" style="width: 0%">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Secondary Metrics Card -->
+                    <div class="col-md-8">
+                        <div class="card border-0 shadow-sm h-100 bg-white">
+                            <div class="card-body py-2 d-flex align-items-center justify-content-around">
+                                <div class="text-center">
+                                    <h6 class="text-info small text-uppercase fw-bold mb-1">Precision</h6>
+                                    <h4 class="mb-0" id="detail-precision">0%</h4>
+                                    <div class="progress mt-1 mx-auto" style="height: 4px; width: 60px;">
+                                        <div class="progress-bar bg-info" id="detail-precision-progress"
+                                            style="width: 0%"></div>
+                                    </div>
+                                </div>
+                                <div class="vr opacity-10"></div>
+                                <div class="text-center">
+                                    <h6 class="text-info small text-uppercase fw-bold mb-1">Recall</h6>
+                                    <h4 class="mb-0" id="detail-recall">0%</h4>
+                                    <div class="progress mt-1 mx-auto" style="height: 4px; width: 60px;">
+                                        <div class="progress-bar bg-info" id="detail-recall-progress" style="width: 0%">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="vr opacity-10"></div>
+                                <div class="text-center">
+                                    <h6 class="text-info small text-uppercase fw-bold mb-1">Accuracy</h6>
+                                    <h4 class="mb-0" id="detail-accuracy">0%</h4>
+                                    <div class="progress mt-1 mx-auto" style="height: 4px; width: 60px;">
+                                        <div class="progress-bar bg-info" id="detail-accuracy-progress"
+                                            style="width: 0%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Counts Summary -->
+                <div class="card border-0 shadow-sm mb-4 bg-white">
+                    <div
+                        class="card-body py-2 d-flex align-items-center justify-content-around bg-light-subtle rounded text-center">
+                        <div>
+                            <span class="text-success fw-bold" id="detail-tp">0</span>
+                            <div class="small text-muted">True Positive</div>
+                        </div>
+                        <div class="vr opacity-10"></div>
+                        <div>
+                            <span class="text-danger fw-bold" id="detail-fp">0</span>
+                            <div class="small text-muted">False Positive</div>
+                        </div>
+                        <div class="vr opacity-10"></div>
+                        <div>
+                            <span class="text-warning fw-bold" id="detail-fn">0</span>
+                            <div class="small text-muted">False Negative</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <!-- Section 2: Technical Specs (Kiri) -->
+                    <div class="col-lg-4">
+                        <div class="card border-0 shadow-sm mb-4 h-100 bg-white">
+                            <div class="card-header bg-white border-0 py-3">
+                                <h6 class="mb-0 fw-bold text-dark"><i
+                                        class="fas fa-sliders-h me-2 text-primary"></i>Konfigurasi Teknis</h6>
+                            </div>
+                            <div class="card-body pt-0">
+                                <div id="model-formula-info">
+                                    <!-- Dynamic content here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section 3: Data Breakdown (Kanan) -->
+                    <div class="col-lg-8">
+                        <div class="card border-0 shadow-sm h-100 bg-white">
+                            <div
+                                class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0 fw-bold text-dark"><i
+                                        class="fas fa-database me-2 text-primary"></i>Sampel Temuan (Top 10)</h6>
+                                <span class="badge bg-light text-dark border fw-normal" id="total-results-summary">0
+                                    temuan</span>
+                            </div>
+                            <div class="card-body pt-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle small">
+                                        <thead class="bg-light">
+                                            <tr>
+                                                <th style="width: 25%">Referensi</th>
+                                                <th style="width: 25%">Kategori</th>
+                                                <th style="width: 50%">Catatan Analisis</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="result-detail-table-body">
+                                            <!-- Row breakdown inside js -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-white border-0 py-3">
+                <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Tutup Laporan</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Dokumentasi Teknis (Untuk Penelitian) -->
+<div class="modal fade" id="technicalDocModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title"><i class="fas fa-book me-2"></i>Panduan Parameter & Logika Sistem</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="alert alert-info small border-0">
+                    <i class="fas fa-info-circle me-2"></i>Sistem ini dirancang untuk mendukung penelitian mengenai
+                    pencarian semantik pada teks Al-Qur'an menggunakan metode <i>Ensemble Embedding</i>.
+                </div>
+
+                <h6 class="fw-bold border-bottom pb-2 mb-3"><i class="fas fa-sliders-h me-2 text-info"></i>1. Parameter
+                    Dasar (Threshold)</h6>
+                <p class="small text-muted mb-2">Threshold (0.0 - 1.0) menentukan standar kemiripan minimum agar ayat
+                    dianggap relevan oleh model.</p>
+                <div class="p-2 bg-light rounded mb-3 small border-start border-info border-4">
+                    <strong>Mengapa banyak threshold?</strong><br>
+                    Setiap model (W2V, FT, GloVe) memiliki distribusi vektor dan karakteristik ruang pencarian yang
+                    berbeda. Strategi <b>Multi-Level Thresholding</b> memungkinkan peneliti melakukan penyaringan noise
+                    sejak tahap awal (per-model) sebelum hasil digabungkan dalam ensemble.
+                </div>
+                <ul class="small">
+                    <li><strong>Word2Vec:</strong> Menilai kedekatan semantik berdasarkan konteks kata statis dari
+                        corpus Al-Qur'an.</li>
+                    <li><strong>FastText:</strong> Menggunakan <i>sub-word information</i> (n-grams), sangat baik dalam
+                        menangani kata yang tidak ada di vocab (OOV).</li>
+                    <li><strong>GloVe:</strong> Berbasis pada <i>global word-word co-occurrence statistics</i>.</li>
+                </ul>
+
+                <h6 class="fw-bold border-bottom pb-2 mt-4 mb-3"><i class="fas fa-layer-group me-2 text-info"></i>2.
+                    Logika Ensemble & Voting</h6>
+                <ul class="small">
+                    <li><strong>Metode Weighted:</strong> Menggabungkan skor kemiripan dari ketiga model dengan bobot
+                        rata-rata.</li>
+                    <li><strong>Voting Bonus:</strong> Tambahan skor kemiripan jika sebuah ayat ditemukan oleh lebih
+                        dari satu model. Hal ini memberikan reward pada "konsensus" antar model.</li>
+                    <li><strong>Consensus Filter:</strong> Jika diaktifkan, hanya ayat yang ditemukan oleh minimal 2
+                        model yang akan ditampilkan di hasil akhir (menekan <i>False Positive</i>).</li>
+                    <li><strong>Final Ensemble Threshold:</strong> Filter tahap akhir setelah skor gabungan didapat.
+                        Jika dimatikan, semua temuan model dasar akan ditampilkan.</li>
+                </ul>
+
+                <h6 class="fw-bold border-bottom pb-2 mt-4 mb-3"><i class="fas fa-chart-bar me-2 text-info"></i>3.
+                    Metrik Evaluasi</h6>
+                <table class="table table-sm table-bordered small">
+                    <thead class="bg-light">
+                        <tr>
+                            <th>Metrik</th>
+                            <th>Rumus / Penjelasan</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Precision</td>
+                            <td>TP / (TP + FP). Menilai ketepatan hasil (seberapa banyak noise).</td>
+                        </tr>
+                        <tr>
+                            <td>Recall</td>
+                            <td>TP / (TP + FN). Menilai kelengkapan hasil (seberapa banyak yang terlewat).</td>
+                        </tr>
+                        <tr>
+                            <td>F1-Score</td>
+                            <td>2 * (P * R) / (P + R). Keseimbangan antara Precision dan Recall.</td>
+                        </tr>
+                        <tr>
+                            <td>Accuracy</td>
+                            <td>(TP) / Total Ground Truth. Rasio penemuan ayat yang diharapkan.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup Panduan</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal CRUD Query -->
+<div class="modal fade" id="queryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="queryModalTitle">Tambah Query</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="form-query">
+                <div class="modal-body">
+                    <input type="hidden" id="query-id-hidden">
+                    <div class="mb-3">
+                        <label for="query-text-input" class="form-label fw-bold">Query Text</label>
+                        <textarea class="form-control" id="query-text-input" rows="3" required
+                            placeholder="Masukkan teks query evaluasi..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary" id="btn-save-query">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <div class="modal fade" id="ayatDetailModal" tabindex="-1">
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
@@ -400,7 +630,7 @@
                 <form id="form-add-verse-modal" class="mb-3">
                     <div class="input-group">
                         <input type="text" class="form-control" id="verse-ref-modal"
-                               placeholder="Format: surah:ayat (misal: 2:255)" required />
+                            placeholder="Format: surah:ayat (misal: 2:255)" required />
                         <button class="btn btn-success" type="submit">Tambah Ayat</button>
                     </div>
                 </form>
@@ -454,6 +684,8 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="{{ url_for('static', filename='js/evaluasi_v3.js') }}"></script>
+
+<!-- Modular JS for Evaluation V3 -->
+<script type="module" src="{{ url_for('static', filename='js/evaluasi_v3/main.js') }}"></script>
 <script src="{{ url_for('static', filename='js/evaluasi_import_excel.js') }}"></script>
 {% endblock %}

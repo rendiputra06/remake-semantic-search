@@ -31,9 +31,9 @@ class EnsembleEmbeddingModel:
                  word2vec_model: Word2VecModel, 
                  fasttext_model: FastTextModel, 
                  glove_model: GloVeModel,
-                 word2vec_weight: float = 1.0,
-                 fasttext_weight: float = 1.0,
-                 glove_weight: float = 1.0,
+                 word2vec_threshold: float = 0.5,
+                 fasttext_threshold: float = 0.5,
+                 glove_threshold: float = 0.5,
                  voting_bonus: float = 0.05,
                  use_meta_ensemble: bool = False,
                  use_voting_filter: bool = True):
@@ -42,9 +42,9 @@ class EnsembleEmbeddingModel:
         self.glove_model = glove_model
         self.verse_data = None  # Akan diambil dari salah satu model (diasumsikan sama)
         self.verse_vectors = {}  # vektor ensemble untuk setiap ayat
-        self.word2vec_weight = word2vec_weight
-        self.fasttext_weight = fasttext_weight
-        self.glove_weight = glove_weight
+        self.word2vec_threshold = word2vec_threshold
+        self.fasttext_threshold = fasttext_threshold
+        self.glove_threshold = glove_threshold
         self.voting_bonus = voting_bonus
         self.use_meta_ensemble = use_meta_ensemble
         self.use_voting_filter = use_voting_filter  # Filter hanya ayat yang ditemukan >=2 model
@@ -122,12 +122,12 @@ class EnsembleEmbeddingModel:
         Melakukan pencarian ensemble.
         Mengumpulkan hasil dari setiap model, menggabungkannya, dan menghitung skor rata-rata serta menyimpan skor individual.
         """
-        # 1. Dapatkan hasil dari setiap model
+        # 1. Dapatkan hasil dari setiap model menggunakan threshold masing-masing
         # Jika limit None, gunakan default besar untuk model dasar (misal 1000), tapi tetap kembalikan hasil tak terbatas di akhir
         base_limit = limit*3 if limit is not None else 3000
-        results_w2v = {res['verse_id']: res for res in self.word2vec_model.search(query, language, limit=base_limit, threshold=threshold)}
-        results_ft = {res['verse_id']: res for res in self.fasttext_model.search(query, language, limit=base_limit, threshold=threshold)}
-        results_glove = {res['verse_id']: res for res in self.glove_model.search(query, language, limit=base_limit, threshold=threshold)}
+        results_w2v = {res['verse_id']: res for res in self.word2vec_model.search(query, language, limit=base_limit, threshold=self.word2vec_threshold)}
+        results_ft = {res['verse_id']: res for res in self.fasttext_model.search(query, language, limit=base_limit, threshold=self.fasttext_threshold)}
+        results_glove = {res['verse_id']: res for res in self.glove_model.search(query, language, limit=base_limit, threshold=self.glove_threshold)}
 
         # 2. Gabungkan semua verse_id yang unik
         all_verse_ids = set(results_w2v.keys()) | set(results_ft.keys()) | set(results_glove.keys())
@@ -162,23 +162,23 @@ class EnsembleEmbeddingModel:
                     'meta_ensemble_features': meta_result['features']
                 }
             else:
-                # Fallback to weighted ensemble
-                weights = []
+                # Fallback to weighted ensemble (equal weights)
                 sims = []
                 if w2v_sim > 0:
-                    weights.append(self.word2vec_weight)
                     sims.append(w2v_sim)
                 if ft_sim > 0:
-                    weights.append(self.fasttext_weight)
                     sims.append(ft_sim)
                 if glove_sim > 0:
-                    weights.append(self.glove_weight)
                     sims.append(glove_sim)
+                
                 if not sims:
                     continue
-                ensemble_score = sum(w * s for w, s in zip(weights, sims)) / sum(weights)
+                
+                # Average scores from models that passed their threshold
+                ensemble_score = sum(sims) / len(sims)
+                
                 # Voting: bonus jika ayat muncul di >=2 model
-                model_count = sum([w2v_sim > 0, ft_sim > 0, glove_sim > 0])
+                model_count = len(sims)
                 if model_count >= 2:
                     ensemble_score += self.voting_bonus
                 meta_info = {'model_count': model_count}

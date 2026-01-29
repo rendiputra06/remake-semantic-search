@@ -14,6 +14,17 @@ search_service = SearchService()
 lexical_search_engine = None
 thesaurus = None
 
+# Cache untuk hasil pencarian (query_text, model_type, result_limit, threshold)
+_search_cache = {}
+
+def get_cached_search(query_text, model_type, result_limit, threshold):
+    cache_key = (query_text, model_type, result_limit, threshold)
+    return _search_cache.get(cache_key)
+
+def set_cached_search(query_text, model_type, result_limit, threshold, results):
+    cache_key = (query_text, model_type, result_limit, threshold)
+    _search_cache[cache_key] = results
+
 def init_lexical_search():
     global lexical_search_engine
     if lexical_search_engine is None:
@@ -56,6 +67,10 @@ def calculate_metrics(found, ground_truth):
     # Additional metrics
     accuracy = (true_positive) / (true_positive + false_positive + false_negative) if (true_positive + false_positive + false_negative) > 0 else 0
     
+    tp_verses = sorted(list(found & ground_truth))
+    fp_verses = sorted(list(found - ground_truth))
+    fn_verses = sorted(list(ground_truth - found))
+    
     return {
         'true_positive': true_positive,
         'false_positive': false_positive,
@@ -63,10 +78,13 @@ def calculate_metrics(found, ground_truth):
         'precision': round(precision, 4),
         'recall': round(recall, 4),
         'f1': round(f1, 4),
-        'accuracy': round(accuracy, 4)
+        'accuracy': round(accuracy, 4),
+        'tp_verses': tp_verses,
+        'fp_verses': fp_verses,
+        'fn_verses': fn_verses
     }
 
-def format_eval_result(method, label, found, ground_truth, exec_time, additional_info=None):
+def format_eval_result(method, label, found, ground_truth, exec_time, threshold=None, additional_info=None):
     """
     Format hasil evaluasi ke dalam dict standar.
     """
@@ -76,6 +94,7 @@ def format_eval_result(method, label, found, ground_truth, exec_time, additional
         'label': label,
         **metrics,
         'exec_time': exec_time,
+        'threshold': threshold,
         'total_relevant': len(ground_truth),
         'total_found': len(found),
         'found_verses': sorted(list(found))
@@ -113,9 +132,9 @@ def run_evaluation_v3(query_id):
     
     # Konfigurasi ensemble lanjutan
     ensemble_config = data.get('ensemble_config', {})
-    w2v_weight = float(ensemble_config.get('w2v_weight', 1.0))
-    ft_weight = float(ensemble_config.get('ft_weight', 1.0))
-    glove_weight = float(ensemble_config.get('glove_weight', 1.0))
+    w2v_threshold = float(ensemble_config.get('w2v_threshold', 0.5))
+    ft_threshold = float(ensemble_config.get('ft_threshold', 0.5))
+    glove_threshold = float(ensemble_config.get('glove_threshold', 0.5))
     voting_bonus = float(ensemble_config.get('voting_bonus', 0.05))
     ensemble_method = ensemble_config.get('method', 'weighted')  # weighted, voting, meta
     use_voting_filter = ensemble_config.get('use_voting_filter', False)
@@ -137,16 +156,21 @@ def run_evaluation_v3(query_id):
     # --- 1. Evaluasi Lexical ---
     if not selected_methods or 'lexical' in selected_methods:
         try:
-            search_engine = init_lexical_search()
             start = time.time()
-            lexical_results = search_engine.search(query_text, exact_match=False, use_regex=False, limit=result_limit)
-            found = set()
-            for r in lexical_results if result_limit is None else lexical_results[:result_limit]:
-                ref = extract_verse_ref(r)
-                if ref:
-                    found.add(ref)
+            found = get_cached_search(query_text, 'lexical', result_limit, 0.0)
+            
+            if found is None:
+                search_engine = init_lexical_search()
+                lexical_results = search_engine.search(query_text, exact_match=False, use_regex=False, limit=result_limit)
+                found = set()
+                for r in lexical_results if result_limit is None else lexical_results[:result_limit]:
+                    ref = extract_verse_ref(r)
+                    if ref:
+                        found.add(ref)
+                set_cached_search(query_text, 'lexical', result_limit, 0.0, found)
+            
             exec_time = round(time.time() - start, 3)
-            result = format_eval_result('lexical', 'Lexical', found, ground_truth, exec_time)
+            result = format_eval_result('lexical', 'Lexical', found, ground_truth, exec_time, threshold=0.0)
             # Simpan ke database
             add_evaluation_result(query_id, 'lexical', result['precision'], result['recall'], result['f1'], exec_time)
             results.append(result)
@@ -158,21 +182,27 @@ def run_evaluation_v3(query_id):
         if not selected_methods or model in selected_methods:
             try:
                 start = time.time()
-                res = search_service.semantic_search(
-                    query=query_text,
-                    model_type=model,
-                    limit=result_limit,
-                    threshold=get_threshold(model),
-                    user_id=None
-                )
-                found = set()
-                for r in res['results']:
-                    ref = extract_verse_ref(r)
-                    if ref:
-                        found.add(ref)
+                threshold = get_threshold(model)
+                found = get_cached_search(query_text, model, result_limit, threshold)
+                
+                if found is None:
+                    res = search_service.semantic_search(
+                        query=query_text,
+                        model_type=model,
+                        limit=result_limit,
+                        threshold=threshold,
+                        user_id=None
+                    )
+                    found = set()
+                    for r in res['results']:
+                        ref = extract_verse_ref(r)
+                        if ref:
+                            found.add(ref)
+                    set_cached_search(query_text, model, result_limit, threshold, found)
+                
                 exec_time = round(time.time() - start, 3)
                 label = f'Semantic ({model.capitalize()})'
-                result = format_eval_result(model, label, found, ground_truth, exec_time)
+                result = format_eval_result(model, label, found, ground_truth, exec_time, threshold=threshold)
                 # Simpan ke database
                 add_evaluation_result(query_id, model, result['precision'], result['recall'], result['f1'], exec_time)
                 results.append(result)
@@ -195,25 +225,25 @@ def run_evaluation_v3(query_id):
             # Test berbagai konfigurasi ensemble
             ensemble_configs = []
             
-            # Config 1: Weighted Averaging (user-defined weights)
+            # Config 1: Weighted Averaging (now based on individual thresholds)
             if ensemble_method in ['weighted', 'all']:
                 ensemble_configs.append({
                     'name': 'Weighted Averaging',
                     'method_key': 'ensemble_weighted',
                     'use_meta': False,
                     'use_voting_filter': use_voting_filter,
-                    'weights': (w2v_weight, ft_weight, glove_weight),
+                    'thresholds': (w2v_threshold, ft_threshold, glove_threshold),
                     'voting_bonus': voting_bonus
                 })
             
-            # Config 2: Voting (equal weights + voting bonus)
+            # Config 2: Voting (fixed thresholds + voting bonus)
             if ensemble_method in ['voting', 'all']:
                 ensemble_configs.append({
                     'name': 'Voting',
                     'method_key': 'ensemble_voting',
                     'use_meta': False,
                     'use_voting_filter': True,  # Voting always uses filter
-                    'weights': (1.0, 1.0, 1.0),
+                    'thresholds': (0.5, 0.5, 0.5), # Default for voting
                     'voting_bonus': voting_bonus
                 })
             
@@ -224,7 +254,7 @@ def run_evaluation_v3(query_id):
                     'method_key': 'ensemble_meta',
                     'use_meta': True,
                     'use_voting_filter': False,
-                    'weights': (1.0, 1.0, 1.0),
+                    'thresholds': (0.5, 0.5, 0.5),
                     'voting_bonus': 0.0
                 })
             
@@ -236,9 +266,9 @@ def run_evaluation_v3(query_id):
                     # Buat instance ensemble dengan konfigurasi spesifik
                     ensemble = EnsembleEmbeddingModel(
                         w2v_model, ft_model, glove_model,
-                        word2vec_weight=config['weights'][0],
-                        fasttext_weight=config['weights'][1],
-                        glove_weight=config['weights'][2],
+                        word2vec_threshold=config['thresholds'][0],
+                        fasttext_threshold=config['thresholds'][1],
+                        glove_threshold=config['thresholds'][2],
                         voting_bonus=config['voting_bonus'],
                         use_meta_ensemble=config['use_meta'],
                         use_voting_filter=config['use_voting_filter']
@@ -262,12 +292,13 @@ def run_evaluation_v3(query_id):
                     label = f'Ensemble ({config["name"]})'
                     
                     # Additional info untuk ensemble
+                    ensemble_threshold = get_threshold('ensemble')
                     additional_info = {
                         'ensemble_method': config['name'],
-                        'weights': {
-                            'word2vec': config['weights'][0],
-                            'fasttext': config['weights'][1],
-                            'glove': config['weights'][2]
+                        'thresholds': {
+                            'word2vec': config['thresholds'][0],
+                            'fasttext': config['thresholds'][1],
+                            'glove': config['thresholds'][2]
                         },
                         'voting_bonus': config['voting_bonus'],
                         'use_voting_filter': config['use_voting_filter']
@@ -279,7 +310,8 @@ def run_evaluation_v3(query_id):
                         found, 
                         ground_truth, 
                         exec_time,
-                        additional_info
+                        threshold=ensemble_threshold,
+                        additional_info=additional_info
                     )
                     
                     # Simpan ke database
