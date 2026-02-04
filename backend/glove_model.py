@@ -134,7 +134,7 @@ class GloVeModel:
         
         # Ambil hasil sebanyak limit
         if limit is not None:
-            top_results = similarities[:limit]
+            top_results = similarities[:int(limit)]
         else:
             top_results = similarities[:]
         

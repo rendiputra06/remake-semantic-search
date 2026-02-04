@@ -1,0 +1,359 @@
+{% extends "layout.html" %}
+
+{% block title %}Laboratorium Evaluasi (V5) - Glass Command Center{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Glassmorphism Design System */
+    :root {
+        --v5-primary: #0ea5e9;
+        --v5-secondary: #6366f1;
+        --v5-success: #10b981;
+        --v5-bg: #f1f5f9;
+        --v5-glass: rgba(255, 255, 255, 0.7);
+        --v5-glass-border: rgba(255, 255, 255, 0.4);
+        --v5-text: #1e293b;
+    }
+
+    body {
+        background: linear-gradient(135deg, #e0f2fe 0%, #f1f5f9 100%);
+        min-height: 100vh;
+    }
+
+    .glass-card {
+        background: var(--v5-glass);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid var(--v5-glass-border);
+        border-radius: 16px;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+    }
+
+    .glass-sidebar {
+        height: calc(100vh - 120px);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .query-search-container {
+        padding: 1rem;
+        background: rgba(255, 255, 255, 0.4);
+        border-radius: 12px;
+        margin-bottom: 1rem;
+    }
+
+    .query-list-v5 {
+        flex-grow: 1;
+        overflow-y: auto;
+        padding-right: 5px;
+    }
+
+    .query-item-v5 {
+        background: rgba(255, 255, 255, 0.5);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 12px;
+        padding: 0.75rem 1rem;
+        margin-bottom: 0.5rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .query-item-v5:hover {
+        background: rgba(255, 255, 255, 0.9);
+        transform: translateX(4px);
+    }
+
+    .query-item-v5.active {
+        background: var(--v5-primary);
+        color: white;
+        border-color: var(--v5-primary);
+        box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+    }
+
+    .query-item-v5.active .text-muted {
+        color: rgba(255, 255, 255, 0.8) !important;
+    }
+
+    .batch-row-v5 {
+        padding: 1.25rem;
+        margin-bottom: 1rem;
+        border-left: 5px solid transparent;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .batch-row-v5.active {
+        border-left-color: var(--v5-primary);
+        background: rgba(14, 165, 233, 0.05);
+        transform: scale(1.01);
+    }
+
+    .batch-row-v5.completed {
+        border-left-color: var(--v5-success);
+    }
+
+    .input-v5 {
+        background: rgba(255, 255, 255, 0.8) !important;
+        border: 1px solid rgba(0, 0, 0, 0.1) !important;
+        border-radius: 8px !important;
+        font-weight: 600;
+        text-align: center;
+    }
+
+    .input-v5:focus {
+        box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2) !important;
+        border-color: var(--v5-primary) !important;
+    }
+
+    .btn-v5-primary {
+        background: linear-gradient(135deg, var(--v5-primary), var(--v5-secondary));
+        color: white;
+        border: none;
+        padding: 0.6rem 1.2rem;
+        border-radius: 10px;
+        font-weight: 600;
+        box-shadow: 0 4px 15px rgba(14, 165, 233, 0.3);
+        transition: all 0.2s;
+    }
+
+    .btn-v5-primary:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(14, 165, 233, 0.4);
+        color: white;
+    }
+
+    .btn-v5-outline {
+        border: 2px solid var(--v5-primary);
+        color: var(--v5-primary);
+        background: transparent;
+        border-radius: 10px;
+        font-weight: 600;
+    }
+
+    .btn-v5-outline:hover:not(:disabled) {
+        background: var(--v5-primary);
+        color: white;
+    }
+
+    .progress-v5 {
+        height: 8px;
+        background: rgba(0, 0, 0, 0.05);
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .progress-bar-v5 {
+        height: 100%;
+        background: linear-gradient(90deg, var(--v5-primary), var(--v5-secondary));
+        width: 0%;
+        transition: width 0.4s ease;
+        position: relative;
+    }
+
+    .progress-bar-v5::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+        animation: shine 1.5s infinite;
+    }
+
+    @keyframes shine {
+        0% {
+            transform: translateX(-100%);
+        }
+
+        100% {
+            transform: translateX(100%);
+        }
+    }
+
+    .badge-v5 {
+        font-size: 0.7rem;
+        padding: 0.35em 0.65em;
+        border-radius: 6px;
+    }
+
+    .opacity-ctrl {
+        opacity: 0;
+        transition: opacity 0.2s;
+    }
+
+    .query-item-v5:hover .opacity-ctrl {
+        opacity: 1;
+    }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+        width: 5px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: rgba(0, 0, 0, 0.1);
+        border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: rgba(0, 0, 0, 0.2);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-5">
+    <!-- Sidebar Query -->
+    <div class="col-md-4 col-lg-3">
+        <div class="glass-card p-3 glass-sidebar">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="mb-0 fw-bold text-dark"><i class="fas fa-search me-2 text-primary"></i>Query Terdaftar</h6>
+                <button class="btn btn-sm btn-v5-primary p-1" id="btn-add-query"
+                    style="border-radius: 50%; width: 28px; height: 28px;">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+
+            <div class="query-search-container mb-3">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-transparent border-0"><i
+                            class="fas fa-filter text-muted"></i></span>
+                    <input type="text" id="query-search-input" class="form-control border-0 bg-transparent"
+                        placeholder="Cari query...">
+                </div>
+            </div>
+
+            <div id="query-list-v5" class="query-list-v5">
+                <!-- Data via JS -->
+                <div class="text-center py-5">
+                    <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                </div>
+            </div>
+
+            <div class="mt-3 pt-3 border-top border-light d-flex justify-content-between small text-muted">
+                <span>Total: <b id="query-total-count">0</b></span>
+                <span id="sync-status"><i class="fas fa-check-circle text-success me-1"></i>Synced</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Area Eksperimen -->
+    <div class="col-md-8 col-lg-9">
+        <div id="no-query-selected-v5" class="glass-card p-5 text-center animate-fade-in">
+            <div class="mb-4">
+                <i class="fas fa-vial fa-4x text-primary opacity-25"></i>
+            </div>
+            <h3 class="fw-bold text-dark">Selamat Datang di Laboratorium</h3>
+            <p class="text-muted mx-auto" style="max-width: 500px;">
+                Pilih topik dari daftar di samping untuk memulai eksperimen pencarian ensemble multi-threshold.
+                Anda dapat menguji hingga 10 kombinasi parameter sekaligus.
+            </p>
+        </div>
+
+        <div id="experiment-area-v5" style="display: none;">
+            <!-- Header Kontrol -->
+            <div class="glass-card p-4 mb-4 d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small text-uppercase fw-bold mb-1">Eksperimen Topik</div>
+                    <h2 id="active-query-title" class="mb-0 fw-bold text-primary">Query Text</h2>
+                    <div class="mt-1">
+                        <span class="badge bg-light text-dark border border-secondary-subtle">
+                            <i class="fas fa-check-circle text-success me-1"></i>
+                            <span id="gt-count-v5">0</span> Ground Truth Terdaftar
+                        </span>
+                    </div>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-v5-outline" id="btn-export-v5" style="display: none;">
+                        <i class="fas fa-file-export me-1"></i> Export CSV
+                    </button>
+                    <button class="btn btn-v5-outline" id="btn-add-row-v5">
+                        <i class="fas fa-plus me-1"></i> Tambah Set
+                    </button>
+                    <button class="btn btn-v5-primary" id="btn-run-batch-v5">
+                        <i class="fas fa-play-circle me-1"></i> Mulai Batch
+                    </button>
+                </div>
+            </div>
+
+            <!-- List Batch Rows -->
+            <div id="batch-container-v5" class="mb-5">
+                <!-- Dynamic Rows Created by JS -->
+            </div>
+
+            <!-- Table Summary Section -->
+            <div id="results-table-container-v5" class="glass-card p-4 mt-5 animate-fade-in" style="display: none;">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="fw-bold text-dark mb-0">
+                        <i class="fas fa-table me-2 text-primary"></i>Tabel Rekapitulasi Hasil
+                    </h5>
+                    <div class="small text-muted" id="results-timestamp"></div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle border-0" id="summary-table-v5">
+                        <thead>
+                            <tr class="text-muted small text-uppercase">
+                                <th class="border-0">#</th>
+                                <th class="border-0">W2V</th>
+                                <th class="border-0">FT</th>
+                                <th class="border-0">GV</th>
+                                <th class="border-0">TP</th>
+                                <th class="border-0">FP</th>
+                                <th class="border-0">FN</th>
+                                <th class="border-0">Precision</th>
+                                <th class="border-0">Recall</th>
+                                <th class="border-0 font-bold text-primary">F1-Score</th>
+                            </tr>
+                        </thead>
+                        <tbody id="summary-table-body-v5">
+                            <!-- Rows filled by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="text-center mt-4">
+                <button class="btn btn-sm btn-link text-muted" id="btn-reset-batch-v5">
+                    <i class="fas fa-history me-1"></i> Reset Ke Standar (3 Baris)
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal CRUD Query (Synced with V4) -->
+<div class="modal fade" id="queryModalV5" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content glass-card">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="queryModalTitleV5">Tambah Query</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="form-query-v5">
+                    <input type="hidden" id="query-id-hidden-v5">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Teks Query</label>
+                        <input type="text" id="query-text-input-v5" class="form-control"
+                            placeholder="Masukkan topik baru..." required>
+                    </div>
+                    <button type="submit" class="btn btn-v5-primary w-100">Simpan Query</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script type="module" src="{{ url_for('static', filename='js/evaluasi_v5/main.js') }}"></script>
+{% endblock %}

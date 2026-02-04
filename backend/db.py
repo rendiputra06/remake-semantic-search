@@ -191,6 +191,65 @@ def init_db():
         threshold REAL NOT NULL
     )
     ''')
+
+    # Buat tabel custom_evaluations untuk override hasil evaluasi V4
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS custom_evaluations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        topic TEXT NOT NULL,
+        w2v_threshold REAL,
+        ft_threshold REAL,
+        gv_threshold REAL,
+        precision REAL,
+        recall REAL,
+        f1_score REAL,
+        tp INTEGER,
+        fp INTEGER,
+        fn INTEGER,
+        created_at TEXT NOT NULL,
+        UNIQUE(topic, w2v_threshold, ft_threshold, gv_threshold)
+    )
+    ''')
+    
+    # Migrasi: Hapus unique constraint lama pada 'topic' saja jika ada
+    # SQLite tidak support ALTER TABLE DROP CONSTRAINT, jadi kita harus cek schema
+    cursor.execute("PRAGMA index_list('custom_evaluations')")
+    indexes = cursor.fetchall()
+    for idx in indexes:
+        # SQLite sering membuat index otomatis untuk UNIQUE constraint
+        # Jika ada index unique hanya pada topic, kita mungkin perlu recreate table
+        # Namun cara paling aman adalah mengecek schema asli
+        pass
+
+    # Alternative migration: if column topic is unique, recreate the table
+    cursor.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name='custom_evaluations'")
+    schema = cursor.fetchone()[0]
+    if 'UNIQUE(topic)' in schema.replace(' ', '') or 'topicTEXTUNIQUE' in schema.replace(' ', ''):
+        print("Migrating custom_evaluations table schema...")
+        cursor.execute('ALTER TABLE custom_evaluations RENAME TO custom_evaluations_old')
+        cursor.execute('''
+        CREATE TABLE custom_evaluations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            topic TEXT NOT NULL,
+            w2v_threshold REAL,
+            ft_threshold REAL,
+            gv_threshold REAL,
+            precision REAL,
+            recall REAL,
+            f1_score REAL,
+            tp INTEGER,
+            fp INTEGER,
+            fn INTEGER,
+            created_at TEXT NOT NULL,
+            UNIQUE(topic, w2v_threshold, ft_threshold, gv_threshold)
+        )
+        ''')
+        cursor.execute('''
+        INSERT INTO custom_evaluations (topic, w2v_threshold, ft_threshold, gv_threshold, precision, recall, f1_score, tp, fp, fn, created_at)
+        SELECT topic, w2v_threshold, ft_threshold, gv_threshold, precision, recall, f1_score, tp, fp, fn, created_at FROM custom_evaluations_old
+        ''')
+        cursor.execute('DROP TABLE custom_evaluations_old')
+        conn.commit()
     # Inisialisasi default threshold jika belum ada
     default_models = [
         ('word2vec', 0.5),
@@ -1330,16 +1389,69 @@ def add_query(text: str):
         conn.close()
         return False, f"Error saat menambahkan query: {str(e)}"
 
-def get_all_queries():
+def update_query(query_id: int, text: str):
     """
-    Mengambil semua query evaluasi dari tabel queries
+    Memperbarui teks query evaluasi
     """
     conn = get_db_connection()
     cursor = conn.cursor()
+    try:
+        cursor.execute('''
+        UPDATE queries SET text = ? WHERE id = ?
+        ''', (text, query_id))
+        conn.commit()
+        conn.close()
+        return True, "Query berhasil diperbarui"
+    except Exception as e:
+        conn.rollback()
+        conn.close()
+        return False, f"Error saat memperbarui query: {str(e)}"
+
+
+def get_all_queries():
+    """
+    Mengambil semua query evaluasi dari tabel queries, 
+    ditambah memastikan topik dari custom_evaluations juga ada di tabel queries.
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # 1. Ambil topik unik dari custom_evaluations
+    cursor.execute('SELECT DISTINCT topic FROM custom_evaluations')
+    custom_topics = [row['topic'] for row in cursor.fetchall()]
+    
+    # 2. Sinkronkan dengan tabel queries jika belum ada
+    now = datetime.datetime.now().isoformat()
+    for topic in custom_topics:
+        cursor.execute('SELECT id FROM queries WHERE text = ? COLLATE NOCASE', (topic,))
+        if not cursor.fetchone():
+            cursor.execute('INSERT INTO queries (text, created_at) VALUES (?, ?)', (topic, now))
+    
+    conn.commit()
+    
+    # 3. Ambil semua query (termasuk yang baru disinkronkan)
     cursor.execute('SELECT * FROM queries ORDER BY created_at DESC')
-    queries = cursor.fetchall()
+    queries = [dict(row) for row in cursor.fetchall()]
+    
     conn.close()
-    return [dict(row) for row in queries]
+    return queries
+
+def ensure_query_exists(text: str) -> Optional[int]:
+    """
+    Memastikan query ada di tabel queries. Jika tidak ada, tambahkan.
+    Mengembalikan query_id.
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT id FROM queries WHERE text = ? COLLATE NOCASE', (text,))
+    res = cursor.fetchone()
+    conn.close()
+    
+    if res:
+        return res['id']
+    
+    success, query_id = add_query(text)
+    return query_id if success else None
 
 def add_relevant_verse(query_id: int, verse_ref: str):
     """
@@ -1610,6 +1722,157 @@ def get_asr_history_detail(history_id):
     row = cursor.fetchone()
     conn.close()
     return dict(row) if row else None
+
+def add_custom_evaluation(data: Dict[str, Any]) -> Tuple[bool, str]:
+    """
+    Menambahkan atau memperbarui custom evaluation result untuk V4
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    try:
+        now = datetime.datetime.now().isoformat()
+        
+        # Cek apakah kombinasi topic + threshold sudah ada
+        cursor.execute('''
+            SELECT id FROM custom_evaluations 
+            WHERE topic = ? COLLATE NOCASE
+            AND ABS(w2v_threshold - ?) < 0.001 
+            AND ABS(ft_threshold - ?) < 0.001 
+            AND ABS(gv_threshold - ?) < 0.001
+        ''', (data['topic'], data.get('w2v_threshold', 0.5), data.get('ft_threshold', 0.5), data.get('gv_threshold', 0.5)))
+        existing = cursor.fetchone()
+        
+        if existing:
+            # Update existing
+            cursor.execute('''
+            UPDATE custom_evaluations 
+            SET precision = ?, recall = ?, f1_score = ?,
+                tp = ?, fp = ?, fn = ?, created_at = ?
+            WHERE id = ?
+            ''', (
+                data.get('precision', 0.0),
+                data.get('recall', 0.0),
+                data.get('f1_score', 0.0),
+                data.get('tp', 0),
+                data.get('fp', 0),
+                data.get('fn', 0),
+                now,
+                existing['id']
+            ))
+        else:
+            # Insert new
+            cursor.execute('''
+            INSERT INTO custom_evaluations (
+                topic, w2v_threshold, ft_threshold, gv_threshold,
+                precision, recall, f1_score, tp, fp, fn, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                data['topic'],
+                data.get('w2v_threshold', 0.5),
+                data.get('ft_threshold', 0.5),
+                data.get('gv_threshold', 0.5),
+                data.get('precision', 0.0),
+                data.get('recall', 0.0),
+                data.get('f1_score', 0.0),
+                data.get('tp', 0),
+                data.get('fp', 0),
+                data.get('fn', 0),
+                now
+            ))
+        
+        conn.commit()
+        conn.close()
+        return True, "Data evaluasi berhasil disimpan"
+    except Exception as e:
+        conn.rollback()
+        conn.close()
+        return False, str(e)
+
+def get_custom_evaluation(topic: str, w2v: float, ft: float, gv: float) -> Optional[Dict[str, Any]]:
+    """
+    Ambil custom evaluation berdasarkan topic dan thresholds
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    cursor.execute('''
+        SELECT * FROM custom_evaluations 
+        WHERE topic = ? COLLATE NOCASE
+        AND ABS(w2v_threshold - ?) < 0.001
+        AND ABS(ft_threshold - ?) < 0.001
+        AND ABS(gv_threshold - ?) < 0.001
+    ''', (topic, w2v, ft, gv))
+    result = cursor.fetchone()
+    
+    conn.close()
+    
+    if result:
+        return dict(result)
+    return None
+
+def get_all_custom_evaluations() -> List[Dict[str, Any]]:
+    """
+    Ambil semua custom evaluations
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    cursor.execute('SELECT * FROM custom_evaluations ORDER BY created_at DESC')
+    results = cursor.fetchall()
+    
+    conn.close()
+    
+    return [dict(row) for row in results]
+
+def update_custom_evaluation(id: int, data: Dict[str, Any]) -> Tuple[bool, str]:
+    """
+    Update field data pada custom evaluation berdasarkan ID
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    try:
+        now = datetime.datetime.now().isoformat()
+        cursor.execute('''
+            UPDATE custom_evaluations 
+            SET precision = ?, recall = ?, f1_score = ?,
+                tp = ?, fp = ?, fn = ?, created_at = ?
+            WHERE id = ?
+        ''', (
+            data.get('precision', 0.0),
+            data.get('recall', 0.0),
+            data.get('f1_score', 0.0),
+            data.get('tp', 0),
+            data.get('fp', 0),
+            data.get('fn', 0),
+            now,
+            id
+        ))
+        conn.commit()
+        conn.close()
+        return True, "Data berhasil diperbarui"
+    except Exception as e:
+        conn.rollback()
+        conn.close()
+        return False, str(e)
+
+def delete_custom_evaluation(id: int) -> Tuple[bool, str]:
+    """
+    Hapus custom evaluation berdasarkan ID
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    try:
+        cursor.execute('DELETE FROM custom_evaluations WHERE id = ?', (id,))
+        conn.commit()
+        conn.close()
+        return True, "Data berhasil dihapus"
+    except Exception as e:
+        conn.rollback()
+        conn.close()
+        return False, str(e)
 
 if __name__ == "__main__":
     # Inisialisasi database jika dijalankan langsung

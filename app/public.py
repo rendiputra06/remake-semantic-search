@@ -79,6 +79,20 @@ def evaluasi_v3():
     """
     return render_template('evaluasi_v3.html')
 
+@public_bp.route('/evaluasi/v4')
+def evaluasi_v4():
+    """
+    Halaman evaluasi versi 4 (Custom CSV Override)
+    """
+    return render_template('evaluasi_v4.html')
+
+@public_bp.route('/evaluasi/v5')
+def evaluasi_v5():
+    """
+    Halaman evaluasi versi 5 (Laboratorium Batch Ensemble)
+    """
+    return render_template('evaluasi_v5.html')
+
 @public_bp.route('/search')
 def search_main():
     """

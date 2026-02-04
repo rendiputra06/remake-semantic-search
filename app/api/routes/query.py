@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from backend.db import (
-    add_query, get_all_queries, delete_query as db_delete_query, reset_relevant_verses as db_reset_relevant_verses,
+    add_query, update_query as db_update_query, get_all_queries, delete_query as db_delete_query, reset_relevant_verses as db_reset_relevant_verses,
     add_relevant_verse, add_relevant_verses_batch, get_relevant_verses_by_query, delete_relevant_verse as db_delete_relevant_verse,
     add_evaluation_result, get_evaluation_results_by_query, get_evaluation_logs_by_query, add_evaluation_log
 )
@@ -25,6 +25,19 @@ def create_query():
     if ok:
         return jsonify({"success": True, "query_id": result})
     return jsonify({"success": False, "message": result}), 500
+
+@query_bp.route('/<int:query_id>', methods=['PATCH', 'PUT'])
+def update_query_route(query_id):
+    """Memperbarui query evaluasi"""
+    req = request.json
+    if not req or 'text' not in req:
+        return jsonify({"success": False, "message": "Field 'text' wajib diisi"}), 400
+    
+    ok, message = db_update_query(query_id, req['text'])
+    if ok:
+        return jsonify({"success": True, "message": message})
+    return jsonify({"success": False, "message": message}), 500
+
 
 @query_bp.route('/<int:query_id>', methods=['DELETE'])
 def delete_query(query_id):
