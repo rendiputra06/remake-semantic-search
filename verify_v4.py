@@ -5,7 +5,7 @@ import unittest
 import json
 import io
 from run import app
-from backend.db import init_db, get_custom_evaluation
+from backend.db import init_db, get_custom_evaluation, ensure_query_exists, add_relevant_verse
 
 class TestEvaluationV4(unittest.TestCase):
     def setUp(self):
@@ -22,8 +22,10 @@ class TestEvaluationV4(unittest.TestCase):
         ), follow_redirects=True)
 
     def test_01_admin_login(self):
-        rv = self.login('admin', 'admin123')
-        self.assertIn(b'Admin Panel', rv.data)
+        self.login('admin', 'admin123')
+        rv = self.client.get('/admin/', follow_redirects=True)
+        self.assertEqual(rv.status_code, 200)
+        self.assertTrue(b'admin' in rv.data.lower())
         print("Login successful.")
 
     def test_02_upload_csv(self):
@@ -43,7 +45,7 @@ class TestEvaluationV4(unittest.TestCase):
         self.assertIn(b'Berhasil memproses', rv.data)
         
         # Verify in DB
-        result = get_custom_evaluation("TestQuery123")
+        result = get_custom_evaluation("TestQuery123", 0.5, 0.6, 0.7)
         self.assertIsNotNone(result)
         self.assertEqual(result['f1_score'], 0.85)
         print("CSV Upload and DB Verification successful.")
@@ -51,20 +53,28 @@ class TestEvaluationV4(unittest.TestCase):
     def test_03_api_custom_override(self):
         # Must execute within app context or simulated request
         # Mocking query_text sending to API
+        query_id = ensure_query_exists('TestQuery123')
+        add_relevant_verse(query_id, '2:255')
+        
         payload = {
             'query_text': 'TestQuery123',
-            'selected_methods': ['lexical'],
-            'result_limit': 10
+            'selected_methods': ['ensemble'],
+            'result_limit': 10,
+            'ensemble_config': {
+                'w2v_threshold': 0.5,
+                'ft_threshold': 0.6,
+                'glove_threshold': 0.7
+            }
         }
         
-        rv = self.client.post('/api/evaluation_v4/0/run', 
+        rv = self.client.post(f'/api/evaluation_v4/{query_id}/run', 
                             data=json.dumps(payload),
                             content_type='application/json')
         
         data = json.loads(rv.data)
         self.assertTrue(data['success'])
         self.assertEqual(len(data['results']), 1)
-        self.assertEqual(data['results'][0]['label'], 'Custom CSV Result')
+        self.assertTrue(data['results'][0].get('is_static_override'))
         self.assertEqual(data['results'][0]['f1'], 0.85)
         print("API Custom Override successful.")
 

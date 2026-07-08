@@ -158,10 +158,7 @@ export class CRUDManager {
 
         let result;
         if (id) {
-            // Update (assuming API supports PUT/POST to specific ID)
-            // For now, let's assume update is handled by separate method or same add method logic
-            // Since I don't see an explicit update API in api.js, I'll stick to add or show error
-            result = await api.addQuery(text); // Fallback: add new
+            result = await api.updateQuery(id, text);
         } else {
             result = await api.addQuery(text);
         }

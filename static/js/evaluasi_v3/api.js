@@ -18,6 +18,15 @@ export const api = {
         return await res.json();
     },
 
+    async updateQuery(id, text) {
+        const res = await fetch(`/api/query/${id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text }),
+        });
+        return await res.json();
+    },
+
     async deleteQuery(id) {
         const res = await fetch(`/api/query/${id}`, { method: "DELETE" });
         return await res.json();

@@ -1,0 +1,250 @@
+{% extends "layout.html" %}
+{% block title %}Data Playground - Mesin Pencarian Semantik Al-Quran{% endblock %}
+
+{% block content %}
+<style>
+    /* Academic bright research theme */
+    .playground-wrapper {
+        background: #f8f9fa;
+        color: #212529;
+        border-radius: 12px;
+        padding: 24px;
+        border: 1px solid #dee2e6;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        margin-top: 15px;
+    }
+    
+    .research-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+        padding: 20px;
+        transition: all 0.3s ease;
+    }
+    
+    .flow-node {
+        background: #f1f5f9;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        padding: 10px 15px;
+        width: 90%;
+        text-align: center;
+        font-size: 0.88rem;
+        color: #475569;
+        cursor: pointer;
+        transition: all 0.2s ease-in-out;
+        position: relative;
+    }
+
+    .flow-node:hover {
+        background: #e2e8f0;
+        transform: translateY(-1px);
+        border-color: #94a3b8;
+    }
+
+    .flow-node.active {
+        background: #eff6ff;
+        border: 2px solid #3b82f6;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+        color: #1d4ed8;
+        font-weight: bold;
+    }
+
+    .flow-node.active::after {
+        content: '';
+        position: absolute;
+        right: 8px;
+        top: 12px;
+        display: block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #10b981;
+        box-shadow: 0 0 6px #10b981;
+        animation: pulse 1.5s infinite;
+    }
+
+    .flow-arrow {
+        color: #94a3b8;
+        font-size: 0.8rem;
+        margin: -4px 0;
+        transition: color 0.3s;
+    }
+
+    .flow-arrow.active {
+        color: #3b82f6;
+    }
+
+    .math-formula {
+        background: #f8fafc;
+        padding: 12px;
+        border-radius: 6px;
+        text-align: center;
+        color: #0f172a;
+        font-family: 'Courier New', Courier, monospace;
+        margin-bottom: 15px;
+        border: 1px solid #e2e8f0;
+        font-weight: bold;
+    }
+
+    .query-item {
+        transition: all 0.2s ease;
+        border: 1px solid transparent;
+    }
+
+    .query-item:hover {
+        background-color: #f1f5f9;
+        cursor: pointer;
+    }
+
+    .query-item.active {
+        background-color: #eff6ff !important;
+        border-left: 4px solid #3b82f6 !important;
+        color: #1d4ed8 !important;
+        font-weight: bold;
+    }
+
+    @keyframes pulse {
+        0% { transform: scale(0.9); opacity: 0.6; }
+        50% { transform: scale(1.2); opacity: 1; }
+        100% { transform: scale(0.9); opacity: 0.6; }
+    }
+</style>
+
+<div class="container py-3">
+    <div class="playground-wrapper">
+        <!-- Title & Subtitle -->
+        <div class="mb-4">
+            <h2 class="mb-1 text-primary"><i class="fas fa-cubes me-2"></i>Data Playground</h2>
+            <p class="text-muted mb-0">Simulasikan dan periksa transformasi logika bisnis serta kalkulasi metrik secara real-time.</p>
+        </div>
+
+        <!-- Simulation Controls Header -->
+        <div class="research-card mb-4">
+            <h6 class="text-secondary border-bottom pb-2 mb-3"><i class="fas fa-cogs me-2"></i>Konfigurasi Simulasi</h6>
+            <form id="playground-form" class="row g-3 align-items-end">
+                <div class="col-md-5">
+                    <label class="form-label small fw-bold text-dark" for="active-query-display">Query Aktif</label>
+                    <div class="input-group">
+                        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#queryModal">
+                            <i class="fas fa-search me-1"></i>Pilih Query
+                        </button>
+                        <input type="text" class="form-control bg-light" id="active-query-display" placeholder="Pilih query evaluasi..." readonly>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold text-dark" for="model-type">Model Embedding</label>
+                    <select class="form-select border-secondary-subtle" id="model-type">
+                        <option value="word2vec">Word2Vec</option>
+                        <option value="fasttext">FastText</option>
+                        <option value="glove">GloVe</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary flex-grow-1" id="btn-simulate" disabled>
+                            <i class="fas fa-play me-1"></i>Simulasikan
+                        </button>
+                        <button type="button" class="btn btn-outline-danger" id="btn-reset">
+                            <i class="fas fa-undo me-1"></i>Reset
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Simulation Output Split Area -->
+        <div class="row g-3">
+            <!-- Detail Panel -->
+            <div class="col-md-8">
+                <div class="research-card" id="detail-panel" style="min-height: 440px;">
+                    <div class="d-flex justify-content-center align-items-center h-100 flex-column text-muted py-5">
+                        <i class="fas fa-info-circle fa-3x mb-3 text-secondary"></i>
+                        <h5>Belum Ada Data Simulasi</h5>
+                        <p class="small text-center px-3">Silakan klik tombol <strong>Pilih Query</strong> di atas untuk memulai simulasi.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Flowchart Column -->
+            <div class="col-md-4">
+                <div class="research-card d-flex flex-column align-items-center gap-2" style="background: #fafafa; min-height: 440px; justify-content: center;">
+                    <h6 class="text-secondary border-bottom pb-2 mb-2 w-100 text-center"><i class="fas fa-route me-2"></i>Alur Eksekusi</h6>
+                    
+                    <div class="flow-node active" data-step="1">1. Parameter Input</div>
+                    <i class="fas fa-chevron-down flow-arrow" data-arrow="1"></i>
+                    
+                    <div class="flow-node" data-step="2">2. Pra-pemrosesan Teks</div>
+                    <i class="fas fa-chevron-down flow-arrow" data-arrow="2"></i>
+                    
+                    <div class="flow-node" data-step="3">3. Ekstraksi Vektor Kueri</div>
+                    <i class="fas fa-chevron-down flow-arrow" data-arrow="3"></i>
+                    
+                    <div class="flow-node" data-step="4">4. Perhitungan Cosine Similarity</div>
+                    <i class="fas fa-chevron-down flow-arrow" data-arrow="4"></i>
+                    
+                    <div class="flow-node" data-step="5">5. Penyaringan Threshold</div>
+                    <i class="fas fa-chevron-down flow-arrow" data-arrow="5"></i>
+                    
+                    <div class="flow-node" data-step="6">6. Validasi Ground Truth</div>
+                    <i class="fas fa-chevron-down flow-arrow" data-arrow="6"></i>
+                    
+                    <div class="flow-node" data-step="7">7. Evaluasi Metrik Akhir</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Live Dynamic Threshold Slider (Floating Controller) -->
+        <div class="research-card mt-4 border-primary-subtle" style="background: #f0fdf4;">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h6 class="text-success mb-1 fw-bold"><i class="fas fa-sliders-h me-2"></i>Dynamic Threshold & Ground Truth Sandbox</h6>
+                    <p class="small text-muted mb-0">Geser slider atau modifikasi ayat relevan untuk langsung melihat kalkulasi metrik secara real-time.</p>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold text-dark mb-1" for="similarity-threshold">Similarity Threshold: <span id="threshold-val" class="text-success font-monospace fw-bold">0.50</span></label>
+                    <input type="range" class="form-range" id="similarity-threshold" min="0" max="1" step="0.05" value="0.5">
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-12">
+                    <label class="form-label small fw-bold text-dark mb-1" for="ground-truth">Ground Truth Verses (Pisahkan dengan koma)</label>
+                    <input type="text" class="form-control" id="ground-truth" placeholder="Contoh: 2:255, 3:190">
+                    <span class="form-text text-muted" style="font-size: 0.75rem;">*Daftar ini otomatis terisi saat query dipilih, namun Anda bebas menambah/menghapus ayat di atas untuk simulasi dinamis.</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Modal Pilih Query -->
+<div class="modal fade" id="queryModal" tabindex="-1" aria-labelledby="queryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white py-2">
+                <h5 class="modal-title" id="queryModalLabel"><i class="fas fa-search me-2"></i>Pilih Query Evaluasi</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="p-2 border-bottom">
+                    <input type="text" id="query-search" class="form-control" placeholder="Cari query...">
+                </div>
+                <div id="query-list" class="list-group list-group-flush" style="max-height: 400px; overflow-y: auto;">
+                    <!-- Query list will load here -->
+                    <div class="p-3 text-center text-muted small">Memuat daftar query...</div>
+                </div>
+            </div>
+            <div class="modal-footer py-2 bg-light d-flex justify-content-between">
+                <small class="text-muted"><span id="query-count">0</span> query tersedia</small>
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script type="module" src="{{ url_for('static', filename='js/playground/main.js') }}"></script>
+{% endblock %}

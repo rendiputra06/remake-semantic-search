@@ -89,7 +89,7 @@ class OntologyService:
             conn.close()
             
         except Exception as e:
-            print(f"❌ Error logging audit: {e}")
+            print(f"[ERROR] Error logging audit: {e}")
     
     def get_audit_log(self, concept_id: str = None, action: str = None, 
                      limit: int = 100, offset: int = 0) -> List[dict]:
@@ -143,7 +143,7 @@ class OntologyService:
             return audit_logs
             
         except Exception as e:
-            print(f"❌ Error getting audit log: {e}")
+            print(f"[ERROR] Error getting audit log: {e}")
             return []
     
     def get_audit_stats(self) -> dict:
@@ -200,7 +200,7 @@ class OntologyService:
             }
             
         except Exception as e:
-            print(f"❌ Error getting audit stats: {e}")
+            print(f"[ERROR] Error getting audit stats: {e}")
             return {}
     
     def _load_from_json(self):
@@ -209,12 +209,12 @@ class OntologyService:
             with open(self.ontology_path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
                 self.concepts = data.get('concepts', [])
-                print(f"✅ Load dari JSON: {len(self.concepts)} konsep")
+                print(f"[OK] Load dari JSON: {len(self.concepts)} konsep")
         except FileNotFoundError:
-            print(f"⚠️  File JSON tidak ditemukan: {self.ontology_path}")
+            print(f"[WARNING] File JSON tidak ditemukan: {self.ontology_path}")
             self.concepts = []
         except Exception as e:
-            print(f"❌ Error loading JSON: {e}")
+            print(f"[ERROR] Error loading JSON: {e}")
             self.concepts = []
     
     def _save_to_json(self):
@@ -225,7 +225,7 @@ class OntologyService:
                 json.dump({'concepts': self.concepts}, f, ensure_ascii=False, indent=2)
             return True
         except Exception as e:
-            print(f"❌ Error saving JSON: {e}")
+            print(f"[ERROR] Error saving JSON: {e}")
             return False
     
     def _load_from_database(self):
@@ -241,7 +241,7 @@ class OntologyService:
             """)
             
             if not cursor.fetchone():
-                print("⚠️  Tabel ontology_concepts tidak ditemukan, menggunakan JSON")
+                print("[WARNING] Tabel ontology_concepts tidak ditemukan, menggunakan JSON")
                 self.storage_type = 'json'
                 self._load_from_json()
                 return
@@ -263,11 +263,11 @@ class OntologyService:
                 self.concepts.append(concept)
             
             conn.close()
-            print(f"✅ Load dari database: {len(self.concepts)} konsep")
+            print(f"[OK] Load dari database: {len(self.concepts)} konsep")
             
         except Exception as e:
-            print(f"❌ Error loading from database: {e}")
-            print("🔄 Fallback ke JSON...")
+            print(f"[ERROR] Error loading from database: {e}")
+            print("[FALLBACK] Fallback ke JSON...")
             self.storage_type = 'json'
             self._load_from_json()
     
@@ -316,7 +316,7 @@ class OntologyService:
             return True
             
         except Exception as e:
-            print(f"❌ Error saving to database: {e}")
+            print(f"[ERROR] Error saving to database: {e}")
             return False
     
     def _save_ontology(self):
@@ -350,7 +350,7 @@ class OntologyService:
                 self.storage_type = 'database'
                 # Reload data dari database setelah switch
                 self._load_from_database()
-                print("✅ Berhasil switch ke database storage")
+                print("[OK] Berhasil switch ke database storage")
             return success
         else:
             # Save current data to JSON
@@ -359,7 +359,7 @@ class OntologyService:
                 self.storage_type = 'json'
                 # Reload data dari JSON setelah switch
                 self._load_from_json()
-                print("✅ Berhasil switch ke JSON storage")
+                print("[OK] Berhasil switch ke JSON storage")
             return success
 
     def find_concept(self, keyword):

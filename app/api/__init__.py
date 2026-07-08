@@ -20,7 +20,9 @@ from .routes.evaluation import evaluation_bp
 from .routes.evaluation_v2 import evaluation_v2_bp
 from .routes.evaluation_v3 import evaluation_v3_bp
 from .routes.evaluation_v4 import evaluation_v4_bp
-from .routes.asr_quran import asr_quran_bp
+from .routes.playground import playground_api_bp
+# from .routes.asr_quran import asr_quran_bp
+
 
 from .utils import error_response, validation_error_response
 
@@ -47,7 +49,8 @@ def init_app(app):
     app.register_blueprint(evaluation_v2_bp, url_prefix='/api/evaluation-v2')
     app.register_blueprint(evaluation_v3_bp, url_prefix='/api/evaluation_v3')
     app.register_blueprint(evaluation_v4_bp, url_prefix='/api/evaluation_v4')
-    app.register_blueprint(asr_quran_bp, url_prefix='/api/asr_quran')
+    app.register_blueprint(playground_api_bp, url_prefix='/api/playground')
+    # app.register_blueprint(asr_quran_bp, url_prefix='/api/asr_quran')
 
     # Register error handlers
     @app.errorhandler(ValidationError)

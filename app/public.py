@@ -93,6 +93,20 @@ def evaluasi_v5():
     """
     return render_template('evaluasi_v5.html')
 
+@public_bp.route('/playground')
+def playground():
+    """
+    Halaman Data Playground untuk simulasi logika bisnis pencarian semantik
+    """
+    return render_template('playground.html')
+
+@public_bp.route('/playground/ensemble')
+def playground_ensemble():
+    """
+    Halaman Data Playground untuk simulasi logika bisnis pencarian ensembel
+    """
+    return render_template('playground_ensemble.html')
+
 @public_bp.route('/search')
 def search_main():
     """
