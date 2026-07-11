@@ -153,6 +153,49 @@
     .donut-segment {
         transition: stroke-dasharray 0.3s ease, stroke-dashoffset 0.3s ease;
     }
+
+    /* Vector display grid styles */
+    .vector-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+        gap: 6px;
+        max-height: 280px;
+        overflow-y: auto;
+        border: 1px solid #334155;
+    }
+
+    .vector-cell {
+        background: #1e293b;
+        border: 1px solid #334155;
+        border-radius: 4px;
+        padding: 3px 5px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.15s ease;
+    }
+
+    .vector-cell:hover {
+        background: #0f172a;
+        border-color: #10b981;
+    }
+
+    .vector-cell .dim-label {
+        font-size: 0.58rem;
+        color: #64748b;
+        font-family: monospace;
+        line-height: 1;
+    }
+
+    .vector-cell .dim-val {
+        font-size: 0.72rem;
+        color: #10b981;
+        font-family: monospace;
+        font-weight: 500;
+        line-height: 1.1;
+        margin-top: 1px;
+    }
 </style>
 
 <div class="container py-3">

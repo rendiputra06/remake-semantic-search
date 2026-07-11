@@ -369,6 +369,18 @@ def run_playground():
                             "type": types[i]
                         })
         
+        # For ensemble, retrieve sub-model vectors to display to the user
+        ensemble_sub_vectors = None
+        if model_type == 'ensemble':
+            w2v_v = calculate_weighted_query_vector(model.word2vec_model, filtered_tokens, token_weights, 'word2vec')
+            ft_v = calculate_weighted_query_vector(model.fasttext_model, filtered_tokens, token_weights, 'fasttext')
+            glove_v = calculate_weighted_query_vector(model.glove_model, filtered_tokens, token_weights, 'glove')
+            ensemble_sub_vectors = {
+                'word2vec': w2v_v.tolist() if w2v_v is not None else None,
+                'fasttext': ft_v.tolist() if ft_v is not None else None,
+                'glove': glove_v.tolist() if glove_v is not None else None,
+            }
+
         return jsonify({
             'success': True,
             'preprocessing': {
@@ -383,6 +395,7 @@ def run_playground():
                 'magnitude': float(np.linalg.norm(query_vector)),
                 'values': query_vector.tolist()
             },
+            'ensemble_sub_vectors': ensemble_sub_vectors,
             'results': results,
             'pca': pca_coords
         })

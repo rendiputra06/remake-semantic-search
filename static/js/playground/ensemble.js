@@ -466,6 +466,137 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    function registerVectorViewListener(values) {
+        const btn = document.getElementById("btn-show-full-vector");
+        if (btn) {
+            btn.addEventListener("click", () => {
+                const formattedValues = values.map((v, i) => `
+                    <div class="vector-cell" title="Dimensi ${i+1}: ${v}">
+                        <span class="dim-label">d${i+1}</span>
+                        <span class="dim-val">${v.toFixed(5)}</span>
+                    </div>
+                `).join("");
+
+                Swal.fire({
+                    title: '<i class="fas fa-vector-square me-2 text-info"></i>Representasi Vektor Kueri (Ensemble)',
+                    html: `
+                        <p class="small text-muted text-start mb-2">Nilai numerik untuk seluruh <strong>${values.length} dimensi</strong> kueri gabungan (L2 Normalized):</p>
+                        <div class="vector-grid bg-dark p-2 rounded text-start">
+                            ${formattedValues}
+                        </div>
+                    `,
+                    width: '650px',
+                    showDenyButton: true,
+                    showCancelButton: false,
+                    confirmButtonText: 'Tutup',
+                    denyButtonText: '<i class="fas fa-download me-1"></i> Download JSON',
+                    denyButtonColor: '#0dcaf0'
+                }).then((result) => {
+                    if (result.isDenied) {
+                        downloadQueryVectorJSON(values);
+                    }
+                });
+            });
+        }
+    }
+
+    function downloadQueryVectorJSON(values) {
+        const payload = JSON.stringify({
+            query: state.activeQueryText,
+            model_type: 'ensemble',
+            dimensions: values.length,
+            vector: values
+        }, null, 2);
+        
+        const blob = new Blob([payload], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        const safeQuery = state.activeQueryText.toLowerCase().replace(/[^\w\-]/g, '_');
+        a.download = `vector_query_ensemble_${safeQuery}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    function registerVerseVectorListeners(results) {
+        document.querySelectorAll(".btn-show-verse-vector").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const index = parseInt(btn.dataset.index);
+                const tableType = btn.dataset.table;
+                
+                let verse;
+                if (tableType === "ensemble") {
+                    const ensembleSorted = results.slice(0, 5);
+                    verse = ensembleSorted[index];
+                } else if (tableType === "passed") {
+                    const passed = results.filter(r => r.similarity >= state.threshold && r.model_count >= 2);
+                    verse = passed[index];
+                } else if (tableType === "failed") {
+                    const failedVoting = results.filter(r => r.similarity >= state.threshold && r.model_count < 2);
+                    verse = failedVoting[index];
+                }
+                
+                if (verse && verse.vector_values) {
+                    showVerseVectorModal(verse);
+                } else {
+                    Swal.fire("Info", "Data vektor tidak tersedia untuk ayat ini.", "info");
+                }
+            });
+        });
+    }
+
+    function showVerseVectorModal(verse) {
+        const values = verse.vector_values;
+        const formattedValues = values.map((v, i) => `
+            <div class="vector-cell" title="Dimensi ${i+1}: ${v}">
+                <span class="dim-label">d${i+1}</span>
+                <span class="dim-val">${v.toFixed(5)}</span>
+            </div>
+        `).join("");
+
+        Swal.fire({
+            title: `<i class="fas fa-vector-square me-2 text-success"></i>Vektor Ayat ${verse.surah_number}:${verse.ayat_number} (Ensemble)`,
+            html: `
+                <p class="small text-muted text-start mb-2">Nilai numerik untuk seluruh <strong>${values.length} dimensi</strong> ayat (${verse.surah_name}) hasil rerata terbobot:</p>
+                <div class="vector-grid bg-dark p-2 rounded text-start">
+                    ${formattedValues}
+                </div>
+            `,
+            width: '650px',
+            showDenyButton: true,
+            showCancelButton: false,
+            confirmButtonText: 'Tutup',
+            denyButtonText: '<i class="fas fa-download me-1"></i> Download JSON',
+            denyButtonColor: '#10b981'
+        }).then((result) => {
+            if (result.isDenied) {
+                downloadVerseVectorJSON(verse);
+            }
+        });
+    }
+
+    function downloadVerseVectorJSON(verse) {
+        const payload = JSON.stringify({
+            verse_ref: `${verse.surah_number}:${verse.ayat_number}`,
+            surah_name: verse.surah_name,
+            model_type: 'ensemble',
+            dimensions: verse.vector_values.length,
+            vector: verse.vector_values
+        }, null, 2);
+        
+        const blob = new Blob([payload], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `vector_verse_${verse.surah_number}_${verse.ayat_number}_ensemble.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
     // Chart.js Scatter Plot rendering
     function drawVectorChart() {
         const canvas = document.getElementById("vectorSpaceChart");
@@ -569,7 +700,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 html = renderStep2Preprocess(data.preprocessing);
                 break;
             case 3:
-                html = renderStep3Vector(data.vector);
+                html = renderStep3Vector(data.vector, data.ensemble_sub_vectors);
                 break;
             case 4:
                 html = renderStep4Similarity(data.results);
@@ -594,7 +725,86 @@ document.addEventListener("DOMContentLoaded", () => {
             registerTokenListeners();
         } else if (step === 3) {
             drawVectorChart();
+            registerVectorViewListener(data.vector.values);
+            registerSubVectorListeners(data.ensemble_sub_vectors);
+        } else if (step === 4) {
+            registerVerseVectorListeners(data.results);
+        } else if (step === 5) {
+            registerVerseVectorListeners(data.results);
         }
+    }
+
+    function registerSubVectorListeners(subVectors) {
+        document.querySelectorAll(".btn-show-sub-vector").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const model = btn.dataset.model;
+                const values = subVectors[model];
+                if (values) {
+                    showSubVectorModal(model, values);
+                }
+            });
+        });
+    }
+
+    function showSubVectorModal(modelName, values) {
+        const formattedValues = values.map((v, i) => `
+            <div class="vector-cell" title="Dimensi ${i+1}: ${v}">
+                <span class="dim-label">d${i+1}</span>
+                <span class="dim-val">${v.toFixed(5)}</span>
+            </div>
+        `).join("");
+
+        const titleMap = {
+            'word2vec': 'Word2Vec',
+            'fasttext': 'FastText',
+            'glove': 'GloVe'
+        };
+
+        const colorMap = {
+            'word2vec': '#3b82f6',
+            'fasttext': '#10b981',
+            'glove': '#a855f7'
+        };
+
+        Swal.fire({
+            title: `<i class="fas fa-vector-square me-2" style="color: ${colorMap[modelName]}"></i>Vektor Kueri Dasar: ${titleMap[modelName]}`,
+            html: `
+                <p class="small text-muted text-start mb-2">Nilai numerik kueri untuk model dasar <strong>${titleMap[modelName]} (${values.length} dimensi)</strong>:</p>
+                <div class="vector-grid bg-dark p-2 rounded text-start">
+                    ${formattedValues}
+                </div>
+            `,
+            width: '650px',
+            showDenyButton: true,
+            showCancelButton: false,
+            confirmButtonText: 'Tutup',
+            denyButtonText: '<i class="fas fa-download me-1"></i> Download JSON',
+            denyButtonColor: colorMap[modelName]
+        }).then((result) => {
+            if (result.isDenied) {
+                downloadSubVectorJSON(modelName, values);
+            }
+        });
+    }
+
+    function downloadSubVectorJSON(modelName, values) {
+        const payload = JSON.stringify({
+            query: state.activeQueryText,
+            model_type: modelName,
+            dimensions: values.length,
+            vector: values
+        }, null, 2);
+        
+        const blob = new Blob([payload], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        const safeQuery = state.activeQueryText.toLowerCase().replace(/[^\w\-]/g, '_');
+        a.download = `vector_query_${modelName}_${safeQuery}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     }
 
     // Render Sub-steps functions
@@ -698,7 +908,90 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>`;
     }
 
-    function renderStep3Vector(vector) {
+    function renderStep3Vector(vector, subVectors) {
+        const w2vW = parseFloat(w2vWeightInput.value) || 1.0;
+        const ftW = parseFloat(ftWeightInput.value) || 1.0;
+        const gloveW = parseFloat(gloveWeightInput.value) || 1.0;
+        
+        let subVectorsTableHtml = "";
+        if (subVectors) {
+            const w2vVal = subVectors.word2vec ? `[ ${subVectors.word2vec.slice(0, 5).map(v => v.toFixed(4)).join(', ')} ]` : '<span class="text-muted italic">Tidak tersedia (OOV)</span>';
+            const ftVal = subVectors.fasttext ? `[ ${subVectors.fasttext.slice(0, 5).map(v => v.toFixed(4)).join(', ')} ]` : '<span class="text-muted italic">Tidak tersedia (OOV)</span>';
+            const gloveVal = subVectors.glove ? `[ ${subVectors.glove.slice(0, 5).map(v => v.toFixed(4)).join(', ')} ]` : '<span class="text-muted italic">Tidak tersedia (OOV)</span>';
+            const finalVal = `[ ${vector.values.slice(0, 5).map(v => v.toFixed(4)).join(', ')} ]`;
+            
+            // Calculate sample weighted average (first 5 elements)
+            let avgVal5 = [0, 0, 0, 0, 0];
+            const sumW = w2vW + ftW + gloveW;
+            if (sumW > 0) {
+                for (let i = 0; i < 5; i++) {
+                    let val = 0;
+                    if (subVectors.word2vec) val += subVectors.word2vec[i] * w2vW;
+                    if (subVectors.fasttext) val += subVectors.fasttext[i] * ftW;
+                    if (subVectors.glove) val += subVectors.glove[i] * gloveW;
+                    avgVal5[i] = val / sumW;
+                }
+            }
+            
+            subVectorsTableHtml = `
+                <!-- Sub vectors breakdown table -->
+                <span class="text-secondary fw-semibold d-block mb-1"><i class="fas fa-sitemap me-1 text-info"></i>Kontribusi Vektor Kueri Dasar (Sampel 5 Dimensi Pertama):</span>
+                <div class="table-responsive mb-3">
+                    <table class="table table-sm table-bordered bg-white align-middle text-dark" style="font-size: 0.72rem; margin-bottom: 0;">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Model & Bobot Kontribusi</th>
+                                <th class="font-monospace">Sampel Vektor [d1, d2, d3, d4, d5]</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    Vektor Word2Vec (Bobot: <code>${w2vW.toFixed(1)}</code>)
+                                    ${subVectors.word2vec ? `
+                                        <button type="button" class="btn btn-link btn-sm p-0 ms-1 btn-show-sub-vector" data-model="word2vec" title="Lihat Vektor Lengkap">
+                                            <i class="fas fa-expand-alt text-secondary" style="font-size: 0.65rem;"></i>
+                                        </button>
+                                    ` : ''}
+                                </td>
+                                <td class="font-monospace text-muted">${w2vVal}</td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    Vektor FastText (Bobot: <code>${ftW.toFixed(1)}</code>)
+                                    ${subVectors.fasttext ? `
+                                        <button type="button" class="btn btn-link btn-sm p-0 ms-1 btn-show-sub-vector" data-model="fasttext" title="Lihat Vektor Lengkap">
+                                            <i class="fas fa-expand-alt text-secondary" style="font-size: 0.65rem;"></i>
+                                        </button>
+                                    ` : ''}
+                                </td>
+                                <td class="font-monospace text-muted">${ftVal}</td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    Vektor GloVe (Bobot: <code>${gloveW.toFixed(1)}</code>)
+                                    ${subVectors.glove ? `
+                                        <button type="button" class="btn btn-link btn-sm p-0 ms-1 btn-show-sub-vector" data-model="glove" title="Lihat Vektor Lengkap">
+                                            <i class="fas fa-expand-alt text-secondary" style="font-size: 0.65rem;"></i>
+                                        </button>
+                                    ` : ''}
+                                </td>
+                                <td class="font-monospace text-muted">${gloveVal}</td>
+                            </tr>
+                            <tr class="table-info" style="--bs-table-bg: rgba(13, 202, 240, 0.08);">
+                                <td><strong>Rerata Terbobot (Weighted Mean)</strong></td>
+                                <td class="font-monospace text-dark fw-semibold">[ ${avgVal5.map(v => v.toFixed(4)).join(', ')} ]</td>
+                            </tr>
+                            <tr class="table-success" style="--bs-table-bg: rgba(25, 135, 84, 0.08);">
+                                <td><strong>Hasil Akhir (L2 Normalized)</strong></td>
+                                <td class="font-monospace text-success fw-bold">${finalVal}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
         return `
             <div class="h-100 d-flex flex-column text-dark">
                 <h5 class="text-info border-bottom pb-2 mb-3"><i class="fas fa-project-diagram me-2"></i>Langkah 3: Penggabungan Vektor Kueri</h5>
@@ -708,6 +1001,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     <div class="math-formula text-info mb-3">
                         V_avg = (w1*V_w2v + w2*V_ft + w3*V_glove) / (w1 + w2 + w3)
                     </div>
+
+                    ${subVectorsTableHtml}
 
                     <div class="row text-center mb-2">
                         <div class="col-6">
@@ -724,8 +1019,21 @@ document.addEventListener("DOMContentLoaded", () => {
                         </div>
                     </div>
                     
-                    <div style="height: 190px; position: relative;">
+                    <div style="height: 190px; position: relative;" class="mb-2">
                         <canvas id="vectorSpaceChart"></canvas>
+                    </div>
+                    
+                    <!-- Vector Preview -->
+                    <div class="mb-2 p-2 bg-light rounded border border-secondary-subtle" style="font-size: 0.75rem;">
+                        <span class="fw-bold text-dark"><i class="fas fa-project-diagram me-1 text-info"></i>Vektor Kueri (${vector.dimensions} dimensi):</span>
+                        <div class="mt-1 font-monospace text-muted text-truncate" style="background: #ffffff; padding: 4px 8px; border-radius: 4px; border: 1px solid #e2e8f0; font-size: 0.72rem;" id="vector-values-preview">
+                            [${vector.values.slice(0, 10).map(v => v.toFixed(6)).join(", ")}${vector.values.length > 10 ? ', ...' : ''}]
+                        </div>
+                        <div class="text-end mt-1">
+                            <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" id="btn-show-full-vector" style="font-size: 0.7rem;">
+                                <i class="fas fa-external-link-alt me-1"></i>Lihat Seluruh Dimensi
+                            </button>
+                        </div>
                     </div>
 
                     <div class="alert alert-info border-info-subtle bg-info-subtle text-info-emphasis py-2 px-3 small mt-2 mb-0">
@@ -794,9 +1102,14 @@ document.addEventListener("DOMContentLoaded", () => {
                         <div class="card h-100 border-info-subtle shadow-sm" style="background: #ecfeff;">
                             <div class="card-header bg-info text-white p-1 text-center fw-bold" style="font-size: 0.7rem;">Ensemble Gabungan</div>
                             <div class="list-group list-group-flush">
-                                ${ensembleSorted.map(r => `
-                                    <div class="list-group-item p-1 d-flex justify-content-between align-items-center bg-transparent fw-bold">
-                                        <strong class="text-info">${r.surah_number}:${r.ayat_number}</strong>
+                                ${ensembleSorted.map((r, idx) => `
+                                    <div class="list-group-item p-1 d-flex justify-content-between align-items-center bg-transparent fw-bold" style="font-size: 0.7rem;">
+                                        <span>
+                                            <strong class="text-info">${r.surah_number}:${r.ayat_number}</strong>
+                                            <button type="button" class="btn btn-link btn-sm p-0 ms-1 btn-show-verse-vector" data-index="${idx}" data-table="ensemble" title="Lihat Vektor">
+                                                <i class="fas fa-expand-alt text-secondary" style="font-size: 0.65rem;"></i>
+                                            </button>
+                                        </span>
                                         <span class="badge bg-warning text-dark font-monospace">${r.similarity.toFixed(3)}</span>
                                     </div>
                                 `).join("")}
@@ -854,17 +1167,27 @@ document.addEventListener("DOMContentLoaded", () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                ${passed.slice(0, 5).map(r => `
+                                ${passed.slice(0, 5).map((r, idx) => `
                                     <tr class="table-success" style="--bs-table-bg: rgba(16, 185, 129, 0.08);">
-                                        <td><strong>${r.surah_number}:${r.ayat_number}</strong></td>
+                                        <td>
+                                            <strong>${r.surah_number}:${r.ayat_number}</strong>
+                                            <button type="button" class="btn btn-link btn-sm p-0 ms-1 btn-show-verse-vector" data-index="${idx}" data-table="passed" title="Lihat Vektor">
+                                                <i class="fas fa-expand-alt text-secondary" style="font-size: 0.65rem;"></i>
+                                            </button>
+                                        </td>
                                         <td class="font-monospace">${r.similarity.toFixed(4)}</td>
                                         <td class="text-center">${r.model_count}</td>
                                         <td><span class="text-success fw-bold">🟢 Lolos</span></td>
                                     </tr>
                                 `).join("")}
-                                ${failedVoting.slice(0, 5).map(r => `
+                                ${failedVoting.slice(0, 5).map((r, idx) => `
                                     <tr class="table-warning" style="--bs-table-bg: rgba(255, 193, 7, 0.08);">
-                                        <td><strong>${r.surah_number}:${r.ayat_number}</strong></td>
+                                        <td>
+                                            <strong>${r.surah_number}:${r.ayat_number}</strong>
+                                            <button type="button" class="btn btn-link btn-sm p-0 ms-1 btn-show-verse-vector" data-index="${idx}" data-table="failed" title="Lihat Vektor">
+                                                <i class="fas fa-expand-alt text-secondary" style="font-size: 0.65rem;"></i>
+                                            </button>
+                                        </td>
                                         <td class="font-monospace">${r.similarity.toFixed(4)}</td>
                                         <td class="text-center">${r.model_count}</td>
                                         <td><span class="text-warning fw-bold">❌ Saring Out (Model < 2)</span></td>
