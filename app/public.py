@@ -114,6 +114,14 @@ def playground_ensemble():
     """
     return render_template('playground_ensemble.html')
 
+@public_bp.route('/playground/vector-explorer')
+def playground_vector_explorer():
+    """
+    Halaman Data Playground untuk visualisasi vektor ayat dan komparasi kosinus kata
+    """
+    return render_template('playground_vector_explorer.html')
+
+
 @public_bp.route('/search')
 def search_main():
     """

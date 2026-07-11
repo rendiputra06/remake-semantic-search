@@ -21,6 +21,7 @@ from .routes.evaluation_v2 import evaluation_v2_bp
 from .routes.evaluation_v3 import evaluation_v3_bp
 from .routes.evaluation_v4 import evaluation_v4_bp
 from .routes.playground import playground_api_bp
+from .routes.vector_explorer import vector_explorer_bp
 # from .routes.asr_quran import asr_quran_bp
 
 
@@ -50,6 +51,7 @@ def init_app(app):
     app.register_blueprint(evaluation_v3_bp, url_prefix='/api/evaluation_v3')
     app.register_blueprint(evaluation_v4_bp, url_prefix='/api/evaluation_v4')
     app.register_blueprint(playground_api_bp, url_prefix='/api/playground')
+    app.register_blueprint(vector_explorer_bp, url_prefix='/api/vector-explorer')
     # app.register_blueprint(asr_quran_bp, url_prefix='/api/asr_quran')
 
     # Register error handlers

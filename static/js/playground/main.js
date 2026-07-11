@@ -192,7 +192,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     flowNodes.forEach(node => {
         node.addEventListener("click", () => {
-            const step = parseInt(node.dataset.step);
+            const step = parseInt(node.getAttribute("data-step"));
             changeStep(step);
         });
     });
@@ -314,7 +314,7 @@ document.addEventListener("DOMContentLoaded", () => {
         
         // Update nodes UI classes
         flowNodes.forEach(node => {
-            const nodeStep = parseInt(node.dataset.step);
+            const nodeStep = parseInt(node.getAttribute("data-step"));
             if (nodeStep === stepIndex) {
                 node.classList.add("active");
             } else {
@@ -324,7 +324,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Update arrows UI classes
         flowArrows.forEach(arrow => {
-            const arrowIndex = parseInt(arrow.dataset.arrow);
+            const arrowIndex = parseInt(arrow.getAttribute("data-arrow"));
             if (arrowIndex < stepIndex) {
                 arrow.classList.add("active");
                 arrow.setAttribute("marker-end", "url(#arrow-active)");
@@ -340,7 +340,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Highlight active flow indicators
     function highlightFlowchart(active) {
         flowNodes.forEach(node => {
-            const step = parseInt(node.dataset.step);
+            const step = parseInt(node.getAttribute("data-step"));
             if (active && step <= state.activeStep) {
                 node.classList.add("active");
             } else if (!active && step > 1) {

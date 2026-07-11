@@ -1,0 +1,474 @@
+{% extends "layout.html" %}
+{% block title %}Vector Explorer - Visualisasi & Pencocokan Vektor Al-Quran{% endblock %}
+
+{% block content %}
+<style>
+    /* Academic bright research theme */
+    .playground-wrapper {
+        background: #f8f9fa;
+        color: #212529;
+        border-radius: 12px;
+        padding: 24px;
+        border: 1px solid #dee2e6;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        margin-top: 15px;
+    }
+    
+    .research-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+        padding: 20px;
+        transition: all 0.3s ease;
+    }
+    
+    .visual-step-card {
+        border-left: 3px solid #cbd5e1;
+        background: #fdfdfd;
+        padding: 12px 16px;
+        border-radius: 0 6px 6px 0;
+        margin-bottom: 15px;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+    }
+    
+    .visual-step-card.active {
+        border-left-color: #3b82f6;
+        background: #f0fdf4;
+    }
+
+    .similarity-bar-container {
+        width: 100%;
+        background-color: #e2e8f0;
+        border-radius: 9999px;
+        height: 8px;
+        overflow: hidden;
+    }
+
+    .similarity-bar-fill {
+        height: 100%;
+        border-radius: 9999px;
+        transition: width 0.4s ease;
+    }
+
+    /* ── Vector Full View Modal (Matching indexing.html style) ── */
+    .vector-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+        gap: 4px;
+        max-height: 55vh;
+        overflow-y: auto;
+        padding: 4px;
+    }
+    .vector-cell {
+        background: #0f172a;
+        color: #4ade80;
+        font-family: 'Fira Code', Consolas, monospace;
+        font-size: 0.65rem;
+        border-radius: 4px;
+        padding: 4px 6px;
+        text-align: center;
+        border: 1px solid #1e293b;
+        transition: background 0.15s;
+    }
+    .vector-cell:hover {
+        background: #1e3a5f;
+        color: #38bdf8;
+    }
+    .vector-cell .dim-label {
+        display: block;
+        color: #475569;
+        font-size: 0.55rem;
+        margin-bottom: 1px;
+    }
+    .vector-cell .dim-val {
+        display: block;
+        font-weight: 600;
+    }
+</style>
+
+<div class="container py-3">
+    <div class="playground-wrapper">
+        <!-- Title & Navigation -->
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+            <div>
+                <h2 class="mb-1 text-primary"><i class="fas fa-map-marked-alt me-2"></i>Vector Explorer</h2>
+                <p class="text-muted mb-0">Jelajahi representasi vektor 200-dimensi seluruh ayat Al-Quran dan hitung kecocokan kata secara interaktif.</p>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="/playground" class="btn btn-outline-primary btn-sm"><i class="fas fa-cubes me-1"></i>Playground Single</a>
+                <a href="/playground/ensemble" class="btn btn-outline-info btn-sm"><i class="fas fa-layer-group me-1"></i>Playground Ensemble</a>
+            </div>
+        </div>
+
+        <div class="row g-3">
+            <!-- Sidebar Controls -->
+            <div class="col-lg-4">
+                <div class="research-card mb-3">
+                    <h6 class="text-secondary border-bottom pb-2 mb-3"><i class="fas fa-cogs me-2"></i>Konfigurasi Explorer</h6>
+                    
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-dark" for="model-type">Model Embedding</label>
+                        <select class="form-select border-secondary-subtle" id="model-type">
+                            <option value="word2vec" selected>Word2Vec</option>
+                            <option value="fasttext">FastText</option>
+                            <option value="glove">GloVe</option>
+                            <option value="ensemble">Ensemble</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-dark" for="match-word">Cari & Cocokkan Kata</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="match-word" placeholder="Ketik kata (misal: iman, surga, shalat)...">
+                            <button class="btn btn-primary" type="button" id="btn-match"><i class="fas fa-search-plus"></i></button>
+                        </div>
+                        <span class="form-text text-muted" style="font-size: 0.73rem;">
+                            *Ketik satu kata untuk mengurutkan seluruh 6.236 ayat berdasarkan skor kemiripan tertinggi.
+                        </span>
+                    </div>
+
+                    <div class="mb-2">
+                        <button type="button" class="btn btn-outline-danger btn-sm w-100" id="btn-clear-match">
+                            <i class="fas fa-times me-1"></i> Bersihkan Pencocokan
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Word Vector Numeric Card -->
+                <div class="research-card d-none" id="word-vector-card">
+                    <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+                        <h6 class="text-primary mb-0"><i class="fas fa-project-diagram me-2"></i>Vektor Kata: <span class="fw-bold text-dark" id="display-matched-word"></span></h6>
+                        <button type="button" class="btn btn-outline-secondary btn-sm px-2 py-0" id="btn-show-full-word-vector" style="font-size: 0.65rem;">
+                            <i class="fas fa-expand-alt me-1"></i>200D
+                        </button>
+                    </div>
+                    
+                    <div class="row g-2 mb-2 text-center" style="font-size: 0.75rem;">
+                        <div class="col-6">
+                            <div class="p-1 bg-light rounded border">
+                                <span class="text-muted small">Dimensi</span>
+                                <h6 class="mb-0 fw-bold" id="word-vector-dim">200d</h6>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-1 bg-light rounded border">
+                                <span class="text-muted">Magnitude</span>
+                                <h6 class="mb-0 fw-bold text-success" id="word-vector-mag">1.0000</h6>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="my-2">
+                        <span class="small fw-bold text-dark">Sampel Vektor Kata (10 Dimensi Pertama):</span>
+                        <div class="bg-dark text-warning p-2 rounded font-monospace text-wrap my-1" id="word-vector-preview-box" style="font-size: 0.72rem; word-break: break-all;">
+                            <!-- [values] -->
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mt-2">
+                            <small class="text-muted" style="font-size: 0.68rem;">*Vektor sudah dinormalisasi L2</small>
+                            <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" id="btn-download-word-json" style="font-size: 0.7rem;">
+                                <i class="fas fa-download me-1"></i>Unduh JSON
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Panel: Verses List -->
+            <div class="col-lg-8">
+                <div class="research-card">
+                    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                        <h6 class="text-secondary mb-0"><i class="fas fa-list-ol me-2"></i>Data Vektor Database Ayat</h6>
+                        <div style="max-width: 250px;">
+                            <input type="text" class="form-control form-control-sm" id="search-filter" placeholder="Saring surah/teks ayat...">
+                        </div>
+                    </div>
+
+                    <!-- Loader -->
+                    <div id="explorer-loader" class="d-none py-5 text-center">
+                        <div class="spinner-border text-primary mb-3" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <h6 class="text-secondary">Memuat Vektor Ayat...</h6>
+                        <p class="small text-muted mb-0" id="loader-details">Harap tunggu, model sedang dimuat.</p>
+                    </div>
+
+                    <!-- Results Content -->
+                    <div id="explorer-content">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle" style="font-size: 0.82rem;">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 10%;">Ayat</th>
+                                        <th style="width: 15%;">Surah</th>
+                                        <th style="width: 35%;">Isi Ayat / Terjemahan</th>
+                                        <th style="width: 28%;">Preview Vektor (10 Dimensi Pertama)</th>
+                                        <th style="width: 12%;" class="text-end">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="verses-tbody">
+                                    <!-- Dynamic rows loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
+                            <small class="text-muted" id="pagination-info">Menampilkan 1-20 dari 6.236 ayat</small>
+                            <nav aria-label="Page navigation">
+                                <ul class="pagination pagination-sm mb-0" id="pagination-controls">
+                                    <!-- Page buttons -->
+                                </ul>
+                            </nav>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Bandingkan Proses & Vektor Kata -->
+<div class="modal fade" id="compareModal" tabindex="-1" aria-labelledby="compareModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white py-2">
+                <h5 class="modal-title" id="compareModalLabel"><i class="fas fa-balance-scale me-2"></i>Pelacakan Parameter Vektor & Preprocessing</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4" style="background: #f8fafc;">
+                
+                <!-- Verse Information Header -->
+                <div class="card mb-3 border-secondary-subtle shadow-sm">
+                    <div class="card-body py-2 px-3">
+                        <h6 class="mb-1 text-primary fw-bold" id="modal-verse-title">Al-Baqarah [2:255]</h6>
+                        <p class="arabic-text text-end fs-5 mb-1" id="modal-verse-arabic" style="font-family: 'Scheherazade New', serif;"></p>
+                        <p class="small text-muted mb-0" id="modal-verse-translation"></p>
+                    </div>
+                </div>
+
+                <!-- Metrics Overview -->
+                <div class="row g-2 mb-3 text-center">
+                    <div class="col-md-4">
+                        <div class="p-2 bg-white rounded border border-secondary-subtle">
+                            <span class="text-muted small">Kata yang Dicocokkan</span>
+                            <h6 class="mb-0 fw-bold text-dark" id="modal-match-word">-</h6>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-2 bg-white rounded border border-secondary-subtle">
+                            <span class="text-muted small">Model Embedding</span>
+                            <h6 class="mb-0 fw-bold text-info text-uppercase" id="modal-model-type">Word2Vec</h6>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-2 bg-white rounded border border-primary">
+                            <span class="text-primary-emphasis small fw-bold">Cosine Similarity Score</span>
+                            <h5 class="mb-0 fw-bold text-primary" id="modal-similarity-score">-</h5>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Simulation Info Pipeline (Exactly like indexing.html stage views) -->
+                <div class="d-flex flex-column gap-3">
+                    
+                    <!-- Preprocessing Pipeline Stage -->
+                    <div class="visual-step-card active">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-bold text-dark small"><i class="fas fa-magic me-1 text-primary"></i>Tahap 1: Pra-pemrosesan Teks (Preprocessing)</span>
+                            <span class="badge bg-info">Python Preprocessor</span>
+                        </div>
+                        <div class="d-flex flex-column gap-2 small">
+                            <div>
+                                <span class="text-secondary fw-semibold">Lowercase:</span>
+                                <div class="bg-white p-1 border rounded font-monospace text-muted mt-1 px-2" id="modal-prep-lowercase"></div>
+                            </div>
+                            <div>
+                                <span class="text-secondary fw-semibold">Hapus Tanda Baca:</span>
+                                <div class="bg-white p-1 border rounded font-monospace text-muted mt-1 px-2" id="modal-prep-punct"></div>
+                            </div>
+                            <div>
+                                <span class="text-secondary fw-semibold text-danger">Penyaringan Stopword (Token Bersih yang Diolah Vektornya):</span>
+                                <div class="mt-1" id="modal-prep-tokens">
+                                    <!-- Badges of filtered tokens -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Embedding Pooling breakdown (Word Vector Table) -->
+                    <div class="visual-step-card active">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-bold text-dark small"><i class="fas fa-calculator me-1 text-primary"></i>Tahap 2: Ekstraksi Vektor Kata (Embedding Pooling Breakdown)</span>
+                            <span class="badge bg-success">Vector Space</span>
+                        </div>
+                        <div class="small mt-2">
+                            <div class="row g-2 mb-3">
+                                <div class="col-6">
+                                    <div class="bg-white border rounded p-2 text-center border-secondary-subtle">
+                                        <span class="text-muted d-block small" style="font-size:0.7rem;">Dimensi Vektor ($D$)</span>
+                                        <span class="fw-bold text-dark" id="modal-dim-label">200D</span>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="bg-white border rounded p-2 text-center border-secondary-subtle">
+                                        <span class="text-muted d-block small" style="font-size:0.7rem;">L2 Magnitudo (||v||)</span>
+                                        <span class="fw-bold text-dark" id="modal-mag-label">1.0000</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <span class="text-secondary fw-semibold d-block mb-1"><i class="fas fa-sitemap me-1 text-primary"></i>Rincian Vektor Masing-Masing Kata (Sampel 5 Dimensi Pertama):</span>
+                            <div class="table-responsive mb-2">
+                                <table class="table table-sm table-bordered bg-white align-middle text-dark" style="font-size: 0.72rem; margin-bottom: 0;">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Variabel Kata / Proses Pooling</th>
+                                            <th class="font-monospace">Sampel Vektor [d1, d2, d3, d4, d5]</th>
+                                            <th style="width: 10%;" class="text-center">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="modal-pooling-tbody">
+                                        <!-- Row for each word in the verse, plus Mean, plus final L2 -->
+                                    </tbody>
+                                </table>
+                                <div class="form-text text-muted mt-1" style="font-size: 0.65rem;">
+                                    *Vektor dari masing-masing kata diperoleh dari model embedding. Kata OOV (Out of Vocabulary) akan bernilai nol atau diabaikan. Mean Pooling menjumlahkan lalu membagi dengan jumlah kata valid. L2 Normalization membagi vektor dengan magnitudonya agar panjangnya bernilai 1.0.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Cosine Similarity Matching -->
+                    <div class="visual-step-card active d-none" id="modal-step-similarity-card">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="fw-bold text-dark small"><i class="fas fa-search me-1" style="color: #8b5cf6;"></i>Tahap 3: Uji Coba Pencarian Semantik (Cosine Retrieval Test)</span>
+                            <span class="badge" style="background-color: #8b5cf6;">Cosine Similarity</span>
+                        </div>
+                        <div class="small mt-2">
+                            <div class="row g-2 mb-2">
+                                <div class="col-md-6">
+                                    <div class="bg-white border rounded p-2" style="border-left:3px solid #8b5cf6 !important;">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <span class="fw-semibold text-dark" style="font-size:0.72rem;"><i class="fas fa-keyboard me-1" style="color:#8b5cf6;"></i>Vektor Kata Kueri: <code class="text-primary" id="modal-query-word-text">"iman"</code></span>
+                                            <button class="btn btn-outline-secondary py-0 btn-show-word-details-vector" style="font-size:0.6rem;padding:0px 4px;">200D</button>
+                                        </div>
+                                        <div class="bg-dark rounded px-2 py-1 font-monospace text-warning text-truncate" id="modal-query-vec-preview" style="font-size:0.7rem;"></div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="bg-white border rounded p-2" style="border-left:3px solid #3b82f6 !important;">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <span class="fw-semibold text-dark" style="font-size:0.72rem;"><i class="fas fa-file-alt me-1 text-primary"></i>Vektor Akhir Ayat: <code class="text-muted" id="modal-doc-ref-text">2:255</code></span>
+                                            <button class="btn btn-outline-secondary py-0 btn-show-verse-details-vector" style="font-size:0.6rem;padding:0px 4px;">200D</button>
+                                        </div>
+                                        <div class="bg-dark rounded px-2 py-1 font-monospace text-warning text-truncate" id="modal-doc-vec-preview" style="font-size:0.7rem;"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Dot Product Bar Chart -->
+                            <div class="bg-white border rounded p-2 mt-1">
+                                <span class="text-secondary fw-semibold d-block mb-1">Visualisasi Kontribusi Dot Product Per Dimensi (10 dimensi pertama):</span>
+                                <div class="d-flex align-items-end p-1 border-bottom" id="modal-dot-product-bar-cells" style="height:55px;">
+                                    <!-- bars elements -->
+                                </div>
+                                <div class="d-flex justify-content-between mt-1 text-muted" style="font-size: 0.65rem;">
+                                    <span>Hijau = Positif (Mendukung Kemiripan)</span>
+                                    <span>Merah = Negatif (Menghambat Kemiripan)</span>
+                                </div>
+                                <div class="font-monospace text-muted mt-2 border-top pt-1" style="font-size:0.72rem;">
+                                    cos(q,d) = (q &middot; d) / (||q|| &times; ||d||) = &sum; (q_i &times; d_i) = <strong class="text-success fs-6" id="modal-similarity-score-val">0.0000</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+            <div class="modal-footer py-2 bg-light d-flex justify-content-between">
+                <button type="button" class="btn btn-outline-success btn-sm" id="btn-download-compare-json">
+                    <i class="fas fa-download me-1"></i>Unduh Log JSON Perbandingan
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Modal: Full Vector Viewer (Exactly like indexing.html modal) ── -->
+<div class="modal fade" id="vectorModal" tabindex="-1" aria-labelledby="vectorModalLabel" aria-hidden="true" style="z-index: 1060;">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-dark text-white py-2">
+                <div>
+                    <h6 class="modal-title mb-0" id="vectorModalLabel"><i class="fas fa-vector-square me-2"></i>Vektor Lengkap 200 Dimensi</h6>
+                    <small class="text-secondary" id="vectorModalSubtitle"></small>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <button id="modal-copy-btn" class="btn btn-sm btn-outline-light py-1" onclick="copyFullVectorJSON()">
+                        <i class="far fa-copy me-1"></i>Salin JSON
+                    </button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+            </div>
+            <div class="modal-body bg-dark p-3">
+                <!-- Stats row -->
+                <div class="row g-2 mb-3">
+                    <div class="col-4">
+                        <div class="bg-dark border border-secondary rounded p-2 text-center">
+                            <span class="text-secondary d-block" style="font-size:0.65rem">DIMENSI</span>
+                            <span class="text-white fw-bold" id="modal-dims-viewer">200D</span>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="bg-dark border border-secondary rounded p-2 text-center">
+                            <span class="text-secondary d-block" style="font-size:0.65rem">L2 MAGNITUDO</span>
+                            <span class="text-white fw-bold" id="modal-mag-viewer">1.000000</span>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="bg-dark border border-secondary rounded p-2 text-center">
+                            <span class="text-secondary d-block" style="font-size:0.65rem">MODEL</span>
+                            <span class="text-white fw-bold text-uppercase" id="modal-model-viewer">Word2Vec</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Grid items -->
+                <div class="vector-grid" id="vector-full-grid">
+                    <!-- 200 cells -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script type="module" src="{{ url_for('static', filename='js/playground/vector_explorer.js') }}"></script>
+<script>
+    window.copyFullVectorJSON = function() {
+        const btn = document.getElementById('modal-copy-btn');
+        const container = document.getElementById('vector-full-grid');
+        if (!container) return;
+        
+        // Retrieve values from state (done in JS module) or direct copying
+        const cells = container.querySelectorAll('.vector-cell');
+        const values = Array.from(cells).map(cell => {
+            const valSpan = cell.querySelector('.dim-val');
+            return parseFloat(valSpan.textContent);
+        });
+        
+        if (values.length === 0) return;
+        const payload = JSON.stringify(values, null, 2);
+        
+        navigator.clipboard.writeText(payload).then(() => {
+            const orig = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-check me-1 text-success"></i>Tersalin!';
+            btn.disabled = true;
+            setTimeout(() => { btn.innerHTML = orig; btn.disabled = false; }, 1800);
+        });
+    }
+</script>
+{% endblock %}
