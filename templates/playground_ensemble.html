@@ -110,6 +110,49 @@
         50% { transform: scale(1.2); opacity: 1; }
         100% { transform: scale(0.9); opacity: 0.6; }
     }
+
+    /* SVG Flowchart styling */
+    .flow-node-rect {
+        fill: #f8fafc;
+        stroke: #cbd5e1;
+        stroke-width: 1px;
+        transition: all 0.2s ease-in-out;
+        cursor: pointer;
+    }
+    
+    .flow-node-rect:hover {
+        fill: #f1f5f9;
+        stroke: #94a3b8;
+    }
+
+    .flow-node-rect.active {
+        fill: #ecfeff;
+        stroke: #0dcaf0;
+        stroke-width: 2px;
+    }
+
+    .flow-node-text {
+        fill: #334155;
+        font-family: inherit;
+        font-weight: 500;
+        pointer-events: none;
+    }
+
+    .flow-arrow-line {
+        fill: none;
+        stroke: #cbd5e1;
+        stroke-width: 1.5px;
+        transition: stroke 0.3s;
+    }
+
+    .flow-arrow-line.active {
+        stroke: #0dcaf0;
+    }
+
+    /* SVG Donut classes */
+    .donut-segment {
+        transition: stroke-dasharray 0.3s ease, stroke-dashoffset 0.3s ease;
+    }
 </style>
 
 <div class="container py-3">
@@ -123,34 +166,81 @@
         <!-- Simulation Controls Header -->
         <div class="research-card mb-4 border-info-subtle" style="background: #faf5ff;">
             <h6 class="text-info-emphasis border-bottom border-info-subtle pb-2 mb-3"><i class="fas fa-project-diagram me-2"></i>Konfigurasi Simulasi Ensemble</h6>
-            <form id="playground-form" class="row g-3 align-items-end">
+            <form id="playground-form" class="row g-3 align-items-center">
+                <!-- Left: Query & Strategy -->
                 <div class="col-md-4">
-                    <label class="form-label small fw-bold text-dark" for="active-query-display">Query Aktif</label>
-                    <div class="input-group">
-                        <button type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#queryModal">
-                            <i class="fas fa-search me-1"></i>Pilih Query
-                        </button>
-                        <input type="text" class="form-control bg-light" id="active-query-display" placeholder="Pilih kueri..." readonly>
+                    <div class="mb-2">
+                        <label class="form-label small fw-bold text-dark" for="active-query-display">Query Aktif</label>
+                        <div class="input-group input-group-sm">
+                            <button type="button" class="btn btn-outline-info text-nowrap" data-bs-toggle="modal" data-bs-target="#queryModal">
+                                <i class="fas fa-search me-1"></i>Pilih Query
+                            </button>
+                            <input type="text" class="form-control bg-light" id="active-query-display" placeholder="Pilih kueri..." readonly style="font-size: 0.8rem;">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="form-label small fw-bold text-dark" for="aggregation-method">Strategi Agregasi</label>
+                        <select class="form-select form-select-sm border-secondary-subtle" id="aggregation-method">
+                            <option value="score_fusion">Score Fusion (Weighted Average + Bonus Voting)</option>
+                            <option value="rank_fusion">Rank Fusion (Borda Rank Count)</option>
+                            <option value="concatenation">Vector Concatenation (Weighted Concatenation Cosine)</option>
+                        </select>
                     </div>
                 </div>
-                <div class="col-md-2">
-                    <label class="form-label small fw-bold text-dark" for="w2v-weight">W2V Weight</label>
-                    <input type="number" class="form-control border-secondary-subtle" id="w2v-weight" value="1.0" min="0.1" max="10.0" step="0.1" required>
+
+                <!-- Middle: Sliders -->
+                <div class="col-md-5 border-start border-end border-info-subtle px-3">
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label small fw-bold text-dark mb-0" for="w2v-weight">Bobot Word2Vec</label>
+                            <span id="w2v-weight-val" class="badge bg-secondary font-monospace">1.0</span>
+                        </div>
+                        <input type="range" class="form-range form-range-sm" id="w2v-weight" min="0" max="5.0" step="0.5" value="1.0">
+                    </div>
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label small fw-bold text-dark mb-0" for="ft-weight">Bobot FastText</label>
+                            <span id="ft-weight-val" class="badge bg-secondary font-monospace">1.0</span>
+                        </div>
+                        <input type="range" class="form-range form-range-sm" id="ft-weight" min="0" max="5.0" step="0.5" value="1.0">
+                    </div>
+                    <div>
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label small fw-bold text-dark mb-0" for="glove-weight">Bobot GloVe</label>
+                            <span id="glove-weight-val" class="badge bg-secondary font-monospace">1.0</span>
+                        </div>
+                        <input type="range" class="form-range form-range-sm" id="glove-weight" min="0" max="5.0" step="0.5" value="1.0">
+                    </div>
                 </div>
-                <div class="col-md-2">
-                    <label class="form-label small fw-bold text-dark" for="ft-weight">FT Weight</label>
-                    <input type="number" class="form-control border-secondary-subtle" id="ft-weight" value="1.0" min="0.1" max="10.0" step="0.1" required>
+
+                <!-- Right: Donut Chart -->
+                <div class="col-md-2 text-center d-flex flex-column align-items-center justify-content-center">
+                    <span class="small fw-bold text-dark mb-1">Rasio Distribusi</span>
+                    <svg id="weightDonutChart" width="70" height="70" viewBox="0 0 42 42" class="donut">
+                        <circle class="donut-hole" cx="21" cy="21" r="15.91549430918954" fill="#fff"></circle>
+                        <circle class="donut-ring" cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#cbd5e1" stroke-width="4"></circle>
+                        
+                        <!-- Word2Vec Segment -->
+                        <circle id="donut-segment-w2v" class="donut-segment" cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#3b82f6" stroke-width="4.5" stroke-dasharray="33.3 66.7" stroke-dashoffset="25"></circle>
+                        <!-- FastText Segment -->
+                        <circle id="donut-segment-ft" class="donut-segment" cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#10b981" stroke-width="4.5" stroke-dasharray="33.3 66.7" stroke-dashoffset="91.6"></circle>
+                        <!-- GloVe Segment -->
+                        <circle id="donut-segment-glove" class="donut-segment" cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#a855f7" stroke-width="4.5" stroke-dasharray="33.3 66.7" stroke-dashoffset="58.3"></circle>
+                    </svg>
+                    <div class="d-flex justify-content-center gap-2 mt-1" style="font-size: 0.62rem;">
+                        <span class="text-primary"><i class="fas fa-circle me-1"></i>W2V</span>
+                        <span class="text-success"><i class="fas fa-circle me-1"></i>FT</span>
+                        <span class="text-purple" style="color: #a855f7;"><i class="fas fa-circle me-1"></i>GL</span>
+                    </div>
                 </div>
-                <div class="col-md-2">
-                    <label class="form-label small fw-bold text-dark" for="glove-weight">GloVe Weight</label>
-                    <input type="number" class="form-control border-secondary-subtle" id="glove-weight" value="1.0" min="0.1" max="10.0" step="0.1" required>
-                </div>
-                <div class="col-md-2">
-                    <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-info text-white flex-grow-1" id="btn-simulate" disabled>
-                            <i class="fas fa-play"></i>
+
+                <!-- Run / Reset -->
+                <div class="col-md-1 text-center">
+                    <div class="d-flex flex-column gap-2">
+                        <button type="submit" class="btn btn-info text-white btn-sm" id="btn-simulate" disabled title="Jalankan Simulasi">
+                            <i class="fas fa-play"></i> Sim
                         </button>
-                        <button type="button" class="btn btn-outline-danger" id="btn-reset">
+                        <button type="button" class="btn btn-outline-danger btn-sm" id="btn-reset" title="Reset Sandbox">
                             <i class="fas fa-undo"></i>
                         </button>
                     </div>
@@ -171,30 +261,74 @@
                 </div>
             </div>
 
-            <!-- Flowchart Column -->
+            <!-- Flowchart Column (SVG) -->
             <div class="col-md-4">
-                <div class="research-card d-flex flex-column align-items-center gap-2" style="background: #fafafa; min-height: 440px; justify-content: center;">
-                    <h6 class="text-secondary border-bottom pb-2 mb-2 w-100 text-center"><i class="fas fa-route me-2"></i>Alur Eksekusi</h6>
-                    
-                    <div class="flow-node active" data-step="1">1. Parameter Input</div>
-                    <i class="fas fa-chevron-down flow-arrow" data-arrow="1"></i>
-                    
-                    <div class="flow-node" data-step="2">2. Pra-pemrosesan Teks</div>
-                    <i class="fas fa-chevron-down flow-arrow" data-arrow="2"></i>
-                    
-                    <div class="flow-node" data-step="3">3. Penggabungan Vektor Kueri</div>
-                    <i class="fas fa-chevron-down flow-arrow" data-arrow="3"></i>
-                    
-                    <div class="flow-node" data-step="4">4. Perbandingan Multi-Similarity</div>
-                    <i class="fas fa-chevron-down flow-arrow" data-arrow="4"></i>
-                    
-                    <div class="flow-node" data-step="5">5. Penyaringan & Voting Filter</div>
-                    <i class="fas fa-chevron-down flow-arrow" data-arrow="5"></i>
-                    
-                    <div class="flow-node" data-step="6">6. Validasi Ground Truth</div>
-                    <i class="fas fa-chevron-down flow-arrow" data-arrow="6"></i>
-                    
-                    <div class="flow-node" data-step="7">7. Evaluasi Metrik Akhir</div>
+                <div class="research-card d-flex flex-column align-items-center" style="background: #fafafa; min-height: 440px;">
+                    <h6 class="text-secondary border-bottom pb-2 mb-3 w-100 text-center"><i class="fas fa-route me-2"></i>Alur Eksekusi Ensemble</h6>
+                    <div class="w-100 d-flex justify-content-center align-items-center flex-grow-1">
+                        <svg id="ensembleFlowchart" width="100%" height="380" viewBox="0 0 280 380" style="max-width: 280px;">
+                            <defs>
+                                <marker id="arrow-inactive" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                    <path d="M 0 2 L 8 5 L 0 8 z" fill="#cbd5e1"></path>
+                                </marker>
+                                <marker id="arrow-active" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                    <path d="M 0 2 L 8 5 L 0 8 z" fill="#0dcaf0"></path>
+                                </marker>
+                            </defs>
+                            
+                            <!-- Branch 1: W2V -->
+                            <rect class="flow-node-rect active" data-step="1" x="10" y="10" width="70" height="28" rx="5" id="node-w2v"></rect>
+                            <text class="flow-node-text" x="45" y="27" text-anchor="middle" style="font-size: 7px; fill: #1d4ed8; font-weight: bold;">Word2Vec</text>
+                            
+                            <!-- Branch 2: FT -->
+                            <rect class="flow-node-rect active" data-step="1" x="105" y="10" width="70" height="28" rx="5" id="node-ft"></rect>
+                            <text class="flow-node-text" x="140" y="27" text-anchor="middle" style="font-size: 7px; fill: #10b981; font-weight: bold;">FastText</text>
+                            
+                            <!-- Branch 3: GloVe -->
+                            <rect class="flow-node-rect active" data-step="1" x="200" y="10" width="70" height="28" rx="5" id="node-glove"></rect>
+                            <text class="flow-node-text" x="235" y="27" text-anchor="middle" style="font-size: 7px; fill: #a855f7; font-weight: bold;">GloVe</text>
+                            
+                            <!-- Downward Flowing Arrows from individual inputs -->
+                            <line class="flow-arrow-line" id="arrow-w2v" data-arrow="1" x1="45" y1="38" x2="45" y2="70" marker-end="url(#arrow-inactive)"></line>
+                            <line class="flow-arrow-line" id="arrow-ft" data-arrow="1" x1="140" y1="38" x2="140" y2="70" marker-end="url(#arrow-inactive)"></line>
+                            <line class="flow-arrow-line" id="arrow-glove" data-arrow="1" x1="235" y1="38" x2="235" y2="70" marker-end="url(#arrow-inactive)"></line>
+                            
+                            <!-- Step 2: Pra-pemrosesan Teks -->
+                            <rect class="flow-node-rect" data-step="2" x="15" y="70" width="250" height="30" rx="5" id="node-step2"></rect>
+                            <text class="flow-node-text" x="140" y="88" text-anchor="middle" style="font-size: 8px;">2. Pra-pemrosesan Teks Kueri</text>
+                            
+                            <line class="flow-arrow-line" id="arrow-step2" data-arrow="2" x1="140" y1="100" x2="140" y2="130" marker-end="url(#arrow-inactive)"></line>
+                            
+                            <!-- Step 3: Penggabungan Vektor -->
+                            <rect class="flow-node-rect" data-step="3" x="15" y="130" width="250" height="30" rx="5" id="node-step3"></rect>
+                            <text class="flow-node-text" x="140" y="148" text-anchor="middle" style="font-size: 8px;">3. Penggabungan Vektor Kueri (Ensemble)</text>
+                            
+                            <line class="flow-arrow-line" id="arrow-step3" data-arrow="3" x1="140" y1="160" x2="140" y2="190" marker-end="url(#arrow-inactive)"></line>
+                            
+                            <!-- Step 4: Perbandingan Multi-Similarity -->
+                            <rect class="flow-node-rect" data-step="4" x="15" y="190" width="250" height="30" rx="5" id="node-step4"></rect>
+                            <text class="flow-node-text" x="140" y="208" text-anchor="middle" style="font-size: 8px;">4. Multi-Similarity & Perbandingan Skor</text>
+                            
+                            <line class="flow-arrow-line" id="arrow-step4" data-arrow="4" x1="140" y1="220" x2="140" y2="250" marker-end="url(#arrow-inactive)"></line>
+                            
+                            <!-- Step 5: Penyaringan & Voting -->
+                            <rect class="flow-node-rect" data-step="5" x="15" y="250" width="250" height="30" rx="5" id="node-step5"></rect>
+                            <text class="flow-node-text" x="140" y="268" text-anchor="middle" style="font-size: 8px;">5. Penyaringan Hasil & Voting Filter</text>
+                            
+                            <line class="flow-arrow-line" id="arrow-step5" data-arrow="5" x1="140" y1="280" x2="140" y2="310" marker-end="url(#arrow-inactive)"></line>
+                            
+                            <!-- Step 6: Validasi Ground Truth & Evaluasi Metrik -->
+                            <rect class="flow-node-rect" data-step="6" x="15" y="310" width="115" height="40" rx="5" id="node-step6"></rect>
+                            <text class="flow-node-text" x="72" y="328" text-anchor="middle" style="font-size: 7px;">6. Validasi Ground Truth</text>
+                            <text class="flow-node-text" x="72" y="338" text-anchor="middle" style="font-size: 6px; fill: #64748b;">(Relevancy Check)</text>
+
+                            <rect class="flow-node-rect" data-step="7" x="150" y="310" width="115" height="40" rx="5" id="node-step7"></rect>
+                            <text class="flow-node-text" x="207" y="328" text-anchor="middle" style="font-size: 7px;">7. Evaluasi Metrik Akhir</text>
+                            <text class="flow-node-text" x="207" y="338" text-anchor="middle" style="font-size: 6px; fill: #64748b;">(MAP, Precision, Recall)</text>
+
+                            <path d="M 130 330 L 150 330" stroke="#cbd5e1" stroke-width="1.5" fill="none" id="arrow-step6" data-arrow="6" marker-end="url(#arrow-inactive)"></path>
+                        </svg>
+                    </div>
                 </div>
             </div>
         </div>

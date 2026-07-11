@@ -30,13 +30,55 @@ document.addEventListener("DOMContentLoaded", () => {
     const simulateBtn = document.getElementById("btn-simulate");
     const resetBtn = document.getElementById("btn-reset");
     const detailPanel = document.getElementById("detail-panel");
-    const flowNodes = document.querySelectorAll(".flow-node");
-    const flowArrows = document.querySelectorAll(".flow-arrow");
+    const flowNodes = document.querySelectorAll(".flow-node-rect");
+    const flowArrows = document.querySelectorAll(".flow-arrow-line, #arrow-step6");
 
     // Ensemble Weights inputs
     const w2vWeightInput = document.getElementById("w2v-weight");
     const ftWeightInput = document.getElementById("ft-weight");
     const gloveWeightInput = document.getElementById("glove-weight");
+
+    // Dynamic Donut Chart update based on weights
+    function updateDonutChart() {
+        const w2v = parseFloat(w2vWeightInput.value) || 0;
+        const ft = parseFloat(ftWeightInput.value) || 0;
+        const glove = parseFloat(gloveWeightInput.value) || 0;
+        
+        document.getElementById('w2v-weight-val').textContent = w2v.toFixed(1);
+        document.getElementById('ft-weight-val').textContent = ft.toFixed(1);
+        document.getElementById('glove-weight-val').textContent = glove.toFixed(1);
+        
+        const total = w2v + ft + glove;
+        if (total === 0) {
+            document.getElementById('donut-segment-w2v').setAttribute('stroke-dasharray', '0 100');
+            document.getElementById('donut-segment-ft').setAttribute('stroke-dasharray', '0 100');
+            document.getElementById('donut-segment-glove').setAttribute('stroke-dasharray', '0 100');
+            return;
+        }
+        
+        const pW2v = (w2v / total) * 100;
+        const pFt = (ft / total) * 100;
+        const pGlove = (glove / total) * 100;
+        
+        const segW2v = document.getElementById('donut-segment-w2v');
+        segW2v.setAttribute('stroke-dasharray', `${pW2v} ${100 - pW2v}`);
+        segW2v.setAttribute('stroke-dashoffset', '25');
+        
+        const segFt = document.getElementById('donut-segment-ft');
+        segFt.setAttribute('stroke-dasharray', `${pFt} ${100 - pFt}`);
+        segFt.setAttribute('stroke-dashoffset', `${25 - pW2v}`);
+        
+        const segGlove = document.getElementById('donut-segment-glove');
+        segGlove.setAttribute('stroke-dasharray', `${pGlove} ${100 - pGlove}`);
+        segGlove.setAttribute('stroke-dashoffset', `${25 - pW2v - pFt}`);
+    }
+
+    [w2vWeightInput, ftWeightInput, gloveWeightInput].forEach(input => {
+        input.addEventListener("input", updateDonutChart);
+    });
+
+    // Initialize donut
+    updateDonutChart();
 
     // Load queries on startup
     loadQueries();
@@ -186,17 +228,24 @@ document.addEventListener("DOMContentLoaded", () => {
         thresholdInput.value = 0.50;
         thresholdVal.textContent = "0.50";
         querySearchInput.value = "";
+        document.getElementById('aggregation-method').value = 'score_fusion';
 
         // Reset model weights
         w2vWeightInput.value = 1.0;
         ftWeightInput.value = 1.0;
         gloveWeightInput.value = 1.0;
+        updateDonutChart();
 
         // Reset flowchart step active status
         highlightFlowchart(false);
         flowNodes.forEach(node => node.classList.remove("active"));
-        flowNodes[0].classList.add("active"); // Set to first step
-        flowArrows.forEach(arrow => arrow.classList.remove("active"));
+        if (flowNodes.length > 0) flowNodes[0].classList.add("active");
+        flowArrows.forEach(arrow => {
+            arrow.classList.remove("active");
+            if (arrow.tagName === 'line' || arrow.tagName === 'path') {
+                arrow.setAttribute('marker-end', 'url(#arrow-inactive)');
+            }
+        });
 
         // Disable simulation
         simulateBtn.disabled = true;
@@ -237,6 +286,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 body: JSON.stringify({
                     query_text: state.activeQueryText,
                     model_type: 'ensemble',
+                    aggregation_method: document.getElementById('aggregation-method').value,
                     token_weights: state.tokenWeights,
                     model_weights: {
                         word2vec: w2vW,
@@ -300,13 +350,19 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
 
-        // Update arrows UI classes
+        // Update arrows UI classes and SVG markers
         flowArrows.forEach(arrow => {
             const arrowIndex = parseInt(arrow.dataset.arrow);
             if (arrowIndex < stepIndex) {
                 arrow.classList.add("active");
+                if (arrow.tagName === 'line' || arrow.tagName === 'path') {
+                    arrow.setAttribute('marker-end', 'url(#arrow-active)');
+                }
             } else {
                 arrow.classList.remove("active");
+                if (arrow.tagName === 'line' || arrow.tagName === 'path') {
+                    arrow.setAttribute('marker-end', 'url(#arrow-inactive)');
+                }
             }
         });
 
@@ -316,10 +372,13 @@ document.addEventListener("DOMContentLoaded", () => {
     // Highlight active flow indicators
     function highlightFlowchart(active) {
         flowNodes.forEach(node => {
-            if (active && parseInt(node.dataset.step) <= state.activeStep) {
-                node.style.borderColor = "#0dcaf0";
+            const step = parseInt(node.dataset.step);
+            if (active && step <= state.activeStep) {
+                node.classList.add("active");
             } else {
-                node.style.borderColor = "";
+                if (step !== 1) {
+                    node.classList.remove("active");
+                }
             }
         });
     }
@@ -540,6 +599,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Render Sub-steps functions
     function renderStep1Input() {
+        const method = document.getElementById('aggregation-method').value.replace('_', ' ').toUpperCase();
         return `
             <div class="h-100 d-flex flex-column text-dark">
                 <h5 class="text-info border-bottom pb-2 mb-3"><i class="fas fa-sliders-h me-2"></i>Langkah 1: Parameter Masukan</h5>
@@ -553,10 +613,13 @@ document.addEventListener("DOMContentLoaded", () => {
                             <strong>Model Embedding:</strong> <span class="text-info">Ensemble Model (Word2Vec + FastText + GloVe)</span>
                         </li>
                         <li class="list-group-item px-0">
+                            <strong>Strategi Agregasi:</strong> <span class="badge bg-info">${method}</span>
+                        </li>
+                        <li class="list-group-item px-0">
                             <strong>Bobot Model:</strong>
-                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">W2V: ${w2vWeightInput.value}</span>
-                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">FT: ${ftWeightInput.value}</span>
-                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">GloVe: ${gloveWeightInput.value}</span>
+                            <span class="badge bg-primary">W2V: ${parseFloat(w2vWeightInput.value).toFixed(1)}</span>
+                            <span class="badge bg-success">FT: ${parseFloat(ftWeightInput.value).toFixed(1)}</span>
+                            <span class="badge bg-purple" style="background-color: #a855f7;">GloVe: ${parseFloat(gloveWeightInput.value).toFixed(1)}</span>
                         </li>
                         <li class="list-group-item px-0">
                             <strong>Threshold Kemiripan:</strong> <span class="badge bg-success">${state.threshold.toFixed(2)}</span>
@@ -673,48 +736,77 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function renderStep4Similarity(results) {
+        const w2vSorted = [...results].sort((a,b) => (b.individual_scores?.word2vec || 0) - (a.individual_scores?.word2vec || 0)).slice(0, 5);
+        const ftSorted = [...results].sort((a,b) => (b.individual_scores?.fasttext || 0) - (a.individual_scores?.fasttext || 0)).slice(0, 5);
+        const gloveSorted = [...results].sort((a,b) => (b.individual_scores?.glove || 0) - (a.individual_scores?.glove || 0)).slice(0, 5);
+        const ensembleSorted = results.slice(0, 5);
+
         return `
             <div class="h-100 d-flex flex-column text-dark">
-                <h5 class="text-info border-bottom pb-2 mb-3"><i class="fas fa-calculator me-2"></i>Langkah 4: Perbandingan Multi-Similarity</h5>
-                <div class="flex-grow-1 overflow-auto">
-                    <p class="small text-secondary mb-2">Simulasi ini menyandingkan skor kemiripan individual dari setiap model dasar dengan skor akhir gabungan:</p>
-                    
-                    <div class="table-responsive" style="max-height: 200px;">
-                        <table class="table table-striped table-hover align-middle mb-0" style="font-size: 0.76rem;">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Ref Ayat</th>
-                                    <th>W2V</th>
-                                    <th>FastText</th>
-                                    <th>GloVe</th>
-                                    <th>Model Setuju</th>
-                                    <th>Skor Ensemble</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${results.slice(0, 10).map(r => {
-                                    const w2v = r.individual_scores?.word2vec || 0.0;
-                                    const ft = r.individual_scores?.fasttext || 0.0;
-                                    const glove = r.individual_scores?.glove || 0.0;
-                                    const mCount = r.model_count || 0;
-                                    return `
-                                        <tr>
-                                            <td><strong>${r.surah_number}:${r.ayat_number}</strong></td>
-                                            <td class="font-monospace">${w2v.toFixed(3)}</td>
-                                            <td class="font-monospace">${ft.toFixed(3)}</td>
-                                            <td class="font-monospace">${glove.toFixed(3)}</td>
-                                            <td class="text-center"><span class="badge bg-secondary">${mCount}</span></td>
-                                            <td><span class="badge bg-warning text-dark font-monospace fw-bold">${r.similarity.toFixed(4)}</span></td>
-                                        </tr>
-                                    `;
-                                }).join("")}
-                            </tbody>
-                        </table>
+                <h5 class="text-info border-bottom pb-2 mb-2"><i class="fas fa-calculator me-2"></i>Langkah 4: Perbandingan Multi-Similarity</h5>
+                <p class="small text-secondary mb-2">Perbandingan hasil pencarian Top 5 antara model dasar individual dengan model Ensemble gabungan:</p>
+                
+                <div class="row g-2 flex-grow-1 overflow-auto" style="font-size: 0.72rem;">
+                    <!-- Word2Vec -->
+                    <div class="col-md-3">
+                        <div class="card h-100 border-primary-subtle" style="background: #eff6ff;">
+                            <div class="card-header bg-primary text-white p-1 text-center fw-bold" style="font-size: 0.7rem;">Word2Vec Only</div>
+                            <div class="list-group list-group-flush">
+                                ${w2vSorted.map(r => `
+                                    <div class="list-group-item p-1 d-flex justify-content-between align-items-center bg-transparent">
+                                        <strong>${r.surah_number}:${r.ayat_number}</strong>
+                                        <span class="badge bg-primary">${(r.individual_scores?.word2vec || 0).toFixed(3)}</span>
+                                    </div>
+                                `).join("")}
+                            </div>
+                        </div>
                     </div>
-                    <p class="small text-muted mt-1 mb-2">*Menampilkan top 10 hasil gabungan dengan model count terbanyak.</p>
-                    <div class="alert alert-info border-info-subtle bg-info-subtle text-info-emphasis py-2 px-3 small">
-                        <i class="fas fa-info-circle me-1"></i> <strong>Panduan Penelitian:</strong> Skor Ensemble dihitung dari rata-rata tertimbang skor model dasar, ditambah **voting bonus** jika ayat disepakati oleh $\\ge 2$ model dasar.
+                    <!-- FastText -->
+                    <div class="col-md-3">
+                        <div class="card h-100 border-success-subtle" style="background: #f0fdf4;">
+                            <div class="card-header bg-success text-white p-1 text-center fw-bold" style="font-size: 0.7rem;">FastText Only</div>
+                            <div class="list-group list-group-flush">
+                                ${ftSorted.map(r => `
+                                    <div class="list-group-item p-1 d-flex justify-content-between align-items-center bg-transparent">
+                                        <strong>${r.surah_number}:${r.ayat_number}</strong>
+                                        <span class="badge bg-success">${(r.individual_scores?.fasttext || 0).toFixed(3)}</span>
+                                    </div>
+                                `).join("")}
+                            </div>
+                        </div>
                     </div>
+                    <!-- GloVe -->
+                    <div class="col-md-3">
+                        <div class="card h-100 border-purple-subtle" style="background: #f5f3ff;">
+                            <div class="card-header text-white p-1 text-center fw-bold" style="background-color: #8b5cf6; font-size: 0.7rem;">GloVe Only</div>
+                            <div class="list-group list-group-flush">
+                                ${gloveSorted.map(r => `
+                                    <div class="list-group-item p-1 d-flex justify-content-between align-items-center bg-transparent">
+                                        <strong>${r.surah_number}:${r.ayat_number}</strong>
+                                        <span class="badge bg-purple" style="background-color: #8b5cf6;">${(r.individual_scores?.glove || 0).toFixed(3)}</span>
+                                    </div>
+                                `).join("")}
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Ensemble -->
+                    <div class="col-md-3">
+                        <div class="card h-100 border-info-subtle shadow-sm" style="background: #ecfeff;">
+                            <div class="card-header bg-info text-white p-1 text-center fw-bold" style="font-size: 0.7rem;">Ensemble Gabungan</div>
+                            <div class="list-group list-group-flush">
+                                ${ensembleSorted.map(r => `
+                                    <div class="list-group-item p-1 d-flex justify-content-between align-items-center bg-transparent fw-bold">
+                                        <strong class="text-info">${r.surah_number}:${r.ayat_number}</strong>
+                                        <span class="badge bg-warning text-dark font-monospace">${r.similarity.toFixed(3)}</span>
+                                    </div>
+                                `).join("")}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info border-info-subtle bg-info-subtle text-info-emphasis py-1 px-2 small mt-2 mb-0" style="font-size: 0.72rem;">
+                    <i class="fas fa-info-circle me-1"></i> <strong>Mengapa berbeda?</strong> Word2Vec & GloVe menggunakan level-word sehingga sensitif terhadap OOV, sedangkan FastText toleran OOV. Model Ensemble menggabungkan keunggulan ketiganya.
                 </div>
             </div>`;
     }
@@ -877,7 +969,8 @@ document.addEventListener("DOMContentLoaded", () => {
                         </div>
                         <div class="col-4">
                             <div class="p-3 bg-light rounded border border-warning">
-                                <h6 class="text-info mb-0 fw-bold text-center">${(f1 * 100).toFixed(1)}%</h6>
+                                <h6 class="text-muted small">F1-Score</h6>
+                                <h3 class="text-warning mb-0 fw-bold">${(f1 * 100).toFixed(1)}%</h3>
                             </div>
                         </div>
                     </div>

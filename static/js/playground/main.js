@@ -37,6 +37,39 @@ document.addEventListener("DOMContentLoaded", () => {
     // Load queries on startup
     loadQueries();
 
+    // Model select change handler to keep state consistent
+    modelSelect.addEventListener("change", () => {
+        if (state.simulationData) {
+            // Reset simulation data and return to step 1 to prevent inconsistent displays
+            state.simulationData = null;
+            state.activeStep = 1;
+            
+            // Highlight flow node paths
+            highlightFlowchart(false);
+            flowNodes.forEach(node => node.classList.remove("active"));
+            flowNodes[0].classList.add("active");
+            flowArrows.forEach(arrow => {
+                arrow.classList.remove("active");
+                arrow.setAttribute("marker-end", "url(#arrow-inactive)");
+            });
+            
+            renderActiveStep();
+            
+            Swal.fire({
+                icon: 'warning',
+                title: 'Model Berubah',
+                text: 'Model embedding telah diubah. Silakan jalankan simulasi kembali.',
+                timer: 2000,
+                showConfirmButton: false
+            });
+        } else if (state.activeStep > 4) {
+            state.activeStep = 1;
+            renderActiveStep();
+        } else {
+            renderActiveStep();
+        }
+    });
+
     // Fetch queries from DB
     async function loadQueries() {
         try {
@@ -190,7 +223,10 @@ document.addEventListener("DOMContentLoaded", () => {
         highlightFlowchart(false);
         flowNodes.forEach(node => node.classList.remove("active"));
         flowNodes[0].classList.add("active"); // Set to first step
-        flowArrows.forEach(arrow => arrow.classList.remove("active"));
+        flowArrows.forEach(arrow => {
+            arrow.classList.remove("active");
+            arrow.setAttribute("marker-end", "url(#arrow-inactive)");
+        });
 
         // Disable simulation
         simulateBtn.disabled = true;
@@ -240,13 +276,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 // Highlight flow node paths
                 highlightFlowchart(true);
                 
-                // Advance to Step 2 (Pra-pemrosesan Teks)
-                changeStep(2);
+                // Advance to Step 5 (Query)
+                changeStep(5);
                 
                 Swal.fire({
                     icon: 'success',
                     title: 'Simulasi Selesai',
-                    text: 'Jelajahi alur logika bisnis melalui menu Alur Eksekusi di kanan!',
+                    text: 'Jelajahi alur Searching Phase di kanan!',
                     timer: 1800,
                     showConfirmButton: false
                 });
@@ -263,12 +299,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Step switching logic with safety guard
     function changeStep(stepIndex) {
-        if (stepIndex > 1 && !state.simulationData) {
+        if (stepIndex > 4 && !state.simulationData) {
             Swal.fire({
                 icon: "info",
                 title: "Belum Ada Simulasi",
-                text: "Silakan tekan tombol 'Simulasikan' terlebih dahulu sebelum melihat langkah ini.",
-                timer: 2000,
+                text: "Silakan pilih kueri dan tekan tombol 'Simulasikan' terlebih dahulu sebelum melihat langkah fasa pencarian ini.",
+                timer: 2200,
                 showConfirmButton: false
             });
             return;
@@ -291,8 +327,10 @@ document.addEventListener("DOMContentLoaded", () => {
             const arrowIndex = parseInt(arrow.dataset.arrow);
             if (arrowIndex < stepIndex) {
                 arrow.classList.add("active");
+                arrow.setAttribute("marker-end", "url(#arrow-active)");
             } else {
                 arrow.classList.remove("active");
+                arrow.setAttribute("marker-end", "url(#arrow-inactive)");
             }
         });
 
@@ -302,10 +340,11 @@ document.addEventListener("DOMContentLoaded", () => {
     // Highlight active flow indicators
     function highlightFlowchart(active) {
         flowNodes.forEach(node => {
-            if (active && parseInt(node.dataset.step) <= state.activeStep) {
-                node.style.borderColor = "#3b82f6";
-            } else {
-                node.style.borderColor = "";
+            const step = parseInt(node.dataset.step);
+            if (active && step <= state.activeStep) {
+                node.classList.add("active");
+            } else if (!active && step > 1) {
+                node.classList.remove("active");
             }
         });
     }
@@ -314,7 +353,7 @@ document.addEventListener("DOMContentLoaded", () => {
     function parseGroundTruth(inputVal) {
         if (!inputVal) return [];
         return inputVal.split(",")
-            .map(v => v.trim())
+            .map(v => v.replace(/\s+/g, ''))
             .filter(v => v !== "" && /^\d+:\d+$/.test(v));
     }
 
@@ -391,6 +430,133 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             });
         });
+    }
+
+    function registerVectorViewListener(values) {
+        const btn = document.getElementById("btn-show-full-vector");
+        if (btn) {
+            btn.addEventListener("click", () => {
+                const formattedValues = values.map((v, i) => `
+                    <div class="vector-cell" title="Dimensi ${i+1}: ${v}">
+                        <span class="dim-label">d${i+1}</span>
+                        <span class="dim-val">${v.toFixed(5)}</span>
+                    </div>
+                `).join("");
+
+                Swal.fire({
+                    title: '<i class="fas fa-vector-square me-2 text-primary"></i>Representasi Vektor Kueri',
+                    html: `
+                        <p class="small text-muted text-start mb-2">Nilai numerik untuk seluruh <strong>${values.length} dimensi</strong> kueri (nilai dinormalisasi L2):</p>
+                        <div class="vector-grid bg-dark p-2 rounded text-start">
+                            ${formattedValues}
+                        </div>
+                    `,
+                    width: '650px',
+                    showDenyButton: true,
+                    showCancelButton: false,
+                    confirmButtonText: 'Tutup',
+                    denyButtonText: '<i class="fas fa-download me-1"></i> Download JSON',
+                    denyButtonColor: '#10b981'
+                }).then((result) => {
+                    if (result.isDenied) {
+                        downloadQueryVectorJSON(values);
+                    }
+                });
+            });
+        }
+    }
+
+    function downloadQueryVectorJSON(values) {
+        const payload = JSON.stringify({
+            query: state.activeQueryText,
+            model_type: modelSelect.value,
+            dimensions: values.length,
+            vector: values
+        }, null, 2);
+        
+        const blob = new Blob([payload], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        const safeQuery = state.activeQueryText.toLowerCase().replace(/[^\w\-]/g, '_');
+        a.download = `vector_query_${safeQuery}_${modelSelect.value}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    function registerVerseVectorListeners(results) {
+        document.querySelectorAll(".btn-show-verse-vector").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const index = parseInt(btn.dataset.index);
+                const isFilteredTable = btn.dataset.table === "filtered";
+                
+                let verse;
+                if (isFilteredTable) {
+                    const filtered = results.filter(r => r.similarity >= state.threshold);
+                    verse = filtered[index];
+                } else {
+                    verse = results[index];
+                }
+                
+                if (verse && verse.vector_values) {
+                    showVerseVectorModal(verse);
+                } else {
+                    Swal.fire("Info", "Data vektor tidak tersedia untuk ayat ini.", "info");
+                }
+            });
+        });
+    }
+
+    function showVerseVectorModal(verse) {
+        const values = verse.vector_values;
+        const formattedValues = values.map((v, i) => `
+            <div class="vector-cell" title="Dimensi ${i+1}: ${v}">
+                <span class="dim-label">d${i+1}</span>
+                <span class="dim-val">${v.toFixed(5)}</span>
+            </div>
+        `).join("");
+
+        Swal.fire({
+            title: `<i class="fas fa-vector-square me-2 text-success"></i>Vektor Ayat ${verse.surah_number}:${verse.ayat_number}`,
+            html: `
+                <p class="small text-muted text-start mb-2">Nilai numerik untuk seluruh <strong>${values.length} dimensi</strong> ayat (${verse.surah_name}):</p>
+                <div class="vector-grid bg-dark p-2 rounded text-start">
+                    ${formattedValues}
+                </div>
+            `,
+            width: '650px',
+            showDenyButton: true,
+            showCancelButton: false,
+            confirmButtonText: 'Tutup',
+            denyButtonText: '<i class="fas fa-download me-1"></i> Download JSON',
+            denyButtonColor: '#10b981'
+        }).then((result) => {
+            if (result.isDenied) {
+                downloadVerseVectorJSON(verse);
+            }
+        });
+    }
+
+    function downloadVerseVectorJSON(verse) {
+        const payload = JSON.stringify({
+            verse_ref: `${verse.surah_number}:${verse.ayat_number}`,
+            surah_name: verse.surah_name,
+            model_type: modelSelect.value,
+            dimensions: verse.vector_values.length,
+            vector: verse.vector_values
+        }, null, 2);
+        
+        const blob = new Blob([payload], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `vector_verse_${verse.surah_number}_${verse.ayat_number}_${modelSelect.value}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     }
 
     // Chart.js Scatter Plot rendering
@@ -477,13 +643,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Stepper Renderer Router
     function renderActiveStep() {
-        if (!state.simulationData && state.activeStep > 1) {
+        if (!state.simulationData && state.activeStep > 4) {
             state.activeStep = 1;
-        }
-
-        if (state.activeStep === 1) {
-            detailPanel.innerHTML = renderStep1Input();
-            return;
         }
 
         const data = state.simulationData;
@@ -492,23 +653,29 @@ document.addEventListener("DOMContentLoaded", () => {
         let html = "";
         
         switch(step) {
+            case 1:
+                html = renderStep1RawDoc();
+                break;
             case 2:
-                html = renderStep2Preprocess(data.preprocessing);
+                html = renderStep2PreprocessingCorpus();
                 break;
             case 3:
-                html = renderStep3Vector(data.vector);
+                html = renderStep3SemanticModel();
                 break;
             case 4:
-                html = renderStep4Similarity(data.results);
+                html = renderStep4IndexedDoc();
                 break;
             case 5:
-                html = renderStep5Filter(data.results);
+                html = renderStep5Query(data.preprocessing);
                 break;
             case 6:
-                html = renderStep6Validation(data.results);
+                html = renderStep6Similarity(data.vector, data.results);
                 break;
             case 7:
-                html = renderStep7Evaluation(data.results);
+                html = renderStep7Results(data.results);
+                break;
+            case 8:
+                html = renderStep8Performance(data.results);
                 break;
             default:
                 html = "<h5>Langkah tidak dikenali</h5>";
@@ -517,53 +684,202 @@ document.addEventListener("DOMContentLoaded", () => {
         detailPanel.innerHTML = html;
 
         // Post-render attachments
-        if (step === 2) {
+        if (step === 5) {
             registerTokenListeners();
-        } else if (step === 3) {
+        } else if (step === 6) {
             drawVectorChart();
+            registerVectorViewListener(data.vector.values);
+            registerVerseVectorListeners(data.results);
+        } else if (step === 7) {
+            registerVerseVectorListeners(data.results);
         }
     }
 
     // Render Sub-steps functions
-    function renderStep1Input() {
+    function renderStep1RawDoc() {
         return `
             <div class="h-100 d-flex flex-column text-dark">
-                <h5 class="text-primary border-bottom pb-2 mb-3"><i class="fas fa-sliders-h me-2"></i>Langkah 1: Parameter Masukan</h5>
-                <div class="flex-grow-1">
-                    <p class="small text-secondary">Parameter aktif saat ini yang digunakan dalam simulasi pencarian:</p>
-                    <ul class="list-group list-group-flush">
-                        <li class="list-group-item px-0">
-                            <strong>Query Teks:</strong> <span class="text-primary fw-bold">"${state.activeQueryText || 'Belum dipilih'}"</span>
-                        </li>
-                        <li class="list-group-item px-0">
-                            <strong>Model Embedding:</strong> <span class="text-primary">${modelSelect.options[modelSelect.selectedIndex].text}</span>
-                        </li>
-                        <li class="list-group-item px-0">
-                            <strong>Threshold Kemiripan:</strong> <span class="badge bg-success">${state.threshold.toFixed(2)}</span>
-                        </li>
-                        <li class="list-group-item px-0">
-                            <strong>Ground Truth Ayat (Relevan):</strong>
-                            <div class="mt-2">
-                                ${formatGroundTruthBadges(state.groundTruth, "primary")}
-                            </div>
-                        </li>
-                    </ul>
-                    <div class="alert alert-primary border-primary-subtle bg-primary-subtle text-primary-emphasis mt-3 py-2 px-3 small">
-                        <i class="fas fa-info-circle me-1"></i> <strong>Panduan Penelitian:</strong> Kueri aktif adalah teks pencarian yang akan dianalisis. Ground Truth adalah kumpulan ayat relevan yang telah diinput sebelumnya oleh pakar sebagai acuan kebenaran untuk menghitung metrik performa.
+                <h5 class="text-primary border-bottom pb-2 mb-3"><i class="fas fa-database me-2"></i>Langkah 1: Raw Document</h5>
+                <div class="flex-grow-1 overflow-auto">
+                    <p class="small text-secondary">Representasi dokumen mentah (corpus) Al-Quran yang digunakan dalam sistem:</p>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped align-middle mb-3" style="font-size: 0.85rem;">
+                            <thead class="table-light text-dark">
+                                <tr>
+                                    <th style="width: 40%;">Atribut</th>
+                                    <th>Nilai / Detail</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Nama Corpus</strong></td>
+                                    <td>Al-Quran Terjemahan Kemenag RI</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Total Surah</strong></td>
+                                    <td>114 Surah</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Total Ayat</strong></td>
+                                    <td>6.236 Ayat</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Bahasa</strong></td>
+                                    <td>Induk (Arab) & Terjemahan (Bahasa Indonesia)</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Penyimpanan Database</strong></td>
+                                    <td>SQLite (File: <code>semantic.db</code>)</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Tabel Dokumen</strong></td>
+                                    <td><code>quran_verses</code></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="alert alert-primary border-primary-subtle bg-primary-subtle text-primary-emphasis py-2 px-3 small">
+                        <i class="fas fa-info-circle me-1"></i> <strong>Fasa Pengindeksan (Indexing Phase):</strong> Langkah awal ini memuat database Quran mentah yang berisi data teks tekstual arab serta terjemahan bahasa Indonesianya sebelum diolah ke tahap pra-pemrosesan fasa pengindeksan.
                     </div>
                 </div>
             </div>`;
     }
 
-    function renderStep2Preprocess(preprocessing) {
+    function renderStep2PreprocessingCorpus() {
         return `
             <div class="h-100 d-flex flex-column text-dark">
-                <h5 class="text-primary border-bottom pb-2 mb-3"><i class="fas fa-magic me-2"></i>Langkah 2: Pra-pemrosesan Teks</h5>
+                <h5 class="text-primary border-bottom pb-2 mb-3"><i class="fas fa-magic me-2"></i>Langkah 2: Pre-processing (Corpus)</h5>
                 <div class="flex-grow-1 overflow-auto">
-                    <p class="small text-secondary">Kueri teks dibersihkan dan dipecah menjadi token kata:</p>
+                    <p class="small text-secondary">Pipeline pembersihan teks corpus sebelum pembuatan vektor kata:</p>
+                    
+                    <div class="list-group list-group-flush mb-3" style="font-size: 0.85rem;">
+                        <div class="list-group-item px-0 py-2">
+                            <span class="badge bg-primary me-2">1</span> <strong>Case Folding:</strong> Mengubah semua karakter huruf teks terjemahan menjadi huruf kecil (lowercase).
+                        </div>
+                        <div class="list-group-item px-0 py-2">
+                            <span class="badge bg-primary me-2">2</span> <strong>Punctuation Removal:</strong> Menghapus seluruh karakter tanda baca dan simbol non-alfanumerik.
+                        </div>
+                        <div class="list-group-item px-0 py-2">
+                            <span class="badge bg-primary me-2">3</span> <strong>Tokenization:</strong> Memotong kalimat menjadi token kata individual (pemisah spasi).
+                        </div>
+                        <div class="list-group-item px-0 py-2">
+                            <span class="badge bg-primary me-2">4</span> <strong>Stopword Filtering:</strong> Menyaring kata umum yang tidak memiliki bobot semantik menggunakan kamus stopword bahasa Indonesia (misal: "dan", "di", "yang", "itu").
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-primary border-primary-subtle bg-primary-subtle text-primary-emphasis py-2 px-3 small">
+                        <i class="fas fa-info-circle me-1"></i> <strong>Fasa Pengindeksan (Indexing Phase):</strong> Preprocessing diterapkan secara menyeluruh pada semua teks terjemahan 6.236 ayat Quran untuk memastikan hanya kata-kata yang bersih dan bermakna semantik saja yang akan dikonversi menjadi representasi vektor.
+                    </div>
+                </div>
+            </div>`;
+    }
+
+    function renderStep3SemanticModel() {
+        const model = modelSelect.value;
+        const modelLabel = modelSelect.options[modelSelect.selectedIndex].text;
+        return `
+            <div class="h-100 d-flex flex-column text-dark">
+                <h5 class="text-primary border-bottom pb-2 mb-3"><i class="fas fa-brain me-2"></i>Langkah 3: Single-View Semantic</h5>
+                <div class="flex-grow-1 overflow-auto">
+                    <p class="small text-secondary">Model representasi kata semantik tunggal yang aktif digunakan:</p>
                     
                     <div class="table-responsive">
-                        <table class="table table-bordered table-striped align-middle mb-2">
+                        <table class="table table-bordered table-striped align-middle mb-3" style="font-size: 0.85rem;">
+                            <thead class="table-light text-dark">
+                                <tr>
+                                    <th style="width: 40%;">Spesifikasi</th>
+                                    <th>Detail Konfigurasi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Model Terpilih</strong></td>
+                                    <td><span class="text-primary fw-bold">${modelLabel}</span></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Dimensi Vektor</strong></td>
+                                    <td>200 Dimensi</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Kosakata (Vocabulary)</strong></td>
+                                    <td>Kata unik yang terdaftar pada file model terkompresi (.bin/.model)</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Fitur Khusus Model</strong></td>
+                                    <td>
+                                        ${model === 'word2vec' ? 'Menangkap relasi semantik lokal berdasarkan jendela kata (sliding window).' : ''}
+                                        ${model === 'fasttext' ? 'Menangani kata di luar kamus (Out-of-Vocabulary/OOV) dengan pemodelan n-gram sub-kata.' : ''}
+                                        ${model === 'glove' ? 'Fokus pada statistik co-occurrence global kata untuk memahami hubungan makna luas.' : ''}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="alert alert-primary border-primary-subtle bg-primary-subtle text-primary-emphasis py-2 px-3 small">
+                        <i class="fas fa-info-circle me-1"></i> <strong>Fasa Pengindeksan (Indexing Phase):</strong> Model embedding kata bertanggung jawab memberikan nilai representasi vektor numerik 200 dimensi ke setiap kata unik, di mana kata dengan konteks serupa berada berdekatan dalam ruang vektor.
+                    </div>
+                </div>
+            </div>`;
+    }
+
+    function renderStep4IndexedDoc() {
+        return `
+            <div class="h-100 d-flex flex-column text-dark">
+                <h5 class="text-primary border-bottom pb-2 mb-3"><i class="fas fa-folder-open me-2"></i>Langkah 4: Indexed Document</h5>
+                <div class="flex-grow-1 overflow-auto">
+                    <p class="small text-secondary">Detail status penyimpanan indeks vektor dokumen ayat Al-Quran:</p>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped align-middle mb-3" style="font-size: 0.85rem;">
+                            <thead class="table-light text-dark">
+                                <tr>
+                                    <th style="width: 40%;">Metrik Indeks</th>
+                                    <th>Detail Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Tabel Indeks Vektor</strong></td>
+                                    <td><code>verse_vectors</code> (SQLite)</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Total Vektor Terindeks</strong></td>
+                                    <td>6.236 Vektor (100% Ayat Terpenuhi)</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Status Caching</strong></td>
+                                    <td><span class="badge bg-success">MEM-CACHE READY</span> (Dimuat langsung ke RAM untuk efisiensi eksekusi)</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Waktu Pencarian Rata-rata</strong></td>
+                                    <td>&lt; 5 milidetik (Direct Memory Scan)</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="card mb-3 border-secondary-subtle">
+                        <div class="card-header bg-light small fw-bold text-dark"><i class="fas fa-cube me-1 text-primary"></i>Konseptual: Vektor vs Matriks</div>
+                        <div class="card-body small text-muted py-2" style="font-size:0.78rem; line-height:1.45;">
+                            Setiap ayat disimpan sebagai <strong>vektor tunggal berdimensi 200</strong> (1D array berisi 200 angka desimal, bukan matriks 200x200). Sementara seluruh 6.236 ayat disatukan dalam memori sebagai sebuah <strong>Matriks Korpus</strong> berukuran <strong>6.236 &times; 200</strong>.
+                        </div>
+                    </div>
+                    <div class="alert alert-primary border-primary-subtle bg-primary-subtle text-primary-emphasis py-2 px-3 small">
+                        <i class="fas fa-info-circle me-1"></i> <strong>Akhir Fasa Pengindeksan:</strong> Seluruh ayat telah diubah menjadi vektor berdimensi 200 menggunakan model embedding pilihan, dan diindeks secara permanen. Indeks ini siap dibandingkan dengan kueri pencarian pada **Fasa Pencarian (Searching Phase)**.
+                    </div>
+                </div>
+            </div>`;
+    }
+
+    function renderStep5Query(preprocessing) {
+        return `
+            <div class="h-100 d-flex flex-column text-dark">
+                <h5 class="text-primary border-bottom pb-2 mb-3"><i class="fas fa-keyboard me-2"></i>Langkah 5: Kueri & Pra-pemrosesan Kueri</h5>
+                <div class="flex-grow-1 overflow-auto">
+                    <p class="small text-secondary">Kueri pencarian dibersihkan secara real-time sebelum dikonversi menjadi vektor:</p>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped align-middle mb-2" style="font-size: 0.84rem;">
                             <thead class="table-light text-dark">
                                 <tr>
                                     <th style="width: 35%;">Tahap Proses</th>
@@ -572,11 +888,11 @@ document.addEventListener("DOMContentLoaded", () => {
                             </thead>
                             <tbody>
                                 <tr>
-                                    <td><strong>1. Teks Mentah (Raw)</strong></td>
+                                    <td><strong>1. Teks Kueri Mentah</strong></td>
                                     <td><span class="text-danger fw-bold">"${preprocessing.raw}"</span></td>
                                 </tr>
                                 <tr>
-                                    <td><strong>2. Huruf Kecil (Lowercase)</strong></td>
+                                    <td><strong>2. Lowercase</strong></td>
                                     <td>"${preprocessing.lowercased}"</td>
                                 </tr>
                                 <tr>
@@ -602,202 +918,164 @@ document.addEventListener("DOMContentLoaded", () => {
                                             }).join("")}
                                         </div>
                                         ${preprocessing.filtered_tokens.length === 0 ? '<span class="text-muted small">Kosong</span>' : ''}
-                                        <p class="small text-muted mt-2 mb-0"><i class="fas fa-info-circle me-1"></i> Klik nama token untuk melihat sinonim terdekat. Ubah angka untuk merubah bobot kata kueri (klik Simulasikan kembali untuk menerapkan).</p>
+                                        <p class="small text-muted mt-2 mb-0" style="font-size: 0.73rem;"><i class="fas fa-info-circle me-1"></i> Klik nama token untuk sinonim. Sesuaikan bobot token kata untuk mempengaruhi kueri (klik Simulasikan kembali untuk menerapkan).</p>
                                     </td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
-                    <div class="alert alert-primary border-primary-subtle bg-primary-subtle text-primary-emphasis mt-2 py-2 px-3 small">
-                        <i class="fas fa-info-circle me-1"></i> <strong>Panduan Penelitian:</strong> Pra-pemrosesan teks (Preprocessing) adalah tahap pembersihan teks. Huruf diubah menjadi lowercase, tanda baca dibuang, teks dipecah menjadi unit kata (Tokenisasi), dan kata-kata umum yang tidak membawa makna khusus (Stopwords) disaring keluar.
-                    </div>
                 </div>
             </div>`;
     }
 
-    function renderStep3Vector(vector) {
-        const miniValues = vector.values ? vector.values.slice(0, 5) : [];
+    function renderStep6Similarity(vector, results) {
         return `
             <div class="h-100 d-flex flex-column text-dark">
-                <h5 class="text-primary border-bottom pb-2 mb-3"><i class="fas fa-project-diagram me-2"></i>Langkah 3: Ekstraksi Vektor Kueri</h5>
+                <h5 class="text-primary border-bottom pb-2 mb-2"><i class="fas fa-calculator me-2"></i>Langkah 6: Perhitungan Cosine Similarity</h5>
                 <div class="flex-grow-1 overflow-auto">
-                    <p class="small text-secondary mb-2">Model merata-ratakan vektor token kueri untuk menghasilkan <strong>vektor kueri 200-dimensi</strong>:</p>
-                    
-                    <div class="row text-center mb-2">
+                    <div class="row g-2 mb-2 text-center" style="font-size: 0.8rem;">
                         <div class="col-6">
-                            <div class="p-2 bg-light rounded border border-secondary-subtle">
-                                <h6 class="text-muted mb-0 small">Dimensi Vektor</h6>
-                                <h5 class="text-primary mb-0 fw-bold">${vector.dimensions}d</h5>
+                            <div class="p-1 bg-light rounded border border-secondary-subtle">
+                                <span class="text-muted small" style="font-size: 0.72rem;">Dimensi Vektor</span>
+                                <h6 class="text-primary mb-0 fw-bold">${vector.dimensions}d</h6>
                             </div>
                         </div>
                         <div class="col-6">
-                            <div class="p-2 bg-light rounded border border-secondary-subtle">
-                                <h6 class="text-muted mb-0 small">Magnitudo (Norm-L2)</h6>
-                                <h5 class="text-success mb-0 fw-bold">${vector.magnitude.toFixed(4)}</h5>
+                            <div class="p-1 bg-light rounded border border-secondary-subtle">
+                                <span class="text-muted small" style="font-size: 0.72rem;">Magnitudo L2</span>
+                                <h6 class="text-success mb-0 fw-bold">${vector.magnitude.toFixed(4)}</h6>
                             </div>
                         </div>
                     </div>
                     
-                    <div style="height: 190px; position: relative;">
+                    <!-- Chart area -->
+                    <div class="mb-2" style="height: 220px; position: relative;">
                         <canvas id="vectorSpaceChart"></canvas>
                     </div>
 
-                    <div class="alert alert-primary border-primary-subtle bg-primary-subtle text-primary-emphasis py-2 px-3 small mt-2 mb-0">
-                        <i class="fas fa-info-circle me-1"></i> <strong>Panduan Penelitian:</strong> Model representasi vektor (Embedding) mengubah setiap token kata menjadi vektor numerik berdimensi 200. Vektor kueri akhir didapatkan dengan merata-ratakan seluruh vektor kata tersebut, kemudian dinormalisasi dengan L2-normalization agar panjangnya (magnitudo) bernilai 1.0. Proyeksi 2D di atas dihitung dengan Singular Value Decomposition (SVD).
+                    <!-- Vector Preview -->
+                    <div class="mb-3 p-2 bg-light rounded border border-secondary-subtle" style="font-size: 0.75rem;">
+                        <span class="fw-bold text-dark"><i class="fas fa-project-diagram me-1 text-primary"></i>Vektor Kueri (${vector.dimensions} dimensi):</span>
+                        <div class="mt-1 font-monospace text-muted text-truncate" style="background: #ffffff; padding: 4px 8px; border-radius: 4px; border: 1px solid #e2e8f0; font-size: 0.72rem;" id="vector-values-preview">
+                            [${vector.values.slice(0, 10).map(v => v.toFixed(6)).join(", ")}${vector.values.length > 10 ? ', ...' : ''}]
+                        </div>
+                        <div class="text-end mt-1">
+                            <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" id="btn-show-full-vector" style="font-size: 0.7rem;">
+                                <i class="fas fa-external-link-alt me-1"></i>Lihat Seluruh Dimensi
+                            </button>
+                        </div>
                     </div>
-                </div>
-            </div>`;
-    }
 
-    function renderStep4Similarity(results) {
-        return `
-            <div class="h-100 d-flex flex-column text-dark">
-                <h5 class="text-primary border-bottom pb-2 mb-3"><i class="fas fa-calculator me-2"></i>Langkah 4: Perhitungan Cosine Similarity</h5>
-                <div class="flex-grow-1 overflow-auto">
-                    <div class="math-formula text-primary mb-2">
-                        Similarity = (A · B) / (||A|| ||B||)
-                    </div>
-                    <p class="small text-secondary mb-2">Skor kemiripan dihitung antara vektor kueri (A) dengan vektor tiap ayat (B) sebelum disaring:</p>
-                    
-                    <div class="table-responsive" style="max-height: 200px;">
-                        <table class="table table-striped table-hover align-middle mb-0">
+                    <!-- Cosine Similarity scores -->
+                    <p class="small text-secondary mb-1">Top 5 ayat kemiripan kosinus mentah tertinggi:</p>
+                    <div class="table-responsive" style="max-height: 100px;">
+                        <table class="table table-striped table-hover align-middle mb-0" style="font-size: 0.75rem;">
                             <thead class="table-light">
                                 <tr>
-                                    <th>Ref Ayat</th>
-                                    <th>Nama Surah</th>
-                                    <th>Skor Kemiripan</th>
+                                    <th class="py-1">Ref Ayat</th>
+                                    <th class="py-1">Nama Surah</th>
+                                    <th class="py-1">Skor Kemiripan</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                ${results.slice(0, 10).map(r => `
+                                ${results.slice(0, 5).map((r, idx) => `
                                     <tr>
-                                        <td><strong>${r.surah_number}:${r.ayat_number}</strong></td>
-                                        <td>${r.surah_name}</td>
-                                        <td><span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle font-monospace">${r.similarity.toFixed(4)}</span></td>
+                                        <td class="py-1">
+                                            <strong>${r.surah_number}:${r.ayat_number}</strong>
+                                            <button type="button" class="btn btn-link btn-sm p-0 ms-1 btn-show-verse-vector" data-index="${idx}" data-table="raw" title="Lihat Vektor">
+                                                <i class="fas fa-expand-alt text-secondary" style="font-size: 0.65rem;"></i>
+                                            </button>
+                                        </td>
+                                        <td class="py-1">${r.surah_name}</td>
+                                        <td class="py-1"><span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle font-monospace">${r.similarity.toFixed(4)}</span></td>
                                     </tr>
                                 `).join("")}
                             </tbody>
                         </table>
                     </div>
-                    <p class="small text-muted mt-1 mb-2">*Menampilkan top 10 ayat kemiripan tertinggi sebelum penyaringan threshold.</p>
-                    <div class="alert alert-primary border-primary-subtle bg-primary-subtle text-primary-emphasis py-2 px-3 small">
-                        <i class="fas fa-info-circle me-1"></i> <strong>Panduan Penelitian:</strong> Cosine Similarity mengukur sudut kosinus antara vektor kueri (A) dan vektor ayat (B). Nilai positif mendekati 1.0 berarti makna kueri dan ayat sangat mirip. Rumus ini menghitung perkalian titik dibagi hasil kali magnitudo kedua vektor.
+                    <div class="alert alert-primary border-primary-subtle bg-primary-subtle text-primary-emphasis py-1 px-2 small mt-2 mb-0" style="font-size: 0.72rem;">
+                        <i class="fas fa-info-circle me-1"></i> Perhitungan kemiripan dihitung antara kueri (titik biru pada plot SVD di atas) dengan seluruh vektor dokumen terindeks (titik hijau).
                     </div>
                 </div>
             </div>`;
     }
 
-    function renderStep5Filter(results) {
+    function renderStep7Results(results) {
         const filtered = results.filter(r => r.similarity >= state.threshold);
-        return `
-            <div class="h-100 d-flex flex-column text-dark">
-                <h5 class="text-primary border-bottom pb-2 mb-3"><i class="fas fa-filter me-2"></i>Langkah 5: Penyaringan Threshold</h5>
-                <div class="flex-grow-1 overflow-auto">
-                    <p class="small text-secondary">Menyaring ayat hasil perhitungan kemiripan yang memiliki nilai kemiripan $\\ge$ threshold aktif (<span class="text-danger fw-bold">${state.threshold.toFixed(2)}</span>):</p>
-                    
-                    <div class="row text-center mb-3">
-                        <div class="col-6">
-                            <div class="p-2 bg-light rounded border">
-                                <h6 class="text-muted mb-1 small font-monospace">Total Ayat Masuk</h6>
-                                <h4 class="text-primary mb-0 fw-bold">${results.length}</h4>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="p-2 bg-light rounded border">
-                                <h6 class="text-muted mb-1 small font-monospace">Lolos Filter</h6>
-                                <h4 class="text-success mb-0 fw-bold">${filtered.length}</h4>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="table-responsive" style="max-height: 180px; margin-bottom: 10px;">
-                        <table class="table table-striped table-hover align-middle mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Ref Ayat</th>
-                                    <th>Skor</th>
-                                    <th>Keterangan</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${filtered.slice(0, 10).map(r => `
-                                    <tr class="table-success" style="--bs-table-bg: rgba(16, 185, 129, 0.08);">
-                                        <td><strong>${r.surah_number}:${r.ayat_number}</strong></td>
-                                        <td class="font-monospace">${r.similarity.toFixed(4)}</td>
-                                        <td><span class="text-success fw-bold">Lolos (>= ${state.threshold.toFixed(2)})</span></td>
-                                    </tr>
-                                `).join("")}
-                                ${filtered.length === 0 ? '<tr><td colspan="3" class="text-center text-muted">Tidak ada ayat lolos filter</td></tr>' : ''}
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="alert alert-primary border-primary-subtle bg-primary-subtle text-primary-emphasis py-2 px-3 small">
-                        <i class="fas fa-info-circle me-1"></i> <strong>Panduan Penelitian:</strong> Penyaringan Threshold menentukan batas minimum kemiripan ayat untuk masuk sebagai hasil pencarian akhir. Ayat dengan nilai kemiripan di bawah batas threshold disaring keluar untuk meminimalkan hasil yang tidak relevan.
-                    </div>
-                </div>
-            </div>`;
-    }
-
-    function renderStep6Validation(results) {
-        const filtered = results.filter(r => r.similarity >= state.threshold).map(r => `${r.surah_number}:${r.ayat_number}`);
+        const filteredRefs = filtered.map(r => `${r.surah_number}:${r.ayat_number}`);
         
         // TP: in filtered AND in ground truth
-        const tp = state.groundTruth.filter(v => filtered.includes(v));
+        const tp = state.groundTruth.filter(v => filteredRefs.includes(v));
         // FP: in filtered BUT NOT in ground truth
-        const fp = filtered.filter(v => !state.groundTruth.includes(v));
+        const fp = filteredRefs.filter(v => !state.groundTruth.includes(v));
         // FN: in ground truth BUT NOT in filtered
-        const fn = state.groundTruth.filter(v => !filtered.includes(v));
+        const fn = state.groundTruth.filter(v => !filteredRefs.includes(v));
 
         return `
             <div class="h-100 d-flex flex-column text-dark">
-                <h5 class="text-primary border-bottom pb-2 mb-3"><i class="fas fa-check-double me-2"></i>Langkah 6: Validasi Ground Truth</h5>
+                <h5 class="text-primary border-bottom pb-2 mb-2"><i class="fas fa-poll me-2"></i>Langkah 7: Hasil Penyaringan & Validasi</h5>
                 <div class="flex-grow-1 overflow-auto">
-                    <p class="small text-secondary">Sistem membandingkan hasil pencarian lolos filter dengan ayat acuan (*Ground Truth*) untuk menghitung keakuratan:</p>
+                    <p class="small text-secondary mb-1">Hasil penyaringan skor kemiripan &ge; <span class="text-danger fw-bold">${state.threshold.toFixed(2)}</span>:</p>
                     
-                    <div class="row g-2 mb-3 text-center">
+                    <div class="row g-2 mb-2 text-center" style="font-size: 0.75rem;">
                         <div class="col-4">
-                            <div class="p-2 bg-light rounded border border-success">
-                                <span class="badge bg-success text-white">True Positive</span>
-                                <h4 class="mt-2 mb-0 fw-bold text-success">${tp.length}</h4>
+                            <div class="p-1 bg-light rounded border border-success">
+                                <span class="badge bg-success" style="font-size: 0.65rem;">True Positive (TP)</span>
+                                <h6 class="mt-1 mb-0 fw-bold text-success">${tp.length}</h6>
                             </div>
                         </div>
                         <div class="col-4">
-                            <div class="p-2 bg-light rounded border border-warning">
-                                <span class="badge bg-warning text-dark">False Positive</span>
-                                <h4 class="mt-2 mb-0 fw-bold text-warning">${fp.length}</h4>
+                            <div class="p-1 bg-light rounded border border-warning">
+                                <span class="badge bg-warning text-dark" style="font-size: 0.65rem;">False Positive (FP)</span>
+                                <h6 class="mt-1 mb-0 fw-bold text-warning">${fp.length}</h6>
                             </div>
                         </div>
                         <div class="col-4">
-                            <div class="p-2 bg-light rounded border border-danger">
-                                <span class="badge bg-danger text-white">False Negative</span>
-                                <h4 class="mt-2 mb-0 fw-bold text-danger">${fn.length}</h4>
+                            <div class="p-1 bg-light rounded border border-danger">
+                                <span class="badge bg-danger" style="font-size: 0.65rem;">False Negative (FN)</span>
+                                <h6 class="mt-1 mb-0 fw-bold text-danger">${fn.length}</h6>
                             </div>
                         </div>
                     </div>
 
-                    <h6 class="fw-bold fs-6">Rincian Pengelompokan:</h6>
-                    <div style="font-size: 0.88rem; line-height: 1.8; margin-bottom: 10px;">
-                        <div class="mb-2">
-                            <span class="text-success fw-bold">🟢 True Positive (TP):</span>
-                            <div class="mt-1">${formatGroundTruthBadges(tp, "success")}</div>
-                        </div>
-                        <div class="mb-2">
-                            <span class="text-warning fw-bold">🟡 False Positive (FP):</span>
-                            <div class="mt-1">${formatGroundTruthBadges(fp, "warning")}</div>
-                        </div>
-                        <div class="mb-2">
-                            <span class="text-danger fw-bold">🔴 False Negative (FN):</span>
-                            <div class="mt-1">${formatGroundTruthBadges(fn, "danger")}</div>
-                        </div>
+                    <div class="table-responsive" style="max-height: 120px; margin-bottom: 5px;">
+                        <table class="table table-striped table-hover align-middle mb-0" style="font-size: 0.75rem;">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="py-1">Ayat</th>
+                                    <th class="py-1">Skor</th>
+                                    <th class="py-1">Klasifikasi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${filtered.slice(0, 5).map((r, idx) => {
+                                    const ref = `${r.surah_number}:${r.ayat_number}`;
+                                    const isTp = state.groundTruth.includes(ref);
+                                    return `
+                                        <tr class="${isTp ? 'table-success' : 'table-warning'}" style="--bs-table-bg: ${isTp ? 'rgba(16, 185, 129, 0.08)' : 'rgba(245, 158, 11, 0.08)'};">
+                                            <td class="py-1">
+                                                <strong>${ref}</strong>
+                                                <button type="button" class="btn btn-link btn-sm p-0 ms-1 btn-show-verse-vector" data-index="${idx}" data-table="filtered" title="Lihat Vektor">
+                                                    <i class="fas fa-expand-alt text-secondary" style="font-size: 0.65rem;"></i>
+                                                </button>
+                                            </td>
+                                            <td class="py-1 font-monospace">${r.similarity.toFixed(4)}</td>
+                                            <td class="py-1">${isTp ? '<span class="text-success fw-bold">TP (Relevan)</span>' : '<span class="text-warning fw-bold">FP (Tidak Relevan)</span>'}</td>
+                                        </tr>
+                                    `;
+                                }).join("")}
+                                ${filtered.length === 0 ? '<tr><td colspan="3" class="text-center text-muted py-2">Tidak ada ayat lolos filter</td></tr>' : ''}
+                            </tbody>
+                        </table>
                     </div>
-                    <div class="alert alert-primary border-primary-subtle bg-primary-subtle text-primary-emphasis py-2 px-3 small">
-                        <i class="fas fa-info-circle me-1"></i> <strong>Panduan Penelitian:</strong> Sistem mencocokkan hasil pencarian lolos filter dengan ayat acuan. **True Positive (TP)** adalah ayat relevan yang berhasil ditemukan. **False Positive (FP)** adalah ayat hasil pencarian yang tidak relevan. **False Negative (FN)** adalah ayat relevan yang gagal ditemukan.
+                    <div style="font-size: 0.72rem; line-height: 1.4;">
+                        <strong>FN (Gagal Terambil):</strong> ${formatGroundTruthBadges(fn, "danger")}
                     </div>
                 </div>
             </div>`;
     }
 
-    function renderStep7Evaluation(results) {
+    function renderStep8Performance(results) {
         const filtered = results.filter(r => r.similarity >= state.threshold).map(r => `${r.surah_number}:${r.ayat_number}`);
         
         const tp = state.groundTruth.filter(v => filtered.includes(v)).length;
@@ -811,39 +1089,36 @@ document.addEventListener("DOMContentLoaded", () => {
 
         return `
             <div class="h-100 d-flex flex-column text-dark">
-                <h5 class="text-primary border-bottom pb-2 mb-3"><i class="fas fa-chart-pie me-2"></i>Langkah 7: Evaluasi Metrik Akhir</h5>
+                <h5 class="text-primary border-bottom pb-2 mb-3"><i class="fas fa-chart-pie me-2"></i>Langkah 8: Evaluasi Metrik Akhir</h5>
                 <div class="flex-grow-1 overflow-auto">
-                    <p class="small text-secondary">Skor metrik performa akhir hasil kalkulasi dari data validasi sebelumnya:</p>
+                    <p class="small text-secondary">Skor metrik performa akhir hasil kalkulasi dari fasa pencarian:</p>
                     
                     <div class="row g-2 mb-3 text-center">
                         <div class="col-4">
                             <div class="p-3 bg-light rounded border border-info">
-                                <h6 class="text-muted small">Precision</h6>
-                                <h3 class="text-info mb-0 fw-bold">${(precision * 100).toFixed(1)}%</h3>
+                                <h6 class="text-muted small" style="font-size: 0.75rem;">Precision</h6>
+                                <h4 class="text-info mb-0 fw-bold">${(precision * 100).toFixed(1)}%</h4>
                             </div>
                         </div>
                         <div class="col-4">
                             <div class="p-3 bg-light rounded border border-info">
-                                <h6 class="text-muted small">Recall</h6>
-                                <h3 class="text-info mb-0 fw-bold">${(recall * 100).toFixed(1)}%</h3>
+                                <h6 class="text-muted small" style="font-size: 0.75rem;">Recall</h6>
+                                <h4 class="text-info mb-0 fw-bold">${(recall * 100).toFixed(1)}%</h4>
                             </div>
                         </div>
                         <div class="col-4">
                             <div class="p-3 bg-light rounded border border-warning">
-                                <h6 class="text-muted small">F1-Score</h6>
-                                <h3 class="text-warning mb-0 fw-bold">${(f1 * 100).toFixed(1)}%</h3>
+                                <h6 class="text-muted small" style="font-size: 0.75rem;">F1-Score</h6>
+                                <h4 class="text-warning mb-0 fw-bold">${(f1 * 100).toFixed(1)}%</h4>
                             </div>
                         </div>
                     </div>
 
-                    <h6 class="fw-bold fs-6">Rincian Formula Perhitungan:</h6>
-                    <div class="math-formula text-start mb-2" style="font-size: 0.78rem; padding: 12px; line-height: 1.6; font-weight: normal;">
+                    <h6 class="fw-bold fs-6">Formula Perhitungan Aktif:</h6>
+                    <div class="math-formula text-start mb-2" style="font-size: 0.75rem; padding: 10px; line-height: 1.5; font-weight: normal;">
                         Precision = TP / (TP + FP) = ${tp} / (${tp} + ${fp}) = <strong class="text-primary">${precision.toFixed(4)}</strong><br>
                         Recall = TP / (TP + FN) = ${tp} / (${tp} + ${fn}) = <strong class="text-primary">${recall.toFixed(4)}</strong><br>
                         F1-Score = 2 * (P * R) / (P + R) = <strong class="text-success">${f1.toFixed(4)}</strong>
-                    </div>
-                    <div class="alert alert-primary border-primary-subtle bg-primary-subtle text-primary-emphasis py-2 px-3 small">
-                        <i class="fas fa-info-circle me-1"></i> <strong>Panduan Penelitian:</strong> Metrik mengevaluasi keakuratan sistem. **Precision** mengukur seberapa banyak hasil yang ditemukan benar-benar relevan. **Recall** mengukur seberapa banyak total ayat relevan yang berhasil disaring. **F1-Score** adalah rata-rata harmonik dari keduanya untuk menilai performa secara keseluruhan.
                     </div>
                 </div>
             </div>`;

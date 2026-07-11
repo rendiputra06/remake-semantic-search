@@ -100,6 +100,13 @@ def playground():
     """
     return render_template('playground.html')
 
+@public_bp.route('/playground/indexing')
+def playground_indexing():
+    """
+    Halaman Data Playground khusus untuk simulasi fasa pengindeksan
+    """
+    return render_template('playground_indexing.html')
+
 @public_bp.route('/playground/ensemble')
 def playground_ensemble():
     """

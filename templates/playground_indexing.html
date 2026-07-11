@@ -1,0 +1,610 @@
+{% extends "layout.html" %}
+{% block title %}Laboratorium Fasa Pengindeksan - Mesin Pencarian Semantik Al-Quran{% endblock %}
+
+{% block content %}
+<style>
+    /* Premium Academic Styling */
+    .indexing-wrapper {
+        background: #f8f9fa;
+        color: #212529;
+        border-radius: 12px;
+        padding: 24px;
+        border: 1px solid #dee2e6;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        margin-top: 15px;
+    }
+    
+    .research-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+        padding: 20px;
+        transition: all 0.3s ease;
+    }
+
+    .verse-item {
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: 1px solid transparent;
+        font-size: 0.85rem;
+    }
+
+    .verse-item:hover {
+        background-color: #f1f5f9;
+    }
+
+    .verse-item.active {
+        background-color: #eff6ff !important;
+        border-left: 4px solid #3b82f6 !important;
+        color: #1d4ed8 !important;
+        font-weight: bold;
+    }
+
+    /* SVG Visual pipeline nodes */
+    .pipeline-node-rect {
+        fill: #f8fafc;
+        stroke: #cbd5e1;
+        stroke-width: 1px;
+        transition: all 0.2s ease-in-out;
+    }
+    
+    .pipeline-node-text {
+        fill: #475569;
+        font-size: 9px;
+        font-weight: 500;
+        pointer-events: none;
+    }
+
+    .pipeline-arrow-line {
+        fill: none;
+        stroke: #cbd5e1;
+        stroke-width: 1.5px;
+    }
+
+    /* Code Editor Mockup */
+    .editor-wrapper {
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid #1e293b;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        background: #0f172a;
+        margin-bottom: 15px;
+    }
+
+    .editor-header {
+        background: #1e293b;
+        padding: 8px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid #0f172a;
+    }
+
+    .editor-dots {
+        display: flex;
+        gap: 6px;
+    }
+
+    .editor-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+    }
+
+    .dot-red { background: #ef4444; }
+    .dot-yellow { background: #eab308; }
+    .dot-green { background: #22c55e; }
+
+    .editor-title {
+        color: #94a3b8;
+        font-size: 0.75rem;
+        font-family: 'Fira Code', 'JetBrains Mono', Consolas, monospace;
+        font-weight: 500;
+    }
+
+    .btn-copy {
+        background: transparent;
+        border: none;
+        color: #94a3b8;
+        font-size: 0.75rem;
+        cursor: pointer;
+        padding: 2px 6px;
+        border-radius: 4px;
+        transition: all 0.2s;
+    }
+
+    .btn-copy:hover {
+        background: #334155;
+        color: #f8fafc;
+    }
+
+    .code-container {
+        background: #0f172a;
+        color: #e2e8f0;
+        padding: 20px;
+        font-family: 'Fira Code', 'JetBrains Mono', 'Fira Mono', Consolas, Monaco, monospace;
+        font-size: 0.8rem;
+        line-height: 1.6;
+        overflow-x: auto;
+        max-height: 480px;
+        margin: 0;
+    }
+
+    .code-keyword { color: #f472b6; font-weight: 600; }
+    .code-string { color: #4ade80; }
+    .code-comment { color: #64748b; font-style: italic; }
+    .code-function { color: #38bdf8; }
+    .code-algorithm { color: #fb923c; font-weight: bold; }
+
+    .visual-step-card {
+        border-left: 3px solid #cbd5e1;
+        background: #fdfdfd;
+        padding: 10px 15px;
+        border-radius: 0 6px 6px 0;
+        margin-bottom: 12px;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+    }
+    
+    .visual-step-card.active {
+        border-left-color: #3b82f6;
+        background: #f0fdf4;
+    }
+
+    .tab-content-panel {
+        min-height: 450px;
+    }
+
+    /* ── Vector Full View Modal ──────────────────────────── */
+    .vector-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+        gap: 4px;
+        max-height: 55vh;
+        overflow-y: auto;
+        padding: 4px;
+    }
+    .vector-cell {
+        background: #0f172a;
+        color: #4ade80;
+        font-family: 'Fira Code', Consolas, monospace;
+        font-size: 0.65rem;
+        border-radius: 4px;
+        padding: 4px 6px;
+        text-align: center;
+        border: 1px solid #1e293b;
+        transition: background 0.15s;
+    }
+    .vector-cell:hover {
+        background: #1e3a5f;
+        color: #38bdf8;
+    }
+    .vector-cell .dim-label {
+        display: block;
+        color: #475569;
+        font-size: 0.55rem;
+        margin-bottom: 1px;
+    }
+    .vector-cell .dim-val {
+        display: block;
+        font-weight: 600;
+    }
+    .btn-vec-full {
+        font-size: 0.72rem;
+        padding: 2px 8px;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    .download-bar {
+        border-top: 1px solid #e2e8f0;
+        padding-top: 12px;
+        margin-top: 8px;
+    }
+</style>
+
+<div class="container py-3">
+    <div class="indexing-wrapper">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <a href="/playground" class="btn btn-outline-secondary btn-sm mb-2"><i class="fas fa-arrow-left me-1"></i>Kembali ke Playground</a>
+                <h2 class="mb-1 text-primary"><i class="fas fa-microscope me-2"></i>Laboratorium Fasa Pengindeksan</h2>
+                <p class="text-muted mb-0">Simulasikan dan pelajari proses pra-pemrosesan data mentah hingga penyimpanan vektor ke SQLite secara bertahap.</p>
+            </div>
+            <!-- Download buttons (visible after simulation runs) -->
+            <div id="download-bar" class="d-none">
+                <span class="d-block text-muted small mb-1 text-end"><i class="fas fa-download me-1"></i>Unduh Semua Vektor Surah</span>
+                <div class="d-flex gap-2 justify-content-end">
+                    <button id="btn-download-json" class="btn btn-sm btn-outline-success" title="Download JSON">
+                        <i class="fas fa-file-code me-1"></i>JSON
+                    </button>
+                    <button id="btn-download-csv" class="btn btn-sm btn-outline-primary" title="Download CSV">
+                        <i class="fas fa-file-csv me-1"></i>CSV
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Configuration Bar -->
+        <div class="research-card mb-4 bg-light border-secondary-subtle">
+            <form id="indexing-form" class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold text-dark" for="surah-select">Pilih Surah Pendek</label>
+                    <select class="form-select border-secondary-subtle" id="surah-select">
+                        <option value="1">QS. Al-Fatihah (7 Ayat)</option>
+                        <option value="112">QS. Al-Ikhlas (4 Ayat)</option>
+                        <option value="113">QS. Al-Falaq (5 Ayat)</option>
+                        <option value="114">QS. An-Nas (6 Ayat)</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold text-dark" for="model-type">Model Embedding</label>
+                    <select class="form-select border-secondary-subtle" id="model-type">
+                        <option value="word2vec">Word2Vec</option>
+                        <option value="fasttext">FastText</option>
+                        <option value="glove">GloVe</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-primary w-100" id="btn-run-indexing">
+                        <i class="fas fa-play me-1"></i>Jalankan Pengindeksan
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Simulation Split Screen Layout -->
+        <div class="row g-3">
+            <!-- Verse List Container (Left) -->
+            <div class="col-md-4">
+                <div class="research-card d-flex flex-column" style="min-height: 480px; max-height: 600px;">
+                    <h6 class="text-secondary border-bottom pb-2 mb-3"><i class="fas fa-list-ol me-2"></i>Daftar Ayat Surah</h6>
+                    <div id="verse-list" class="list-group list-group-flush overflow-auto flex-grow-1" style="max-height: 480px;">
+                        <!-- Verses list loaded dynamically -->
+                        <div class="p-3 text-center text-muted small">Klik tombol <strong>Jalankan Pengindeksan</strong> untuk memulai simulasi.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabbed Panel Container (Right) -->
+            <div class="col-md-8">
+                <div class="research-card d-flex flex-column tab-content-panel">
+                    <!-- Nav Tabs -->
+                    <ul class="nav nav-tabs border-bottom mb-3" id="labTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="visual-tab" data-bs-toggle="tab" data-bs-target="#visual-content" type="button" role="tab" aria-controls="visual-content" aria-selected="true">
+                                <i class="fas fa-project-diagram me-1"></i>Visual Mode
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="pseudocode-tab" data-bs-toggle="tab" data-bs-target="#pseudocode-content" type="button" role="tab" aria-controls="pseudocode-content" aria-selected="false">
+                                <i class="fas fa-code me-1"></i>Pseudocode
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="code-tab" data-bs-toggle="tab" data-bs-target="#code-content" type="button" role="tab" aria-controls="code-content" aria-selected="false">
+                                <i class="fab fa-python me-1"></i>Coding
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="thesis-tab" data-bs-toggle="tab" data-bs-target="#thesis-content" type="button" role="tab" aria-controls="thesis-content" aria-selected="false">
+                                <i class="fas fa-book me-1"></i>Metodologi & Ekspor
+                            </button>
+                        </li>
+                    </ul>
+
+                    <!-- Tab Contents -->
+                    <div class="tab-content flex-grow-1 overflow-auto" id="labTabsContent">
+                        <!-- Visual Tab Panel -->
+                        <div class="tab-pane fade show active h-100" id="visual-content" role="tabpanel" aria-labelledby="visual-tab">
+                            <div id="visual-detail-panel" class="h-100 d-flex flex-column justify-content-center align-items-center text-muted py-5">
+                                <i class="fas fa-info-circle fa-3x mb-3 text-secondary"></i>
+                                <h5>Belum Ada Data Ayat Terpilih</h5>
+                                <p class="small text-center px-3">Silakan jalankan simulasi dan klik salah satu ayat di panel kiri untuk melihat visualisasinya.</p>
+                            </div>
+                        </div>
+
+                        <!-- Pseudocode Tab Panel -->
+                        <div class="tab-pane fade" id="pseudocode-content" role="tabpanel" aria-labelledby="pseudocode-tab">
+                            <div class="editor-wrapper">
+                                <div class="editor-header">
+                                    <div class="editor-dots">
+                                        <div class="editor-dot dot-red"></div>
+                                        <div class="editor-dot dot-yellow"></div>
+                                        <div class="editor-dot dot-green"></div>
+                                    </div>
+                                    <div class="editor-title">pseudocode.algo</div>
+                                    <button class="btn-copy" onclick="copyCode('code-pseudocode', this)"><i class="far fa-copy me-1"></i>Copy</button>
+                                </div>
+                                <pre id="code-pseudocode" class="code-container"><span class="code-comment"># Algoritma Pengindeksan Corpus Semantik Al-Quran</span>
+<span class="code-algorithm">ALGORITHM</span> IndexingPhase
+    <span class="code-algorithm">INPUT</span>: quran_verses_table, word_embedding_model
+    <span class="code-algorithm">OUTPUT</span>: SQLite verse_vectors_table
+
+    <span class="code-keyword">FOR EACH</span> verse <span class="code-keyword">IN</span> quran_verses_table:
+        <span class="code-comment">// 1. Pra-pemrosesan teks</span>
+        text = verse.translation
+        text_lowercase = lowercase(text)
+        text_cleaned = remove_punctuation(text_lowercase)
+        tokens = tokenize(text_cleaned)
+        filtered_tokens = remove_stopwords(tokens)
+
+        <span class="code-comment">// 2. Pembuatan representasi vektor</span>
+        word_vectors = []
+        <span class="code-keyword">FOR EACH</span> token <span class="code-keyword">IN</span> filtered_tokens:
+            <span class="code-keyword">IF</span> token <span class="code-keyword">IN</span> word_embedding_model:
+                vector = word_embedding_model[token]
+                word_vectors.append(vector)
+            <span class="code-keyword">ELSE</span>:
+                <span class="code-comment">// Kata di luar kamus (OOV) diabaikan atau ditangani model</span>
+                <span class="code-keyword">CONTINUE</span>
+        
+        <span class="code-keyword">IF</span> word_vectors <span class="code-keyword">NOT EMPTY</span>:
+            <span class="code-comment">// Rata-rata pooling & L2 Normalization</span>
+            average_vector = mean(word_vectors, axis=0)
+            final_vector = l2_normalize(average_vector)
+        <span class="code-keyword">ELSE</span>:
+            final_vector = zero_vector(200)
+
+        <span class="code-comment">// 3. Simpan Vektor ke SQLite DB</span>
+        sqlite_save_blob(verse.id, final_vector)
+    <span class="code-keyword">END FOR</span>
+<span class="code-algorithm">END ALGORITHM</span></pre>
+                            </div>
+                        </div>
+
+                        <!-- Coding Tab Panel -->
+                        <div class="tab-pane fade" id="code-content" role="tabpanel" aria-labelledby="code-tab">
+                            <div class="editor-wrapper">
+                                <div class="editor-header">
+                                    <div class="editor-dots">
+                                        <div class="editor-dot dot-red"></div>
+                                        <div class="editor-dot dot-yellow"></div>
+                                        <div class="editor-dot dot-green"></div>
+                                    </div>
+                                    <div class="editor-title">indexing_pipeline.py</div>
+                                    <button class="btn-copy" onclick="copyCode('code-python', this)"><i class="far fa-copy me-1"></i>Copy</button>
+                                </div>
+                                <pre id="code-python" class="code-container"><span class="code-comment"># Python implementation code of Semantic Search Indexing Phase</span>
+
+<span class="code-keyword">import</span> numpy <span class="code-keyword">as</span> np
+<span class="code-keyword">from</span> backend.preprocessing <span class="code-keyword">import</span> remove_punctuation, remove_stopwords, tokenize
+
+<span class="code-keyword">def</span> <span class="code-function">preprocess_text</span>(text):
+    lowercased = text.lower()
+    no_punct = remove_punctuation(lowercased)
+    tokens = tokenize(no_punct)
+    filtered = remove_stopwords(tokens)
+    <span class="code-keyword">return</span> filtered
+
+<span class="code-keyword">def</span> <span class="code-function">generate_verse_vector</span>(model, filtered_tokens):
+    word_vectors = []
+    <span class="code-keyword">for</span> token <span class="code-keyword">in</span> filtered_tokens:
+        <span class="code-keyword">try</span>:
+            <span class="code-keyword">if</span> token <span class="code-keyword">in</span> model.wv:
+                word_vectors.append(model.wv[token])
+        <span class="code-keyword">except</span> Exception:
+            <span class="code-keyword">continue</span>
+            
+    <span class="code-keyword">if not</span> word_vectors:
+        <span class="code-keyword">return</span> np.zeros(200)
+        
+    <span class="code-comment"># Mean pooling</span>
+    mean_vec = np.mean(word_vectors, axis=0)
+    <span class="code-comment"># L2 normalization</span>
+    norm = np.linalg.norm(mean_vec)
+    <span class="code-keyword">if</span> norm == 0:
+        <span class="code-keyword">return</span> mean_vec
+    <span class="code-keyword">return</span> mean_vec / norm
+
+<span class="code-keyword">def</span> <span class="code-function">save_to_database</span>(conn, verse_id, model_type, vector):
+    <span class="code-comment"># Serialize float vector to sqlite BLOB</span>
+    vector_blob = vector.astype(np.float32).tobytes()
+    cursor = conn.cursor()
+    cursor.execute(
+        <span class="code-string">"INSERT INTO verse_vectors (verse_id, model_type, vector_blob) VALUES (?, ?, ?)"</span>,
+        (verse_id, model_type, sqlite3.Binary(vector_blob))
+    )
+    conn.commit()</pre>
+                            </div>
+                        </div>
+
+                        <!-- Thesis Content Tab Panel -->
+                        <div class="tab-pane fade" id="thesis-content" role="tabpanel" aria-labelledby="thesis-tab">
+                            <div class="p-3">
+                                <h6 class="text-primary border-bottom pb-2 mb-3"><i class="fas fa-book me-2"></i>Metodologi & Parameter Ekspor Data</h6>
+                                
+                                <!-- Section 1: Teori & Rumus -->
+                                <div class="card mb-4 border-secondary-subtle">
+                                    <div class="card-header bg-light fw-bold text-dark"><i class="fas fa-square-root-alt me-2 text-primary"></i>1. Dasar Teori & Formulasi Matematika</div>
+                                    <div class="card-body small text-dark">
+                                        <p>Dalam metode Information Retrieval berbasis semantik, fasa pengindeksan mentransformasikan teks terjemahan ayat Al-Quran menjadi representasi vektor numerik. Proses ini melalui tiga tahapan matematika:</p>
+                                        <ol>
+                                            <li class="mb-3">
+                                                <strong>Pra-pemrosesan Teks:</strong>
+                                                Pembersihan teks mentah terjemahan ($d$) menjadi sekumpulan token bersih ($T$):
+                                                <div class="bg-light p-2 rounded font-monospace my-1">T = remove_stopwords(tokenize(remove_punctuation(lowercase(d))))</div>
+                                            </li>
+                                            <li class="mb-3">
+                                                <strong>Mean Pooling (Rata-rata Vektor Kata):</strong>
+                                                Pembentukan vektor representasi dokumen ($\mathbf{v}_{mean}$) dengan merata-ratakan seluruh vektor kata anggota token bersih yang terdaftar dalam model embedding:
+                                                <div class="bg-light p-2 rounded font-monospace my-1 text-center font-bold" style="font-size: 0.95rem;">
+                                                    \(\mathbf{v}_{mean} = \frac{1}{N} \sum_{i=1}^{N} \mathbf{w}_i\)
+                                                </div>
+                                                Di mana $N$ adalah jumlah kata yang ditemukan dalam kosakata model, dan $\mathbf{w}_i$ adalah vektor embedding dari kata ke-$i$.
+                                            </li>
+                                            <li>
+                                                <strong>L2 Normalization (Normalisasi Vektor):</strong>
+                                                Menormalkan panjang vektor dokumen menjadi 1.0 (unit vector) agar pencarian kemiripan kosinus (Cosine Similarity) di fasa pencarian konsisten:
+                                                <div class="bg-light p-2 rounded font-monospace my-1 text-center font-bold" style="font-size: 0.95rem;">
+                                                    \(\mathbf{v}_{final} = \frac{\mathbf{v}_{mean}}{\|\mathbf{v}_{mean}\|_2}\)
+                                                </div>
+                                                Di mana $\|\mathbf{v}_{mean}\|_2$ adalah magnitudo L2-norm yang dihitung dengan rumus:
+                                                <div class="bg-light p-2 rounded font-monospace my-1 text-center font-bold" style="font-size: 0.9rem;">
+                                                    \(\|\mathbf{v}_{mean}\|_2 = \sqrt{\sum_{j=1}^{D} v_j^2}\)
+                                                </div>
+                                                dengan $D = 200$ (dimensi ruang vektor model Word2Vec/FastText/GloVe).
+                                            </li>
+                                        </ol>
+                                        <hr class="my-3">
+                                        <h6 class="fw-bold text-primary mb-2"><i class="fas fa-balance-scale me-2"></i>Perbandingan Karakteristik Model Embedding</h6>
+                                        <div class="table-responsive">
+                                            <table class="table table-sm table-bordered text-dark mb-0 bg-white" style="font-size: 0.8rem;">
+                                                <thead>
+                                                    <tr class="table-light text-secondary">
+                                                        <th>Karakteristik</th>
+                                                        <th>Word2Vec</th>
+                                                        <th>GloVe</th>
+                                                        <th>FastText</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td class="fw-semibold">Level Representasi</td>
+                                                        <td>Word-level (Kata utuh)</td>
+                                                        <td>Word-level (Kata utuh)</td>
+                                                        <td>Subword (n-gram karakter)</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="fw-semibold">Penanganan Kata Baru (OOV)</td>
+                                                        <td>Diabaikan / dilewati</td>
+                                                        <td>Diabaikan / dilewati</td>
+                                                        <td>Dibuat dari representasi subword</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="fw-semibold">Toleransi Typo / Imbuhan</td>
+                                                        <td>Sangat rendah (menjadi kata asing)</td>
+                                                        <td>Sangat rendah (menjadi kata asing)</td>
+                                                        <td>Tinggi (mengenali akar kata / n-gram)</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Section 2: Skema Database -->
+                                <div class="card mb-4 border-secondary-subtle">
+                                    <div class="card-header bg-light fw-bold text-dark d-flex justify-content-between align-items-center">
+                                        <span><i class="fas fa-database me-2 text-primary"></i>2. Skema Relasi Database SQLite (DDL)</span>
+                                        <button class="btn-copy py-1" onclick="copyCode('ddl-sql', this)"><i class="far fa-copy me-1"></i>Copy SQL</button>
+                                    </div>
+                                    <div class="card-body p-0">
+                                        <pre id="ddl-sql" class="code-container font-monospace" style="max-height: 250px; font-size: 0.75rem;"><span class="code-comment">-- Skema tabel untuk menyimpan terjemahan ayat</span>
+<span class="code-keyword">CREATE TABLE</span> quran_verses (
+    id <span class="code-keyword">INTEGER PRIMARY KEY</span>,
+    surah_id <span class="code-keyword">INTEGER</span>,
+    verse_number <span class="code-keyword">INTEGER</span>,
+    verse_text <span class="code-keyword">TEXT</span>,
+    verse_translation <span class="code-keyword">TEXT</span>
+);
+
+<span class="code-comment">-- Skema tabel untuk menyimpan vektor embedding hasil pengindeksan</span>
+<span class="code-keyword">CREATE TABLE</span> verse_vectors (
+    id <span class="code-keyword">INTEGER PRIMARY KEY AUTOINCREMENT</span>,
+    verse_id <span class="code-keyword">TEXT UNIQUE</span>, <span class="code-comment">-- Format: "surah_number:verse_number"</span>
+    model_type <span class="code-keyword">TEXT</span>,       <span class="code-comment">-- 'word2vec', 'fasttext', 'glove'</span>
+    vector_blob <span class="code-keyword">BLOB</span>       <span class="code-comment">-- Representasi biner array float32 (800 bytes)</span>
+);</pre>
+                                    </div>
+                                </div>
+
+                                <!-- Section 3: Trace Data Uji (Dinamis) -->
+                                <div class="card border-secondary-subtle">
+                                    <div class="card-header bg-light fw-bold text-dark d-flex justify-content-between align-items-center">
+                                        <span><i class="fas fa-table me-2 text-primary"></i>3. Tabel Pelacakan Parameter Vektor</span>
+                                        <div class="d-flex gap-2">
+                                            <button class="btn btn-outline-secondary btn-sm" id="btn-copy-md-table" disabled><i class="far fa-copy me-1"></i>Copy Markdown</button>
+                                            <button class="btn btn-outline-secondary btn-sm" id="btn-copy-latex-table" disabled><i class="far fa-copy me-1"></i>Copy LaTeX</button>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="thesis-verse-trace-container" class="table-responsive small text-muted">
+                                            <div class="text-center py-4">
+                                                <i class="fas fa-info-circle fa-2x mb-2 text-secondary"></i>
+                                                <p class="mb-0">Silakan jalankan simulasi dan klik salah satu ayat untuk menampilkan tabel parameter ekspor data.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script type="module" src="{{ url_for('static', filename='js/playground/indexing.js') }}"></script>
+<script>
+    window.copyCode = function(elementId, btn) {
+        const el = document.getElementById(elementId);
+        if (!el) return;
+        
+        const text = el.innerText;
+        navigator.clipboard.writeText(text).then(() => {
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-check me-1 text-success"></i>Copied!';
+            btn.disabled = true;
+            setTimeout(() => {
+                btn.innerHTML = originalHTML;
+                btn.disabled = false;
+            }, 1500);
+        }).catch(err => {
+            console.error('Failed to copy text: ', err);
+        });
+    }
+</script>
+
+<!-- ── Modal: Full Vector Viewer ──────────────────────────────────────── -->
+<div class="modal fade" id="vectorModal" tabindex="-1" aria-labelledby="vectorModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-dark text-white py-2">
+                <div>
+                    <h6 class="modal-title mb-0" id="vectorModalLabel"><i class="fas fa-vector-square me-2"></i>Vektor Lengkap Ayat</h6>
+                    <small class="text-secondary" id="vectorModalSubtitle"></small>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <button id="modal-copy-btn" class="btn btn-sm btn-outline-light py-1" onclick="copyFullVectorJSON()">
+                        <i class="far fa-copy me-1"></i>Salin JSON
+                    </button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+            </div>
+            <div class="modal-body bg-dark p-3">
+                <!-- Stats row -->
+                <div class="row g-2 mb-3" id="vectorModalStats">
+                    <div class="col-4">
+                        <div class="bg-dark border border-secondary rounded p-2 text-center">
+                            <span class="text-secondary d-block" style="font-size:0.65rem">DIMENSI</span>
+                            <span class="text-white fw-bold" id="modal-dims">—</span>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="bg-dark border border-secondary rounded p-2 text-center">
+                            <span class="text-secondary d-block" style="font-size:0.65rem">L2 MAGNITUDO</span>
+                            <span class="text-white fw-bold" id="modal-mag">—</span>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="bg-dark border border-secondary rounded p-2 text-center">
+                            <span class="text-secondary d-block" style="font-size:0.65rem">MODEL</span>
+                            <span class="text-white fw-bold" id="modal-model">—</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Grid of values -->
+                <div id="vector-full-grid" class="vector-grid"></div>
+            </div>
+            <div class="modal-footer bg-dark border-secondary">
+                <small class="text-secondary me-auto">Hover pada sel untuk melihat nilai lebih jelas</small>
+                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
